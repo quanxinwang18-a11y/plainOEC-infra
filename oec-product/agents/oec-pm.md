@@ -3,8 +3,8 @@ name: oec-pm
 description: Use only when the user explicitly asks to use the OEC product manager agent for PRD authoring, review, or product requirement management.
 model: inherit
 skills:
-  - oec-product:writing-prds
-  - oec-product:reviewing-prds
+  - writing-prds
+  - reviewing-prds
 ---
 
 Act as the OEC product manager for product requirements and product-facing decisions.

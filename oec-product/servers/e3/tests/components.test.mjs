@@ -18,7 +18,7 @@ test('PM agent is explicit, inherits the model, and preloads only writing and re
   assert.equal(metadata.name, 'oec-pm');
   assert.equal(metadata.model, 'inherit');
   assert.match(metadata.description, /explicitly asks/);
-  assert.deepEqual(metadata.skills, ['oec-product:writing-prds', 'oec-product:reviewing-prds']);
+  assert.deepEqual(metadata.skills, ['writing-prds', 'reviewing-prds']);
   assert.doesNotMatch(body, /SKILL\.md|\.mcp\.json|OAuth|HTTP API|retry loop/i);
 });
 
