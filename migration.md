@@ -1,55 +1,101 @@
 # OEC PM 能力迁移分析
 
-> 本文对比旧实现 `/Users/qxwang6/project/oec-ai-infra/oec-infra` 中的 PM 能力，
-> 与当前仓库 `/Users/qxwang6/project/plainOEC-infra` 的 `oec-product` Plugin，说明迁移原因、
-> 设计思路、实际效果和仍需保留的边界。
+> 本文基于旧仓库 `oec-ai-infra` 的 commit
+> `79356008b9961c3e8a70c57e2fe5c9cf0c7ce424` 和当前仓库 `plainOEC-infra` 的 commit
+> `a9ca1125b09afbcc63e56894be009894dbd76f17`。分析对象分别是旧 `oec-ai@0.2.2`
+> 和当前 `oec-product@2.2.1`。旧结构的数据来自实际构建产物以及一次隔离临时目录中的
+> `role=designer + tool=claude-code` 初始化，不把编辑源码目录误认为 PM 最终加载的配置。
 
 ## 1. 结论
 
-这次迁移不是把旧 PM Agent 的提示词逐段翻译到新目录，而是重新划分三类职责：
+旧实现并不是“PM Agent 和 Skills 直接装进 Claude Code Plugin”。它实际包含三套形态：
 
-- Agent 只定义 PM 工作身份、决策范围和事实边界。
-- Skill 承载可发现、可组合的产品**领域能力**。
-- **MCP Server 确定性实现 E3 认证、接口、幂等、恢复和远端校验**。
+1. `oec-infra/` 是供维护者编辑的 Agent、Skill 源码。
+2. `plugins/oec-ai/` 是 Marketplace 真正分发的 Plugin，其中 PM 资产位于 payload，Plugin 原生只暴露
+   初始化 Skill 和同步 Hook。
+3. 初始化器再把 payload 复制进每个业务仓库，使 PM 最终使用的是项目级 `.claude/agents` 和
+   `.claude/skills`，而不是 Plugin 原生 Agent 和 namespaced Skills。
 
-迁移后的核心链路是：
+这套方案解决了当时的 Claude Code/Codex 双宿主和项目模板下发问题，也实现了事务式同步与安全路径
+检查；但它把“Plugin 分发”“业务项目配置同步”“PM 工作流编排”“E3 API 执行”叠加成一个系统。
+结果是安装状态有两个真相源，模型需要穿过多层路由和文件索引，项目配置容易与 payload 漂移，外部
+副作用又依赖模型临场读取文档、拼命令和解释脚本结果。
+
+当前迁移不是逐段缩写旧 803 行 Agent，而是重新划分职责：
+
+- Agent 只定义 PM 身份、决策范围和事实边界。
+- Skill 直接对应“写作、评审、发布”三个稳定用户目标。
+- Supporting files 只作为所属 Skill 的渐进披露资源。
+- MCP Server 确定性实现 E3 认证、接口、幂等、恢复和远端校验。
+- Plugin 安装、升级和卸载不再复制 `.claude` 配置到业务仓库。
+
+当前主链路是：
 
 ```text
 PRD 编写或修订 → PRD 红队评审 → 显式确认发布 → E3 状态验证
 ```
 
-这条主链路已经完成迁移，而且 E3 发布的一致性、安全性和可验证性超过旧实现。当前实现不是旧
-`oec-pm` 工具箱的功能全集：通用产品需求 CRUD、系统需求编辑/删除、任务/工时/构建/缺陷管理等
-平台能力没有迁移；Codex 分发能力也不在当前 Claude Code Plugin 的范围内。
+这条主链路已经完成迁移并强化，但当前实现不是旧工具箱的全集。通用产品需求 CRUD、通用系统需求
+编辑/删除、任务/工时/构建/缺陷管理以及 Codex 分发仍在当前边界之外。
 
-## 2. 迁移前后的组织模型
+## 2. 旧实现的三层真实结构
 
-### 2.1 旧实现：大插件分发项目级资产
+### 2.1 第一层：`oec-infra/` 只是编辑源码
 
-旧仓库并非完全没有 Marketplace 或 Plugin。仓库根部存在 `oec-internal` Marketplace，分发一个覆盖
-产品、设计、研发、测试和交付的大型 `oec-ai` Plugin。
+旧仓库维护者主要在以下目录编写 PM 能力：
 
-但 PM Agent 和主要产品 Skills 并不是该 Plugin 直接暴露的原生组件。它们被构建进 payload，再由
-`SessionStart` Hook 或 `oec-project-init` 将资产复制到业务项目的 `.claude/skills`、
-`.claude/agents`，并同时生成 Codex 所需的 TOML Agents。
-
-```mermaid
-flowchart TD
-    A["oec-internal Marketplace"] --> B["oec-ai Plugin"]
-    B --> C["oec-project-init Skill"]
-    B --> D["SessionStart Hook"]
-    C --> E["project-sync.mjs"]
-    D --> E
-    E --> F["payload/skills"]
-    E --> G["payload/agents/claude"]
-    E --> H["payload/agents/codex"]
-    F --> I["复制到项目 .claude/.codex"]
-    G --> I
-    H --> I
-    I --> J["项目级 PM Agent 和大量 Skills"]
+```text
+oec-infra/
+├── agents/oec-product/
+│   └── oec-pm-agent.md
+└── skills/
+    ├── product/
+    │   ├── oec-prd-generate/
+    │   ├── oec-prd-review/
+    │   ├── oec-prd-finalize/
+    │   ├── oec-prd-split/
+    │   └── ...
+    └── tools/
+        ├── oec-pm/
+        ├── oec-manage-task/
+        └── ...
 ```
 
-从 Claude Code 的 Plugin 视角实测，旧 `oec-ai@0.2.2` 的原生组件清单是：
+[旧构建脚本](../oec-ai-infra/script/build-plugin-marketplace.mjs) 读取 Skill、Agent 和 preset registry，
+再执行以下转换：
+
+- 将注册 Skill 按 frontmatter `name` 扁平复制到 `plugins/oec-ai/payload/skills/<name>`。
+- 将 Agent group 复制到 `plugins/oec-ai/payload/agents/claude`。
+- 将生成的 Codex TOML Agents 复制到 `payload/agents/codex`。
+- 将 dev/designer 工作区模板复制到 `payload/templates`。
+- 生成角色到 Skills、Agent groups 和模板的 [payload manifest](../oec-ai-infra/plugins/oec-ai/payload/manifest.json)。
+
+因此，`oec-infra/skills/product/...` 是构建前来源，不是 PM 项目中的真实运行路径。任何写进 Agent 的
+源码路径都必须经得住构建后的扁平化，否则会成为失效索引。
+
+### 2.2 第二层：Marketplace 实际分发的是 bootstrap Plugin
+
+旧仓库根部的 `oec-internal` Marketplace 只分发一个覆盖产品、设计、研发、测试和交付的
+`oec-ai` Plugin。实际构建后的核心结构是：
+
+```text
+plugins/oec-ai/
+├── .claude-plugin/plugin.json
+├── skills/
+│   └── oec-project-init/
+├── hooks/hooks.json
+├── runtime/project-sync.mjs
+└── payload/
+    ├── manifest.json
+    ├── skills/
+    ├── agents/claude/
+    ├── agents/codex/
+    ├── templates/
+    └── runtime/
+```
+
+使用当前 Claude Code 对 [旧 Plugin manifest](../oec-ai-infra/plugins/oec-ai/.claude-plugin/plugin.json)
+进行实际发现，组件清单是：
 
 ```text
 Skills:      1  oec-project-init
@@ -58,220 +104,403 @@ Hooks:       1  SessionStart
 MCP servers: 0
 ```
 
-这说明旧 PM 能力虽然通过 Plugin 分发，但本质是“Plugin 安装器管理的项目级配置”，而不是
-“Plugin 直接持有的 PM 组件”。安装、升级和卸载 PM 能力也与整个 OEC 工具包耦合。
+PM Agent、25 个 designer Skills 和 E3 脚本虽然被 Plugin 携带，却都只是 payload 文件。安装 Plugin
+只让 Claude 获得 `/oec-ai:oec-project-init` 和同步 Hook，不会直接出现一个 Plugin-scoped PM Agent。
 
-关键证据：
+[SessionStart Hook](../oec-ai-infra/plugins/oec-ai/hooks/hooks.json) 在 `startup|clear|compact` 时调用
+[project-sync.mjs](../oec-ai-infra/plugins/oec-ai/runtime/project-sync.mjs)。同步器只会更新已经存在
+`.oec-ai/installation.json` 的项目；没有初始化标记时直接返回。因此 Plugin 安装成功不等于业务仓库
+已经具备 PM 配置，首次使用仍要运行 `oec-project-init` 并选择 role 和 host tool。
 
-- 旧 Marketplace：`../oec-ai-infra/.claude-plugin/marketplace.json`
-- 旧 Plugin：`../oec-ai-infra/plugins/oec-ai/.claude-plugin/plugin.json`
-- payload 角色清单：`../oec-ai-infra/plugins/oec-ai/payload/manifest.json`
-- 项目同步实现：`../oec-ai-infra/plugins/oec-ai/runtime/project-sync.mjs`
-- SessionStart Hook：`../oec-ai-infra/plugins/oec-ai/hooks/hooks.json`
+### 2.3 第三层：PM 真正获取的是项目级配置副本
 
-### 2.2 当前实现：原生产品域 Plugin
+在隔离临时目录实际执行下面的旧初始化入口：
 
-当前仓库直接采用 Claude Code 原生层级：
+```bash
+node plugins/oec-ai/skills/oec-project-init/scripts/init.mjs \
+  --plugin-root plugins/oec-ai \
+  --target <temporary-product-repository> \
+  --role designer \
+  --tool claude-code
+```
+
+PM 最终获得的真实目录是：
 
 ```text
-Marketplace
-└── oec-product Plugin
-    ├── Agent: oec-pm
-    ├── Skill: writing-prds
-    ├── Skill: reviewing-prds
-    ├── Skill: publishing-prds-to-e3
-    └── MCP Server: e3
+业务仓库/
+├── .claude/
+│   ├── agents/
+│   │   └── oec-pm-agent.md
+│   └── skills/                    # 25 个项目级 Skills
+├── .oec-ai/
+│   ├── installation.json
+│   └── bin/
+│       ├── plugin-discovery.mjs
+│       └── project-sync-launcher.mjs
+└── ai-docs/                       # 8 个首次初始化模板文件
+    ├── prd/
+    ├── ui/
+    └── versions/v0.1.0/
 ```
 
-当前 Plugin 不使用 Commands、Hooks、默认 Agent 设置，也不需要把插件资产复制进业务项目。
-Marketplace 安装、升级或卸载的边界就是 `oec-product` 本身。
+本次物化的精确结果为：
+
+| 内容 | 数量 | 所有权语义 |
+|---|---:|---|
+| `.claude/agents/oec-pm-agent.md` | 1 | 同步器管理的项目级 Agent |
+| `.claude/skills/*` | 610 个文件、25 个 Skill 根目录 | 同步器管理的项目级 Skills |
+| `.oec-ai/bin/*` | 2 | 同步器管理的项目运行时 |
+| `ai-docs/*` | 8 | 仅文件缺失时 seed，后续视为业务内容 |
+| `.oec-ai/installation.json` | 1 | 记录版本、role、tool 和 managed files |
+| **总计** | **622 个文件，约 4.2 MiB** | 分布在业务仓库内 |
+
+`installation.json` 记录了 613 个 `managedFiles`。其中体量最大的四个 Skill 包是：
+
+| Skill 包 | 文件数 | 与 PRD 主链的关系 |
+|---|---:|---|
+| `iflytek-feishu-api` | 304 | 通用飞书 17 个模块、267 个 API |
+| `oec-git-devops` | 114 | 仓库、流水线和 DevOps 管理 |
+| `oec-manage-task` | 92 | 任务、提测和缺陷管理 |
+| `oec-pm` | 67 | PM Mega Skill、嵌套规范和 E3 脚本 |
+
+前三个相邻工具共 510 个 managed files，占全部受管文件约 83%。它们随 designer role 一次下发，
+但与“写 PRD、评审、发布”并不共享稳定生命周期。这说明旧分发边界首先按组织角色聚合，而不是按
+用户目标或副作用边界聚合。
+
+25 个项目 Skills 可进一步分为：
+
+- 15 个产品阶段 Skills：ideate、generate、review、revise、finalize、split、triage 等。
+- 6 个设计相关 Skills：设计系统、原型、UI contract、视觉验证。
+- 4 个通用工具 Skills：Git DevOps、任务管理、PM Mega Skill 和飞书 API。
+
+### 2.4 从源码到项目副本的完整分发链
 
 ```mermaid
-flowchart LR
-    M["Marketplace"] --> P["oec-product Plugin"]
-    P --> A["Agent<br/>oec-pm"]
-    P --> W["Skill<br/>writing-prds"]
-    P --> R["Skill<br/>reviewing-prds"]
-    P --> S["Skill<br/>publishing-prds-to-e3"]
-    P --> E["MCP Server<br/>e3"]
-
-    A -. 预加载 .-> W
-    A -. 预加载 .-> R
-    A -. 不预加载副作用能力 .-> S
-    S --> E
-    E --> X["E3"]
+flowchart TD
+    S1["编辑源码<br/>oec-infra/skills 与 agents"] --> B["build-plugin-marketplace.mjs"]
+    R["registry / presets"] --> B
+    B --> P["oec-ai Plugin"]
+    P --> I["原生 Skill<br/>oec-project-init"]
+    P --> H["SessionStart Hook"]
+    P --> L["payload/manifest + skills + agents + templates"]
+    I --> Y["project-sync.mjs"]
+    H --> Y
+    L --> Y
+    Y --> C1["业务仓库 .claude/agents"]
+    Y --> C2["业务仓库 .claude/skills"]
+    Y --> C3["业务仓库 .oec-ai"]
+    Y --> C4["首次 seed ai-docs"]
 ```
 
-实测当前 `oec-product@2.2.0` 的组件清单是：
+旧同步器并非简单粗暴复制，它具有以下保护：
+
+- 先在 staging 组装并验证，再备份旧 managed files，失败时恢复。
+- 拒绝 payload symlink、目标 symlink traversal 和项目路径逃逸。
+- workspace templates 只在目标文件缺失时 seed，不覆盖已有 `ai-docs`。
+- 通过 `installation.json` 识别旧版本 managed files 和 retired files。
+
+但生命周期仍有四个结构性问题：
+
+1. Plugin cache 和项目副本同时存在，形成两个状态源。
+2. SessionStart 只有 payload 版本严格大于 installation 版本时才同步；同版本内容变化不会传播。
+3. 新版本同步会覆盖 managed files 并删除 retired files；若项目提交了这些配置，会产生大规模工作区
+   变更；若未提交，又成为机器上的隐式项目状态。
+4. 代码中没有与初始化对称的项目资产 uninstall。卸载 Plugin 不会自动清除已复制到业务仓库的
+   `.claude` 和 `.oec-ai` 文件。
+
+## 3. 旧配置的索引和加载关系
+
+### 3.1 项目 Skill 发现不等于 Agent Skill 预加载
+
+物化后的 25 个目录符合项目 Skill 入口形态：
+
+```text
+.claude/skills/<skill-name>/SKILL.md
+```
+
+Claude Code 可以根据这些 Skill 的 description 发现并调用它们。但是旧
+[oec-pm-agent.md](../oec-ai-infra/oec-infra/agents/oec-product/oec-pm-agent.md) frontmatter 没有
+`skills:` 字段，因此 Agent 启动时没有任何 PM Skill 被原生预加载。Agent 的 803 行正文自己保存
+入口判断、阶段编排、文件路径、Git 规则、失败处理和发布流程，再依靠模型从所有项目 Skills 中选择。
+
+与此同时，顶层 [oec-pm/SKILL.md](../oec-ai-infra/plugins/oec-ai/payload/skills/oec-pm/SKILL.md)
+又明确要求：
+
+> 执行任何操作前，必须先根据路由表 Read 对应子目录的 `SKILL.md`；这些文件不作为独立顶层
+> Skill 调用。
+
+`oec-pm` 目录下实际有 1 个根 `SKILL.md` 和 6 个嵌套 `SKILL.md`，合计约 2064 行：
+
+```text
+oec-pm/
+├── SKILL.md                       # 唯一项目级 Skill 入口
+├── requirements-analysis/SKILL.md
+├── generate-prd-document/SKILL.md
+├── design-prototype/SKILL.md
+├── manage-product-requirements/SKILL.md
+├── decompose-prd-to-requirements/SKILL.md
+└── write-file-strategy/SKILL.md
+```
+
+后六个文件是根 Skill 的 supporting files。模型能用 Read 打开它们，但这不等于 Claude Code 已把
+它们注册成六个独立 Skill，也不等于 Agent frontmatter 预加载了它们。
+
+### 3.2 实际调用链包含三重路由
+
+```mermaid
+flowchart TD
+    U["PM 请求"] --> A["项目级 oec-pm-agent<br/>做需求 / 改需求 / 发布需求路由"]
+    A --> D["25 个项目 Skill descriptions<br/>Claude Code 原生发现"]
+    D --> T["阶段 Skill<br/>generate / review / finalize / split 等"]
+    D --> M["oec-pm Mega Skill"]
+    M -.->|普通 Read，不是 Skill preload| C["嵌套子 SKILL.md"]
+    C -.->|普通 Read| R["references"]
+    R --> B["模型组装 Bash / Python 参数"]
+    B --> S["scripts"]
+    S --> E["E3 HTTP API"]
+```
+
+三层都在判断意图：
+
+| 判断层 | 路由内容 | 典型重叠 |
+|---|---|---|
+| PM Agent | 做需求、改需求、发布需求及内部状态机 | “写 PRD”“上 E3” |
+| 顶层阶段 Skills | generate、review、revise、finalize、split 等 | `oec-prd-generate` 本身就能匹配 PRD 写作 |
+| `oec-pm` Mega Skill | 需求分析、PRD、原型、产品需求和系统需求 | description 同时匹配写 PRD、原型和 E3 |
+
+例如“根据需求写个 PRD”既可能命中 Agent 的 build flow，又直接符合 `oec-prd-generate`，也符合
+`oec-pm` 的 `generate-prd-document` 路由。更多文字不会自动消除这种重叠，反而要求模型先判断
+“应该服从哪一层路由”，再处理产品问题。
+
+### 3.3 构建扁平化已经造成失效路径索引
+
+旧 Agent 引用了：
+
+```text
+skills/product/oec-prd-split/sub-prd.md
+skills/product/oec-prd-split/SKILL.md
+```
+
+但实际 PM 项目只有：
+
+```text
+.claude/skills/oec-prd-split/SKILL.md
+.claude/skills/oec-prd-split/templates/sub-prd.md
+```
+
+这两个旧路径在实际初始化结果中均不存在。问题不只是少写了 `.claude/`：构建过程删除了
+`skills/product` 分类层，而 `sub-prd.md` 本身还位于 `templates/`。因此把文件路径写进大型 Agent
+相当于让 Agent 知道构建前内部布局；只要 publication layout 调整，Prompt 索引就会失效。
+
+当前 Claude Code 对 Skill 的正式关系是：项目 Skill 位于 `.claude/skills/<name>/SKILL.md`，Plugin
+Skill 位于 `<plugin>/skills/<name>/SKILL.md`；Agent 的 `skills:` 字段会注入列出的完整 Skill 内容。
+普通 Read 仍然有价值，但应该用于 Skill 内的渐进披露资源，不应该冒充组件加载。
+
+- [Claude Code Skills](https://code.claude.com/docs/en/slash-commands)
+- [Claude Code Subagents](https://code.claude.com/docs/en/sub-agents)
+- [Claude Code Plugins reference](https://code.claude.com/docs/en/plugins-reference)
+
+### 3.4 E3 链路把平台执行交给了 Prompt
+
+旧 E3 发布主链大致是：
+
+```text
+PM Agent
+→ oec-prd-quality-gate
+→ oec-pm Mega Skill
+→ decompose-prd-to-requirements/SKILL.md
+→ CRT/QRY/EDT/DEL reference
+→ 模型选择 Python script 并拼参数
+→ requests 调 E3 HTTP API
+→ 模型解释 JSON 并写 mapping
+→ post-publish gate
+```
+
+由此产生的风险包括：
+
+- 系统需求和任务实现分散在 `oec-pm`、`oec-manage-task` 等不同包，Agent 又禁止某些跨包调用，
+  所有权不完整。
+- 部分字段候选把 `options[0]` 当默认值，列表顺序被误当成业务决策。
+- quality gate 曾使用正则模拟 YAML parser，难以稳定验证嵌套 schema 和安全路径。
+- OAuth token exchange 存在关闭 TLS 证书验证的旧实现。
+- 模型负责选择脚本、构造参数、判断重试和解释多种 ID 返回结构。
+- 发布后缺任务 ID 可以降级成 warning，“已发布”的语义不够严格。
+
+这些是确定性平台问题，不应通过继续扩写 PM Agent 来弥补。
+
+## 4. 对旧方案的辩证判断
+
+### 4.1 应保留的设计价值
+
+旧方案并非简单的错误实现，它解决了当时的现实问题：
+
+- 用一个 registry 和 preset 维护 Claude Code/Codex 双宿主资产。
+- 通过 role 选择 dev、designer 或 all，避免永远下发全集。
+- 使用 staged copy、backup 和 rollback 防止半安装状态。
+- 检查路径逃逸和 symlink traversal，保护业务仓库边界。
+- 将首次工作区模板与后续 managed files 区分，避免升级覆盖 PRD 内容。
+- 用 installation manifest 支持跨 Plugin 版本的项目同步。
+
+如果目标是“把一整套组织脚手架物化进每个项目”，这种设计有合理性。迁移否定的不是这些工程保护，
+而是把它们继续作为 PM Plugin 的默认运行模型。
+
+### 4.2 需要迁移的结构性弊端
+
+| 问题 | 对 PM 或模型的实际影响 |
+|---|---|
+| 二次安装 | Marketplace 安装成功后还要初始化 role/tool，开箱即用链路不完整 |
+| 双状态源 | Plugin payload 和业务仓库副本可能不同步，排障要同时检查两处 |
+| 项目污染 | 一次 designer 初始化写入 622 个文件，组织工具与产品资料混在同一仓库生命周期 |
+| 升级耦合 | SessionStart 可能覆盖 managed files、删除 retired files，并制造项目 diff |
+| 卸载不对称 | Plugin 卸载后项目副本没有自动回收路径 |
+| 三重路由 | Agent、阶段 Skills、Mega Skill 对相同意图重复判断 |
+| 文件索引漂移 | Agent 记住构建前路径，publication layout 改动后索引失效 |
+| 能力边界过宽 | PRD、原型、飞书、Git、任务、缺陷和 E3 CRUD 同时进入 designer 配置 |
+| 平台执行不确定 | OAuth、API、幂等、恢复和 mapping 依赖模型驱动 Bash/Python |
+
+模型能力提升并不意味着业务规则可以删除。正确的区分是：
+
+- 需要理解语义、权衡取舍的产品判断交给模型。
+- 输出必须稳定一致的不变量交给确定性代码。
+- 涉及外部写操作的平台能力交给类型化工具和明确确认。
+- 特定组织的产物规则保留在 Skill supporting files，而不是大 Agent 状态机里。
+
+## 5. 迁移设计原则
+
+### 5.1 按用户目标拆能力，不按内部阶段拆能力
+
+PM 稳定需要完成的是：
+
+1. 把需求写清楚并维护为可交付 PRD。
+2. 判断关键假设和风险是否经得住挑战。
+3. 在明确确认后把最终产物发布到 E3。
+
+ideate、generate、revise、finalize 和 split 是可能采用的内部工作动作，不需要成为要求模型逐关模拟的
+固定状态机。因此当前收敛为：
+
+| Skill | 用户目标 | 副作用边界 |
+|---|---|---|
+| [writing-prds](oec-product/skills/writing-prds/SKILL.md) | 创建、修订、收口和拆分 PRD | 只写本地 PRD；提交前确认 |
+| [reviewing-prds](oec-product/skills/reviewing-prds/SKILL.md) | 对 PRD 做只读红队评审 | 不修改文件 |
+| [publishing-prds-to-e3](oec-product/skills/publishing-prds-to-e3/SKILL.md) | 显式发布最终产物 | 展示计划并确认后写 E3 |
+
+### 5.2 Agent、Skill、MCP 各自只有一个主要职责
+
+```mermaid
+flowchart TB
+    U["用户目标"] --> A["Agent<br/>工作身份、产品边界、事实约束"]
+    A --> K["Skill<br/>领域知识、产物契约、业务编排"]
+    K --> M["MCP<br/>认证、API、幂等、恢复、验证"]
+    M --> E["E3"]
+
+    A1["不虚构事实<br/>产品与研发边界"] -.->|约束| A
+    K1["PRD contract<br/>review rubric<br/>publish contract"] -.->|约束| K
+    M1["roots / token / fingerprint<br/>mapping / remote identity"] -.->|约束| M
+```
+
+当前 [oec-pm Agent](oec-product/agents/oec-pm.md) 通过 frontmatter 原生预加载 writing 和
+reviewing，完整 Skill 内容在 Agent 启动时注入，不需要记住 `SKILL.md` 文件路径。带外部副作用的
+publishing 不预加载，并设置为只能由用户显式调用。
+
+### 5.3 让模型处理语义，让代码处理不变量
+
+模型继续负责：
+
+- 理解模糊或不完整的需求。
+- 识别承重假设和需要用户决策的事项。
+- 根据需求复杂度选择条件章节。
+- 把技术输入转为用户可观察的产品行为。
+- 在事实不足时澄清，不虚构业务规则。
+
+确定性代码负责：
+
+- 文件、路径、版本和命名。
+- HANDOFF YAML schema 和安全路径。
+- Story ID 唯一性及验收标准关联。
+- HANDOFF、子 PRD、featureName 和故事集合一致性。
+- MCP roots、selectionToken、planToken 和 workspace 隔离。
+- artifact fingerprint、E3 ID、标题、空间和任务父子关系。
+- mapping 原子写入、partial checkpoint 和幂等恢复。
+
+### 5.4 保留业务规则，删除对模型过程的微管理
+
+继续保留：
+
+- 产品语言与研发设计的权限边界。
+- PRD SSOT、版本、changelog 和路径契约。
+- 一个模块对应一个子 PRD，单模块也生成一个子 PRD。
+- 一个子 PRD 对应一个 E3 系统需求，一个 Story 对应一个任务。
+- 不虚构业务规则、证据、决策和 E3 结果。
+- 用户确认后才精确提交 PRD 或 mapping 文件。
+
+主动删除：
+
+- 固定 ideate/review/revise/finalize 状态机。
+- 固定章节填充、固定完成话术和 A/B/C/D 评级。
+- quick-fix 分级、固定重试次数和打断恢复对话树。
+- Agent 内的 Skill 文件索引。
+- Prompt 内的 OAuth、HTTP、JSON、重试和 ID 提取细节。
+
+## 6. 当前实现
+
+### 6.1 Plugin 直接持有 PM 组件
+
+当前采用 Claude Code 原生层级：
+
+```text
+Marketplace: plainOEC-infra
+└── Plugin: oec-product
+    ├── agents/oec-pm.md
+    ├── skills/writing-prds/
+    ├── skills/reviewing-prds/
+    ├── skills/publishing-prds-to-e3/
+    ├── .mcp.json
+    ├── servers/e3/
+    └── dist/e3-server.mjs
+```
+
+`oec-product@2.2.1` 的实际组件清单是：
 
 ```text
 Skills:      3
 Agents:      1
 Hooks:       0
 MCP servers: 1
+Commands:    0
 ```
 
-关键文件：
+Plugin 通过 Marketplace 复制进 Claude Code plugin cache。安装过程不会在产品仓库创建 `.claude`、
+`.oec-ai` 或模板；只有用户真正执行 writing Skill 时，才按业务目标创建 PRD 产物。
+
+关键入口：
 
 - [Marketplace](.claude-plugin/marketplace.json)
 - [Plugin manifest](oec-product/.claude-plugin/plugin.json)
 - [PM Agent](oec-product/agents/oec-pm.md)
 - [MCP 注册](oec-product/.mcp.json)
 
-该结构符合 Claude Code 的原生组件模型：Plugin 是自包含的分发单元，`skills/`、`agents/`、
-`.mcp.json` 位于 Plugin 根目录；新插件优先使用 Skills，而不是 legacy Commands。
+### 6.2 Supporting files 回到所属 Skill
 
-- [Claude Code Plugins reference](https://code.claude.com/docs/en/plugins-reference)
-- [Claude Code Skills](https://code.claude.com/docs/en/slash-commands)
-- [Claude Code Subagents](https://code.claude.com/docs/en/sub-agents)
-- [Claude Code MCP](https://code.claude.com/docs/en/mcp)
+Writing 的 artifact contract、versioning、product language、templates 和 checker 都位于
+`writing-prds/` 内；Review rubric 位于 `reviewing-prds/`；E3 publish contract 位于
+`publishing-prds-to-e3/`。没有 Plugin 根公共 `references/assets/lib`，也没有另一个 Mega Skill
+负责告诉模型去哪里找文件。
 
-## 3. 为什么需要迁移
+Skill description 直接描述能力和触发边界，不再依赖无定义的品牌词帮助模型判断。Reference 只在
+执行相关能力时按需读取，避免把所有模板、平台规则和评审方法同时放进 Agent。
 
-### 3.1 旧 Agent 已经成为提示词控制程序
+### 6.3 E3 变成四个类型化工具
 
-旧 `oec-pm-agent.md` 有 803 行，同时承担：
+当前 E3 MCP Server 保持四个公开工具：
 
-- PM 服务边界、拒答清单和固定话术。
-- 文件路径白名单和 Git 命令规则。
-- “做需求、改需求、发布需求”入口路由。
-- ideate、generate、review、revise、finalize、split 阶段状态机。
-- 存量 PRD、子 PRD、拆分粒度调整和中断恢复。
-- 重试次数、失败选项和回退话术。
-- E3 发布步骤、质量门禁和 mapping 规则。
-- A/B/C/D 质量评级。
-- quick-fix、经验沉淀及十六条编排规则。
-
-旧 Agent 的长度不是一次设计的结果，而是随着线上问题不断追加约束形成的。每次增加固定流程都可能
-解决一个局部问题，但也会带来三类新成本：
-
-1. 多组状态规则、重试规则和拒答规则可能互相冲突。
-2. 模型需要先模拟人为状态机，才能开始解决实际产品问题。
-3. 新问题通常只能继续往同一个 Agent 追加文字，缺少可测试的稳定边界。
-
-模型能力提升并不意味着所有规则都应删除。正确的判断标准是：
-
-- 需要语义理解和产品判断的内容交给模型。
-- 可确定验证的不变量交给代码。
-- 涉及外部副作用的平台操作交给类型化工具。
-- OEC 特有的业务规则继续保留在 Skill supporting files 中。
-
-### 3.2 旧“Skill 加载”主要是文件索引
-
-旧 `oec-pm/SKILL.md` 明确要求：执行前先 `Read` 对应子目录的 `SKILL.md`，且这些子目录不是独立
-顶层 Skill。实际运行链路是：
-
-```text
-Agent 路由
-→ oec-pm 再路由
-→ Read 某个子 SKILL.md
-→ 子 Skill 再按 CRT/QRY/EDT/DEL 路由 reference
-```
-
-这可以让模型找到文件，但不是 Claude Code 原生的 Skill 预加载，也形成了重复控制面。旧 Agent 和
-`oec-pm` Mega Skill 都在做意图识别、流程选择和错误处理。
-
-当前 Agent 通过 frontmatter 原生预加载：
-
-```yaml
-skills:
-  - writing-prds
-  - reviewing-prds
-```
-
-Claude Code 会在 Agent 启动时注入列出的完整 Skill 内容，不需要 Agent 再记住文件路径。发布 Skill
-因为带外部副作用而不预加载，只能由用户显式调用。
-
-### 3.3 旧 Skill 按内部阶段拆分，而不是按用户目标拆分
-
-旧产品目录有 15 个 `SKILL.md`，约 2412 行；`oec-pm` 工具树还有 7 个 `SKILL.md`，约 2064 行。
-其中大量能力围绕 ideate、generate、review、revise、finalize、split、triage 等内部阶段拆分。
-
-这些阶段是实现过程，不是稳定的用户目标。PM 真正需要的是：
-
-1. 把需求写清楚并维护为可交付产物。
-2. 判断需求中的关键假设是否经得住挑战。
-3. 在明确确认后把最终产物发布到 E3。
-
-因此当前收敛为三个自包含 Skills：
-
-| Skill | 用户目标 | 是否允许副作用 |
+| 工具 | 职责 | 是否写 E3 |
 |---|---|---|
-| [writing-prds](oec-product/skills/writing-prds/SKILL.md) | 创建、修订、收口、拆分 PRD | 只写本地 PRD；提交前确认 |
-| [reviewing-prds](oec-product/skills/reviewing-prds/SKILL.md) | 对 PRD 做只读红队评审 | 否 |
-| [publishing-prds-to-e3](oec-product/skills/publishing-prds-to-e3/SKILL.md) | 显式发布已完成产物 | 是；必须展示计划并确认 |
+| `prepare_prd_publish` | 验证产物、查询远端、生成 15 分钟计划 | 否 |
+| `select_product_space` | 保存 workspace-bound 空间和 POMP 选择 | 否 |
+| `execute_prd_publish` | 校验计划后创建或复用需求与任务 | 是 |
+| `get_prd_publish_status` | 只读验证 mapping 和远端对象 | 否 |
 
-三个 `SKILL.md` 正文总计 93 行，Agent 19 行。长模板、字段契约和评审 rubric 作为所属 Skill 的
-渐进披露资源存在，不再塞进 Agent，也不建立插件根公共资源层。
-
-### 3.4 E3 外部执行不应依赖模型临场编排
-
-旧 E3 发布链路包含多层 Prompt 和 Bash/Python 调用：
-
-```mermaid
-flowchart TD
-    A["旧 PM Agent"] --> B["oec-prd-quality-gate"]
-    B --> C["oec-pm Mega Skill"]
-    C --> D["decompose-prd-to-requirements"]
-    D --> E["CRT reference"]
-    E --> F["模型拼接 JSON 和命令"]
-    F --> G["Python scripts / requests"]
-    G --> H["E3 HTTP API"]
-    H --> I["模型写 mapping"]
-    I --> J["正则解析 YAML 的 post gate"]
-```
-
-具体风险包括：
-
-- 系统需求创建脚本属于 `oec-pm`，任务 POST 实现在另一套 `oec-manage-task` 中，但旧 Agent 又禁止
-  直接调用 `oec-manage-task`，实现所有权断裂。
-- 字段预填脚本对 POMP、研发负责人、测试负责人等候选直接使用 `options[0]`，会把列表顺序误当
-  业务默认值。
-- 旧 quality gate 用正则模拟 YAML parser，难以可靠处理 schema、嵌套结构和安全路径。
-- OAuth token exchange 使用 `verify=False`，关闭 TLS 证书校验。
-- 模型负责构造 JSON payload 和命令，接口约束只能依赖提示词提醒。
-- 发布后缺少任务 ID 可以作为 warning 降级收口，“已发布”的语义不够严格。
-
-这些问题属于平台能力，不能通过继续扩写提示词解决。
-
-## 4. 迁移设计原则
-
-### 4.1 让模型处理语义，让代码处理不变量
-
-模型继续负责：
-
-- 理解模糊或不完整的需求。
-- 发现承重假设和需要用户决策的事项。
-- 根据需求复杂度选择 PRD 条件章节。
-- 把技术输入转为用户可观察的产品行为。
-- 在事实不足时向用户澄清，不虚构业务规则。
-
-确定性代码负责：
-
-- 路径、文件和版本命名。
-- HANDOFF YAML schema。
-- Story ID 唯一性及验收标准关联。
-- HANDOFF、子 PRD、featureName 和故事列表一致性。
-- MCP roots 和 workspace 路径限制。
-- planToken 过期、配置变化和 artifact fingerprint。
-- E3 ID、标题、空间和任务父子关系验证。
-- mapping 原子写入、partial checkpoint 和幂等恢复。
-
-### 4.2 Agent、Skill、MCP 各自只有一个主要职责
-
-```mermaid
-flowchart TB
-    U["用户目标"] --> A["Agent：工作身份与决策边界"]
-    A --> K["Skill：产品领域知识与业务编排"]
-    K --> M["MCP：类型化外部执行"]
-    M --> E["E3 平台"]
-
-    A1["不虚构事实<br/>产品与研发边界"] -. 约束 .-> A
-    K1["PRD 契约<br/>评审方法<br/>发布确认"] -. 约束 .-> K
-    M1["认证<br/>API<br/>幂等<br/>恢复<br/>远端验证"] -. 约束 .-> M
-```
-
-发布 Skill 只表达用户可理解的业务步骤：
+Publishing Skill 只表达业务步骤：
 
 ```text
 prepare
@@ -282,106 +511,38 @@ prepare
 → status 独立验证
 ```
 
-OAuth、HTTP endpoint、payload、重试、ID 提取和 mapping 更新全部在 MCP Server 内实现。
+OAuth、固定 origin、HTTP payload、成功码、ID 归一化、未知 POST 结果恢复、mapping checkpoint 和
+脱敏全部由 MCP 实现。
 
-### 4.3 保留业务规则，删除对模型思考过程的微管理
+### 6.4 发布一致性边界
 
-保留的规则：
+`prepare` 在访问 E3 前执行完整 artifact gate；`execute` 在远端写入前再次验证 workspace、planToken、
+配置、fingerprint、本地产物和远端身份。
 
-- 产品语言与研发设计的权限边界。
-- PRD SSOT、版本、changelog 和文件路径契约。
-- 一个模块对应一个子 PRD，单模块也必须生成一个子 PRD。
-- 一个子 PRD 对应一个 E3 系统需求。
-- 一个 Story 对应一个 E3 任务。
-- 不虚构业务规则、证据、决策和 E3 结果。
-- PM 确认后才精确提交 PRD 文件。
+一旦 mapping 包含任一 E3 ID，该版本就与 artifact fingerprint 和产品空间绑定：
 
-删除的过度约束：
+- fingerprint 或空间不一致时阻断，不覆盖旧 mapping。
+- mapping ID 存在时先按 ID 验证标题和任务父子关系。
+- mapping 无 ID 时才按精确标题查询；0 条创建、1 条复用、多条阻断。
+- 每个远端成功结果立即原子写入 mapping，partial 下次从 checkpoint 恢复。
+- 只有全部系统需求和 Story 任务均 verified 才返回 `published`。
 
-- 固定 ideate/review/revise/finalize 状态机。
-- 固定十一章空模板。
-- A/B/C/D 或数字化伪精确评分。
-- 大量固定话术和输出模板。
-- 对 TaskCreate/TaskUpdate 等过程工具的微观规定。
-- 重试次数、打断处理和回退对话状态机。
-- 通过文件路径冒充 Skill 加载。
-- Agent 内的 OAuth、HTTP、JSON 和脚本细节。
+POMP、研发负责人和测试负责人只在唯一候选或唯一默认值时自动选择。多个候选没有唯一默认值时让
+用户选择或产生 warning，不把列表第一项当业务决定。
 
-## 5. 当前 E3 发布模型
+产品空间和 POMP 配置保存在
+`${CLAUDE_PLUGIN_DATA}/e3/workspaces/<canonical-root-sha256>/config.json`。Selection 和 plan token 都
+绑定 canonical MCP root，一个产品仓库不能使用另一个仓库的选择或计划。
 
-当前 MCP Server 暴露四个工具，调用名称保持稳定：
+### 6.5 Git 原生分发不要求项目安装依赖
 
-| 工具 | 职责 | 是否写 E3 |
-|---|---|---|
-| `prepare_prd_publish` | 验证产物、读取远端、生成 15 分钟计划 | 否 |
-| `select_product_space` | 保存用户选择的空间和 POMP | 否 |
-| `execute_prd_publish` | 按计划创建或复用需求和任务 | 是 |
-| `get_prd_publish_status` | 只读验证 mapping 和远端对象 | 否 |
+`dist/e3-server.mjs` 和 bundled artifact checker 随 Git 提交，包含 MCP SDK、Zod 和 YAML runtime。
+Marketplace 根 package manifest 仅用于维护和重建，不位于 Plugin 根，因此干净安装后的 Plugin
+cache 不需要 `node_modules`、npm registry 登录、SessionStart 安装 Hook 或用户执行 `npm install`。
 
-### 5.1 发布前后双重门禁
+## 7. 能力迁移结果
 
-`prepare` 在访问 E3 前运行完整 artifact gate；出现 errors 时直接返回 `blocked`，E3 client 零调用。
-
-`execute` 在远端写入前重新检查：
-
-- workspace 仍是客户端提供的 MCP root。
-- planToken 未过期。
-- PRD fingerprint 未变化。
-- 产品空间和 POMP 配置未变化。
-- 本地产物仍满足完整 pre-publish contract。
-- prepare 后远端对象身份未发生漂移。
-
-### 5.2 不可变版本和空间绑定
-
-一旦 mapping 已包含任一 E3 ID，该版本就与 artifact fingerprint 和产品空间绑定：
-
-- fingerprint 一致、空间一致：允许复用或 partial resume。
-- fingerprint 变化且已有远端 ID：`published-version-changed`，要求创建新版本。
-- mapping 已绑定其他空间：`mapping-space-mismatch`。
-- 远端标题或任务父子关系不一致：`remote-object-drift`。
-
-插件不自动更新或替换已发布对象，也不提供通用 E3 update API。
-
-### 5.3 幂等和 partial 恢复
-
-系统需求使用 `[版本] 模块标题` 精确查询，任务使用 `[US-ID] 故事标题` 并限制在对应父需求下：
-
-- 0 条：创建。
-- 1 条：复用。
-- 多条：因歧义阻断。
-
-远端成功后立即原子写入 mapping。网络结果未知时先按精确标识查询，不盲重试 POST。失败时保留
-`partial` checkpoint，下次从已验证的需求或任务继续，不删除、不编辑、不回滚远端对象。
-
-只有全部系统需求和 Story 任务都能验证 ID、标题、父子关系和空间时，status 才能返回
-`published`。
-
-### 5.4 不猜测 POMP 和负责人元数据
-
-POMP 决策规则为：
-
-```text
-0 个候选                         → blocked
-1 个候选                         → 自动选择
-多个候选且恰好 1 个明确默认值    → 自动选择默认值
-多个候选且没有唯一默认值          → needs_pomp_selection
-显式传入 code 但已不在最新候选中  → blocked
-```
-
-系统需求 POMP、研发负责人和测试负责人同样只接受唯一候选或唯一默认值；存在歧义时省略并产生
-warning，而不是取列表第一项。
-
-产品空间和 POMP 选择使用 15 分钟有效的 selectionToken。Token 绑定 canonical MCP root、
-选择阶段和候选集合；配置保存到 `${CLAUDE_PLUGIN_DATA}/e3/workspaces/<root-sha256>/config.json`，
-因此一个产品仓库的选择不能覆盖另一个仓库。OAuth token 仍由插件实例复用。
-
-Status 不把当前 workspace 配置当作历史发布归属。Schema v2 mapping 中的 `product_space.id` 是
-只读验证的权威空间；配置缺失或不同只产生 warning。Legacy mapping 没有空间时，只有当前
-workspace 已配置空间才能进行诊断，并且确认 adoption 前不能返回 `published`。
-
-## 6. 能力迁移结果
-
-### 6.1 已迁移并强化
+### 7.1 已迁移并强化
 
 - 创建、修订、收口版本 PRD。
 - 根 PRD、增量 PRD、子 PRD、changelog 和 HANDOFF。
@@ -389,18 +550,18 @@ workspace 已配置空间才能进行诊断，并且确认 adoption 前不能返
 - 外部子 PRD 合入产品 SSOT。
 - 产品语言和研发边界。
 - 只读 PRD 红队评审。
-- 发布前确定性 artifact gate。
-- 子 PRD 到系统需求、Story 到需求任务的映射。
+- 发布前后确定性 artifact gate。
+- 子 PRD 到系统需求、Story 到任务的映射。
 - E3 OAuth、空间和 POMP 配置。
-- E3 mapping、状态验证、幂等复用和断点恢复。
+- E3 mapping、状态验证、幂等复用和 partial resume。
 - 已发布版本不可变及远端对象漂移阻断。
 
-### 6.2 因模型能力提升和减少过度设计而删除
+### 7.2 因模型能力提升和减少过度设计而删除
 
-以下内容本质上是对模型过程的过度编排，不应恢复为 Agent 提示词：
+以下内容是对模型过程的过度编排，不应恢复为 Agent 提示词：
 
 - ideate/generate/review/revise/finalize 的硬状态机。
-- 独立“需求分析报告”作为强制前置阶段。
+- 独立需求分析报告作为强制前置阶段。
 - A/B/C/D 质量评级。
 - 固定章节填充和固定完成话术。
 - 路由表套路由表。
@@ -408,38 +569,37 @@ workspace 已配置空间才能进行诊断，并且确认 adoption 前不能返
 - quick-fix 分级路由。
 - 固定重试次数、流程打断和回退对话模板。
 
-### 6.3 未随 PM 主链迁移的旧分发附带工具
+### 7.3 未随 PM 主链迁移的旧分发附带工具
 
-旧 `oec-ai` 是覆盖产品、设计、研发、测试和交付的大型分发包，因此曾把一些相邻领域工具与 PM
-配置一起下发。以下能力没有进入当前 `oec-product`，但这不表示 E3 平台能力缺失：
+旧 `oec-ai` 按 designer 角色同时下发了相邻领域工具。以下能力没有进入当前 `oec-product`：
 
-- 原型设计。
+- 原型设计和设计系统处理。
 - 从存量系统逆向整理 PRD。
 - 行为基线维护。
 - 经验库沉淀与检索。
+- 飞书、Git DevOps 等通用组织工具。
 - Codex TOML Agent 生成和项目级配置同步。
 
-这些能力与 PRD 编写、评审和发布主链没有稳定的同一生命周期，也不是 E3 底层原语。如果真实 PM
-场景仍需要，应按用户目标分别评估为独立 Skill、Plugin 或其他宿主的分发适配层，不应为了复刻旧
-安装包而继续扩大 `oec-pm`。
+这些能力与 PRD 编写、评审和受控发布没有稳定的同一生命周期。如果真实场景仍需要，应按用户目标
+评估为独立 Skill、Plugin 或宿主适配层，不为复刻旧 designer 安装包而扩大 PM Plugin。
 
-### 6.4 经场景验证后再扩展的平台能力
+### 7.4 经场景验证后再扩展的平台能力
 
-以下能力属于 E3 或产品管理平台的候选扩展，不是当前迁移承诺中的缺口：
+以下属于 E3 或产品管理平台的候选能力，不是当前主链迁移承诺中的缺口：
 
 - 云帆产品需求创建、查询、编辑、删除。
 - 通用系统需求查询、编辑和删除。
 - 通用任务创建、状态流转和字段编辑。
 - 工时、构建和缺陷管理。
 - 多负责人显式选择工具。
-- 远端已发布需求的更新能力。
+- 远端已发布需求更新。
 
-只有真实 PM 场景证明当前四个发布工具无法完成必要目标时，才应增加边界清晰的类型化 MCP 工具
-或独立 Plugin。即使扩展，也不应把 HTTP/API 细节放回 PM Agent。
+只有真实 PM 场景证明当前四个发布工具无法完成必要目标时，才增加边界清晰的 MCP 工具或独立
+Plugin。即使扩展，也不把 HTTP/API 细节写回 PM Agent。
 
 ```mermaid
 flowchart LR
-    OLD["旧 PM 能力集合"] --> KEEP["保留并强化"]
+    OLD["旧 PM / designer 能力集合"] --> KEEP["保留并强化"]
     OLD --> REMOVE["删除过度编排"]
     OLD --> BUNDLED["旧分发附带工具"]
     OLD --> PLATFORM["候选平台扩展"]
@@ -447,63 +607,63 @@ flowchart LR
     KEEP --> K1["PRD 产物契约"]
     KEEP --> K2["红队评审"]
     KEEP --> K3["E3 发布与验证"]
-
     REMOVE --> R1["阶段状态机"]
     REMOVE --> R2["固定话术与评分"]
     REMOVE --> R3["文件索引式加载"]
-
-    BUNDLED --> B1["原型/逆向 PRD"]
-    BUNDLED --> B2["行为基线/经验库"]
-    BUNDLED --> B3["Codex 分发适配"]
-
-    PLATFORM --> P1["产品需求 CRUD"]
-    PLATFORM --> P2["系统需求 CRUD"]
-    PLATFORM --> P3["任务/工时/构建/缺陷"]
+    BUNDLED --> B1["原型 / 逆向 PRD"]
+    BUNDLED --> B2["飞书 / Git / Codex 适配"]
+    PLATFORM --> P1["产品与系统需求 CRUD"]
+    PLATFORM --> P2["任务 / 工时 / 构建 / 缺陷"]
 ```
 
-## 7. 迁移效果与验证
+## 8. 迁移效果与验证
 
-### 7.1 结构与维护效果
+### 8.1 结构与维护效果
 
-| 指标 | 旧实现 | 当前实现 | 结果 |
+| 指标 | 旧 `oec-ai@0.2.2` | 当前 `oec-product@2.2.1` | 结果 |
 |---|---:|---:|---|
+| 启用 PM 所需的项目物化文件 | 622 个初始化文件 | 0 | 安装与业务产物生命周期分离 |
 | PM Agent 行数 | 803 | 19 | 身份与工作流解耦 |
-| 核心 Skill 正文 | 产品 2412 行 + oec-pm 2064 行 | 3 个 Skill 共 93 行 | 从阶段粒度收敛到用户目标 |
-| Plugin 原生 PM Agents | 0 | 1 | 不再依赖项目同步安装 |
-| Plugin 原生 Skills | 1 个初始化 Skill；PM Skills 由项目同步安装 | 3 个 PM Skills | 原生发现和 namespace |
+| PM 项目级 Skills | 25 | 0 | 不再复制项目配置 |
+| Plugin 原生 PM Skills | 0；仅 1 个 init Skill | 3 | 原生发现和 namespace |
+| 核心 Skill 正文 | 产品阶段 2412 行 + `oec-pm` 树 2064 行 | 3 个 Skill 共 105 行 | 从阶段粒度收敛到用户目标 |
+| Plugin 原生 PM Agents | 0 | 1 | Agent 与 Plugin 同生命周期 |
 | Plugin MCP Servers | 0 | 1 | E3 从 Prompt/Bash 迁到类型化工具 |
-| SessionStart Hook | 1 | 0 | 不再隐式修改项目配置 |
+| SessionStart Hook | 1 | 0 | 不再隐式同步项目配置 |
+| Agent Skill 关系 | 描述发现 + 文件 Read | frontmatter 原生预加载 writing/reviewing | 减少路由歧义 |
+| E3 执行 | 模型驱动 Python/HTTP | 四个类型化 MCP 工具 | 外部副作用可验证 |
 
-行数只能说明维护规模，不能直接等价为真实 token 节省，因为旧 Skills 并非全部同时进入上下文。
-更重要的变化是：Agent 不再重复 Skill 内容，写作和评审才被预加载，E3 发布只在显式调用时加载。
+行数和文件数不能直接等同于 token 成本。旧 Skills 并非全部同时加载，当前 MCP bundle 也包含大量
+确定性代码。真正的改善是模型判断面更单一：Agent 不重复 Skill 工作流，writing/reviewing 才被
+预加载，publishing 只在用户显式调用时出现，API 细节不进入 Prompt。
 
-### 7.2 自动验证
+### 8.2 自动验证
 
-当前仓库验证结果：
+`oec-product@2.2.1` 当前验证结果：
 
 ```text
 npm run build
 npm test
 
-tests: 50
-pass:  50
+tests: 51
+pass:  51
 fail:  0
 ```
 
 测试覆盖：
 
-- Agent frontmatter 和 Skill 预加载。
-- Skill 正向、负向触发和发布手动调用。
-- YAML artifact contract 和安全路径。
+- Agent frontmatter、显式调用描述和 Skill 预加载。
+- 三个 Skill 的正向/负向触发和 publishing 手动调用。
+- 模型判断面不依赖冗余品牌限定词。
+- YAML artifact contract、安全路径和 bundled checker。
 - OAuth PKCE、state、refresh、401 和脱敏。
-- MCP 四个工具和 roots 限制。
+- MCP 四个工具、roots、selectionToken 和 workspace 隔离。
 - planToken 过期、workspace/config/fingerprint 变化。
-- selectionToken 过期、跨 workspace 使用和配置隔离。
 - mapping v1 兼容、v2 原子写入和 legacy adoption。
-- 需求/任务创建、复用、歧义、远端漂移和 partial resume。
+- 创建、复用、歧义、远端漂移和 partial resume。
 - POMP 单候选、唯一默认值、多默认值、无默认值、零候选和 pending 恢复。
 - 缺失任一任务 ID 时禁止返回 `published`。
-- 无 `node_modules` 的 bundled checker 和 E3 MCP stdio discovery。
+- 无 `node_modules` 的 bundled checker 和 MCP stdio discovery。
 
 Plugin 验证结果：
 
@@ -514,70 +674,69 @@ claude plugin validate ./oec-product
 ✔ Validation passed
 ```
 
-旧 E3 目录的两份直接运行式 Python 测试在当前 checkout 中因缺少 `requests` 无法启动。这不能证明
-旧逻辑错误，但说明旧目录不是 lockfile 驱动的自包含测试单元；当前 Node 实现通过
-`package-lock.json` 固定依赖，测试环境更容易复现。
+### 8.3 真实 E3 验收边界
 
-### 7.3 真实 E3 验收
-
-2026-08-20，`oec-product@2.2.0` 已在获得授权的非生产空间“OBU-AI提效组”完成真实发布验收：
+2026-08-20，`oec-product@2.2.0` 在获得授权的非生产空间“OBU-AI提效组”完成真实发布验收：
 
 1. 完整 fixture 通过 pre-publish artifact gate。
 2. prepare 计划创建一条系统需求和一条 Story 任务。
 3. execute 返回 `published`。
-4. status 通过真实 E3 响应验证 ID、标题、任务父子关系和详情链接，两项对象均为 `verified`。
-5. 再次 prepare 的创建数为 0，系统需求和 Story 任务各复用一条。
-6. 修改带既有 mapping 的 fixture 副本后，prepare 返回 `published-version-changed`，mapping 不变。
-7. 临时 token、空间配置、计划文件和 fixture 已清理；远端验收对象按授权保留。
-8. 从干净 Git archive 安装后，插件缓存没有 `node_modules`，bundled MCP 仍注册四个工具。
+4. status 通过真实 E3 响应验证 ID、标题、任务父子关系和详情链接。
+5. 再次 prepare 的创建数为 0，需求和任务均精确复用。
+6. 修改带既有 mapping 的 fixture 后，prepare 返回 `published-version-changed`，mapping 不变。
+7. 从干净 Git archive 安装后，Plugin cache 没有 `node_modules`，bundled MCP 注册四个工具。
 
-真实验收边界：
+`2.2.1` 清理了 Agent、Skill、reference 标题和 MCP tool title 中影响模型判断的冗余限定词，并新增
+第 51 项回归测试；没有改变四个 MCP 工具名称、输入 schema 或 E3 发布逻辑，也没有重新执行真实
+E3 写操作。因此本文不会把 `2.2.0` 的真实 E2E 改写成 `2.2.1` 的真实验收。
 
-- 本次真实流程没有进入 POMP 歧义选择分支，多候选歧义由自动测试覆盖。
-- 未在真实 E3 人为制造 partial 写入故障，partial resume 仍是 mock 测试证据。
-- Plugin 发现、`claude --agent oec-pm` 启动和 MCP E2E 已验证；这证明入口与平台链路可用，不等同
-  于覆盖所有产品领域的 PM 对话质量评估。
+真实验收仍有两项明确边界：
+
+- 真实流程没有进入 POMP 歧义分支，多候选选择由自动测试覆盖。
+- 未在真实 E3 人为制造 partial 写入故障，partial resume 仍是 mocked evidence。
 
 详见 [oec-product README](oec-product/README.md#220-真实-e3-验收)。
 
-## 8. 当前边界和后续注意事项
+## 9. 当前边界和后续注意事项
 
-### 8.1 当前不是 Codex 双宿主实现
+### 9.1 当前不是 Codex 双宿主实现
 
 旧仓库同时生成 Claude Markdown Agents 和 Codex TOML Agents。当前仓库只有 `.claude-plugin`，没有
 `.codex-plugin` 或 Codex Agent manifest。
 
-如果目标是 Claude Code 原生产品插件，这是主动收缩；如果组织目标仍是 Claude/Codex 双宿主，则
-需要另行设计 Codex 分发层，但不应破坏当前 Claude Plugin 的职责结构。
+如果目标是 Claude Code 原生产品插件，这是主动收缩；如果组织仍要求 Claude/Codex 双宿主，应另行
+设计 Codex 分发适配层，不破坏当前 Claude Plugin 的职责结构。
 
-### 8.2 当前 E3 MCP 是发布器，不是通用管理 SDK
+### 9.2 当前 E3 MCP 是发布器，不是通用管理 SDK
 
-当前只保证不可变 PRD 的发布、复用、恢复和验证。没有通用 update/delete API，也不恢复旧
-`oec-manage-task` 的所有能力。
+当前保证不可变 PRD 的发布、复用、恢复和验证，不提供通用 update/delete API，也不恢复旧
+`oec-manage-task` 的全部能力。
 
-这能降低误操作范围，但产品说明中必须明确：当前完成的是“PRD 到 E3 的受控发布链路”，不是
-“所有 E3 操作能力的完整复刻”。
+产品说明应明确：当前完成的是“PRD 到 E3 的受控发布链路”，不是“所有 E3 操作能力的完整复刻”。
 
-### 8.3 License 需要组织确认
+### 9.3 License 需要组织确认
 
 旧 Plugin manifest 使用 `UNLICENSED`，当前 `oec-product/.claude-plugin/plugin.json` 使用 `MIT`，
-而 Node package 又声明 `private: true`。在组织级分发前应确认这是有意的开源授权，还是应恢复为
-内部 `UNLICENSED`。
+而根 Node package 声明 `private: true`。组织级分发前应确认这是有意的开源授权，还是应恢复内部
+`UNLICENSED`。
 
-## 9. 最终判断
+## 10. 最终判断
 
-迁移前，PM 是一个依赖模型模拟工作流、按路径读取文件索引、拼接 E3 请求的大型对话接管层。
+迁移前，PM 能力通过 bootstrap Plugin 携带，但最终作为 622 个文件物化进业务仓库。模型面对一个
+803 行项目 Agent、25 个项目 Skills、一个再次索引 6 份内部 `SKILL.md` 的 Mega Skill，以及由
+Prompt 驱动的 Bash/Python E3 链路。
 
-迁移后，PM 成为一个原生可分发的产品域 Plugin：
+迁移后，PM 是一个可直接安装和卸载的原生产品域 Plugin：
 
 - Agent 定义工作身份。
-- Skills 提供产品领域能力。
-- Supporting files 提供渐进披露的业务规则和模板。
+- 三个 Skills 对应稳定用户目标。
+- Supporting files 提供按需领域契约。
 - MCP Server 确定性执行外部副作用。
+- Plugin cache 承载配置，业务仓库只承载用户确认后产生的产品文档和 mapping。
 
-如果评价“PRD 编写、评审、发布”主链路，当前实现已经完成迁移并强化了旧方案；如果评价旧
-`oec-pm`、`oec-manage-task` 及其他产品/设计工具的全部能力，当前只是主动收窄后的子集，不能称为
-完全复现。
+如果评价“PRD 编写、评审、发布”主链，当前实现已经完成迁移并强化旧方案；如果评价旧
+`oec-pm`、`oec-manage-task`、飞书、设计和 Codex 适配的全部能力，当前只是主动收窄后的子集，不能
+称为完整复刻。
 
-后续扩展应继续遵守同一原则：只有真实存在的平台能力缺口才扩展 MCP 或新增独立 Plugin，不把
-认证、API、重试、状态机或通用 CRUD 重新写回 PM Agent 提示词。
+后续扩展应继续遵守相同原则：只有真实平台能力缺口才扩展 MCP 或增加独立 Plugin，不把认证、API、
+重试、状态机、项目同步器或通用 CRUD 重新写回 PM Agent。
