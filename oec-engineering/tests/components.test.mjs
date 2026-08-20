@@ -40,6 +40,15 @@ test('engineering plugin exposes six native Skills and no orchestration componen
   }
   assert.equal(existsSync(resolve(pluginRoot, 'package.json')), false);
   assert.equal(existsSync(resolve(pluginRoot, 'package-lock.json')), false);
+
+  const marketplace = JSON.parse(readFileSync(resolve(pluginRoot, '..', '.claude-plugin', 'marketplace.json'), 'utf8'));
+  const packageManifest = JSON.parse(readFileSync(resolve(pluginRoot, '..', 'package.json'), 'utf8'));
+  assert.equal(marketplace.version, '2.3.0');
+  assert.equal(packageManifest.version, marketplace.version);
+  assert.deepEqual(marketplace.plugins.map((plugin) => plugin.name), ['oec-product', 'oec-engineering']);
+  const engineeringEntry = marketplace.plugins.find((plugin) => plugin.name === manifest.name);
+  assert.equal(engineeringEntry.version, manifest.version);
+  assert.equal(engineeringEntry.source, './oec-engineering');
 });
 
 test('skill descriptions make positive and negative judgment boundaries explicit', () => {

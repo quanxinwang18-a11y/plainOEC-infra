@@ -83,13 +83,16 @@ test('plugin relies on native discovery and has no forbidden root component fram
   assert.equal(manifest.name, 'oec-product');
   assert.equal(manifest.version, '2.2.1');
   const packageManifest = JSON.parse(readFileSync(resolve(pluginRoot, '..', 'package.json'), 'utf8'));
-  assert.equal(packageManifest.version, manifest.version);
+  assert.equal(packageManifest.version, '2.3.0');
   assert.equal('dependencies' in packageManifest, false);
   assert.equal(packageManifest.devDependencies.esbuild, '0.28.2');
   assert.equal(existsSync(resolve(pluginRoot, 'package.json')), false);
   assert.equal(existsSync(resolve(pluginRoot, 'package-lock.json')), false);
   const marketplace = JSON.parse(readFileSync(resolve(pluginRoot, '..', '.claude-plugin', 'marketplace.json'), 'utf8'));
-  assert.equal(marketplace.version, manifest.version);
+  assert.equal(marketplace.version, '2.3.0');
+  const productEntry = marketplace.plugins.find((plugin) => plugin.name === manifest.name);
+  assert.equal(productEntry.version, manifest.version);
+  assert.equal(productEntry.source, './oec-product');
   for (const key of ['skills', 'agents', 'mcpServers', 'commands', 'hooks']) assert.equal(key in manifest, false);
   for (const path of ['commands', 'hooks', 'settings.json', 'references', 'assets', 'lib']) {
     assert.equal(existsSync(resolve(pluginRoot, path)), false, `${path} must not exist at plugin root`);
