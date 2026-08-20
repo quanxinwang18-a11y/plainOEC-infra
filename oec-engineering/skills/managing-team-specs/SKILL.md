@@ -29,6 +29,11 @@ statement as current fact, durable decision, historical change context, or obsol
 copying it. Never migrate workflow stages, routing tables, generated scores, or unverified claims
 into a current-state Spec.
 
-After updating team knowledge, show the exact changed paths. Before a Git commit, obtain explicit
-confirmation and stage only those paths with `git add -- <exact paths>` and
+Use `oec-spec legacy-audit --workspace "$PWD"` before proposing a legacy cleanup. Use
+`oec-spec select --workspace "$PWD" --paths <relevant paths> --format json` to locate existing
+path-scoped facts. After changing team knowledge, run `oec-spec check --workspace "$PWD"`; errors
+block completion and warnings need a concise user-visible note.
+
+Show the exact changed paths. Before a Git commit, obtain explicit confirmation and stage only
+those paths with `git add -- <exact paths>` and
 `git commit -m "docs(engineering): ..." -- <same exact paths>`.

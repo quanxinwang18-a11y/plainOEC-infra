@@ -1,10 +1,10 @@
 import { build } from 'esbuild';
 import { resolve } from 'node:path';
 
-const pluginRoot = resolve(import.meta.dirname, 'oec-product');
+const productRoot = resolve(import.meta.dirname, 'oec-product');
+const engineeringRoot = resolve(import.meta.dirname, 'oec-engineering');
 
 const common = {
-  absWorkingDir: pluginRoot,
   bundle: true,
   platform: 'node',
   format: 'esm',
@@ -19,12 +19,20 @@ const common = {
 await Promise.all([
   build({
     ...common,
+    absWorkingDir: productRoot,
     entryPoints: ['servers/e3/runtime.mjs'],
     outfile: 'dist/e3-server.mjs',
   }),
   build({
     ...common,
+    absWorkingDir: productRoot,
     entryPoints: ['skills/writing-prds/scripts/check-artifacts-cli.mjs'],
     outfile: 'skills/writing-prds/runtime/check-artifacts.mjs',
+  }),
+  build({
+    ...common,
+    absWorkingDir: engineeringRoot,
+    entryPoints: ['scripts/spec-tool-cli.mjs'],
+    outfile: 'dist/oec-spec.mjs',
   }),
 ]);
