@@ -1,87 +1,66 @@
 ---
-description: 增量 PRD 的 11 章结构和多模块组织方式，含产品语言规范、用户故事格式、变更日志格式和目录模型。Use when writing a version increment PRD, generating prd-v{x.y.z}.md, organizing multi-module PRDs, or splitting into sub-PRDs.
+description: PRD 全生命周期——PM 用自然语言表达目标，Claude 自动识别意图并执行。Use when user mentions PRD, 需求, 版本, E3, or says "做个需求", "改需求", "发布需求", "上 E3", "评一下".
 ---
 
-Write version increment PRDs to `versions/v{x.y.z}/prd/prd-v{x.y.z}.md`. One file per version, even with multiple modules. Split later slices by `## 模块:` — the increment must be complete (split does not refine).
+You are the PM's entry point for PRD work. PM speaks in natural language. Identify intent, execute the matching workflow.
 
-Version types: 大版本 (major direction/GA), 中版本 (new feature/module), 小版本 (minor revision). All are "做需求". "改需求" creates no version.
+| PM says | Intent |
+|---------|--------|
+| "做个 X", "老板要 Y", "业务方给了稿子", "下个版本加" | Build |
+| "改个错别字", "文案 A 改成 B" | Amend |
+| "发布需求", "上 E3", "提交需求" | Publish |
+| "评一下", "这份能提交吗" | Review only |
 
-## Structure
+If unclear, ask in product language. Don't expose workflow names.
 
-### Version-level
+## Build
 
-```
-# PRD v{x.y.z} 增量
+When PM wants to create a version PRD.
 
-## 本版本目标
-[One paragraph: what problem, for whom, core value]
+**1. Understand input.** Accept any form: one-liner, detailed brief, existing PRD for legacy baseline. Determine version type (大版本/中版本/小版本), suggest, let PM confirm.
 
-## 本版本范围
-新增: [...]  修改: [...]  不改动: [...]
+**2. Clarify.** For vague ideas, ask: who/what's the current workaround/minimum viable version/success metrics/explicitly out of scope. For detailed briefs, only ask about gaps.
 
-## 本版本验收（业务级）
-[Version-level. Module-level GWT goes inside each module.]
+**3. Generate.** Write `versions/v{x.y.z}/prd/prd-v{x.y.z}.md`. One file per version, multiple modules in one file. 11-section structure per module (see `templates/increment-prd.md`). Product language throughout (see `references/forbidden-terms.md`). User stories in GWT format (see `references/user-story-gwt.md`). No invention, no half-finished work.
 
-## 不做什么
-[Explicitly excluded scope]
+**4. Review.** Apply the **prd-review** skill: extract load-bearing claims, steelman then attack, rate A/B/C/D. D→return to Step 3, C→get PM decisions, B→revise directly, A→proceed.
 
-## 待 PM 确认（版本级）
-[Cross-module pending items]
-```
+**5. Revise.** Edit `prd-v{x.y.z}.md` directly. No separate copy. Address every kill-assumption.
 
-### Per-module (11 sections)
+**6. Finalize.** Merge into `prd-all.md` (increment wins on conflict, keep base where silent, insert new). Append to changelog (see `references/changelog-format.md`). Run `scripts/product-flow-gate.mjs --stage finalize`. For legacy baseline, initialize from increment.
 
-Each `## 模块: {name}（featureName: {lowerCamelCase}）`:
+**7. Split.** One `## 模块:` = one `prd-v{x.y.z}-{featureName}.md` + `HANDOFF.yaml`. Split is slice-only. Run `scripts/product-flow-gate.mjs --stage pre-publish`.
 
-```
-### 1. 模块概述         | 定位/用户/价值/优先级(P0-P3)/工作量/影响模块
-### 2. 用户故事         | As a [role], I want [action], so that [value]
-### 3. 使用场景         | Pre-condition / Steps / Expected / Error path
-### 4. 交互流程         | 4.1 页面结构 / 4.2 Mermaid flowchart / 4.3 ASCII wireframe / 4.4 表单约束
-### 5. 验收标准(GWT)    | Each US: normal + ≥1 error + ≥1 edge case
-### 6. 状态与生命周期    | Mermaid stateDiagram (only if stateful objects exist)
-### 7. 跨模块关联       | Table: 关联模块/关联方式/用户感知. Must fill — hard gate: write "无" if none
-### 8. 非功能性需求      | 异常/安全/外部依赖/性能感知(用户视角)
-### 9. 数据变更          | Table: 用户行为/系统记录/用户感知
-### 10. 补充发现         | From original PRD / gaps found / cross-module
-### 11. 待人工确认项     | Table: 事项/默认假设/影响范围/决策方. Hard gate: all four columns required
-```
+**8. Ask.** "PRD 已完成。要现在发布到 E3 吗？"
 
-See `templates/increment-prd.md` for the full template, `examples/daily-draw.md` for a worked example.
+If PM has an existing sub-PRD, merge directly into `prd-all.md`. To adjust granularity after split: edit `## 模块:`, delete old sub-PRDs, re-run split. Commit only after PM confirmation.
 
-## Rules
+## Amend
 
-- No invention: input doesn't mention → mark [待确认] + default assumption. Don't fabricate.
-- No half-finished: chapters with TODO/待补充 cannot be reported complete.
-- Split is slice-only: increment must be complete. Split adds nothing.
+When PM wants a small fix to `prd-all.md` without a new version.
 
-## Product Language
+**1. Confirm scope.** If the change adds a feature/module or changes a business rule value → redirect to Build. Small fix → proceed.
 
-PRDs describe what the user sees and does, never how the system is implemented. Technical details belong in `oec-detail-design`.
+**2. Edit.** Modify `prd-all.md` directly. Parse `git diff`, draft summary, get PM confirmation, append to changelog (see `references/changelog-format.md`).
 
-Forbidden: API/REST/GraphQL/HTTP/JSON | VARCHAR/INT/主键/外键/索引 | localStorage/Redis/MySQL | `<Xxx/>`/el-/Vue./React. | `color:#`/px/font-size/z-index | 幂等/事务/消息队列/Kafka | P95/QPS/并发数 | 微服务/网关/部署/Docker | hash/JWT/OAuth
+**3. Remind to commit.** Amend never creates a version. Changelog entry required even for single-character fixes.
 
-Rewrite: "接口返回 200"→"用户看到中奖弹窗" | "幂等键防重复"→"用户重复点击不会被扣两次" | "P95<500ms"→"点击到反馈<1秒"
+## Publish
 
-Full list: `references/forbidden-terms.md`.
+When PM wants to publish sub-PRDs to E3. Reads existing sub-PRDs, does not re-split.
 
-## User Story & GWT Format
+**1. Detect version.** PM-specified or latest in `ai-docs/versions/`.
 
-See `references/user-story-gwt.md` for the full format specification. Quick reference:
+**2. Gate.** Run `scripts/product-flow-gate.mjs --stage pre-publish`. Errors: fix. Warnings: show PM. Check UI design links, remind once if missing.
 
-- Story: `As a [role], I want [action], so that [value]`. Priority: P0(core)/P1(important)/P2(nice-to-have)/P3(future).
-- GWT: Each US needs ≥3 scenarios — normal + error + edge case. Given/When/Then must be observable and testable.
-- Cross-module: `| 关联模块 | 关联方式 | 用户感知 |`. Must fill (write "无" if none).
-- Pending items: `| 序号 | 事项 | 默认假设 | 影响范围 | 决策方 |`. All four columns required.
+**3. Publish.** One sub-PRD = one E3 system requirement. Each story = one task. Write mapping to `ai-docs/integrations/e3/v{x.y.z}.yaml`. Run `scripts/product-flow-gate.mjs --stage post-publish`.
 
-## Changelog Format
+**4. Report.** "已发布需求。创建 [N] 条系统需求。E3 映射: ai-docs/integrations/e3/v{x.y.z}.yaml". Don't ask PM for spaceId/OAuth/API config.
 
-See `references/changelog-format.md` for the full specification. Quick reference:
+## Review Only
 
-```
-## {YYYY-MM-DD HH:MM:SS} — {修订/修正/补充} (decider: {name})
-**摘要**: {1-3 sentences — what changed and why}
-**涉及子段**: {module} → {subsection} ({modified/added/removed})
-```
+When PM says "评一下". Apply the **prd-review** skill. Output finding in session. Don't modify files.
 
-Parse `git diff HEAD -- ai-docs/prd/prd-all.md`. Draft summary. Get PM confirmation. Append at top.
+## Version Types
+
+大版本 (major direction/GA) / 中版本 (new feature/module) / 小版本 (minor revision). All are Build. Amend creates no version.
