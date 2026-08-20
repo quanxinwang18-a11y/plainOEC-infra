@@ -13,8 +13,8 @@ Publish only an already finalized version. Do not write or re-split PRD content 
    from `$ARGUMENTS`, or omit the version to use the latest valid version.
 2. If it returns `needs_space_selection`, show only the candidate space names, obtain the user's
    choice, and call `select_product_space`. If that returns `needs_pomp_selection`, show the POMP
-   project names, obtain the user's choice, and call the same tool with that candidate. Then prepare
-   again.
+   project names, obtain the user's choice, and call the same tool with the original `spaceId` and
+   the selected `pompProjectCode`. Then prepare again.
 3. If it returns `blocked`, report the exact artifact or configuration problems and stop.
 4. For `ready`, show the product-space name, requirements to create or reuse, story tasks to create
    or reuse, and warnings. Ask for explicit confirmation of that plan.
@@ -24,6 +24,11 @@ Publish only an already finalized version. Do not write or re-split PRD content 
 Say “已发布” only when the verified state is `published`. For `partial` or `blocked`, report created
 objects, missing objects, the mapping path, and the safe resume action. Never improvise an E3 payload
 or call lower-level HTTP endpoints.
+
+For `published-version-changed`, ask the user to create a new PRD version. For
+`remote-object-drift`, identify the changed object and never create a replacement automatically.
+Show `legacy-mapping-adoption` as part of the publication plan and require the normal explicit
+confirmation before adopting it.
 
 Use [references/publish-contract.md](references/publish-contract.md) for user-visible status and
 mapping semantics. Authentication, transport, retries, IDs, and idempotency belong to the MCP server.
