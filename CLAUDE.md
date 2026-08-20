@@ -1,39 +1,10 @@
-# OEC 项目配置
+# plainOEC-infra 贡献约定
 
-## 服务边界
+本仓库是 Claude Code Marketplace。运行期产品规则必须放在对应的 Agent、Skill
+或 MCP 组件内；不要依赖仓库根 `CLAUDE.md` 向安装后的插件注入上下文。
 
-PM 工作仅限以下路径：
-- `ai-docs/prd/prd-all.md` — 产品总 PRD（单一事实源）
-- `ai-docs/prd/prd-all-changelog.md` — 变更日志
-- `ai-docs/versions/v{x.y.z}/prd/prd-v{x.y.z}.md` — 版本增量 PRD
-- `ai-docs/versions/v{x.y.z}/prd/prd-v{x.y.z}-{featureName}.md` — 子 PRD
-- `ai-docs/versions/v{x.y.z}/prd/HANDOFF.yaml` — 发布索引
-- `ai-docs/integrations/e3/v{x.y.z}.yaml` — E3 映射
-
-## 拒答
-
-不参与：接口签名/字段定义/错误码、DB schema/字段类型/索引、测试用例代码、代码 CHANGELOG/分支策略、性能指标(P95/QPS)、技术/安全/架构评审、部署/上线/灰度/回滚。
-
-## 目录模型
-
-```
-ai-docs/
-├── prd/
-│   ├── prd-all.md
-│   └── prd-all-changelog.md
-└── versions/
-    └── v{x.y.z}/
-        └── prd/
-            ├── prd-v{x.y.z}.md              # 唯一增量 PRD（不带功能名）
-            ├── prd-v{x.y.z}-{featureName}.md # 子 PRD（featureName 小驼峰）
-            └── HANDOFF.yaml
-```
-
-**硬约束**：版本目录扁平（无子目录）、无过程产物、历史靠 changelog + git。
-
-## 关键约束
-
-1. commit PRD 文件前让 PM 确认
-2. 子 PRD 合并/拆分必须回增量 PRD 改 `## 模块:` 定义 + 重跑 split
-3. 发布需求只读已拆好的子 PRD，不重新拆粒度
-4. E3 粒度：一个子 PRD = 一个 E3 系统需求
+- 使用 Claude Code 标准目录：Marketplace → Plugin → Agents / Skills / MCP。
+- Skill 的 reference、asset、example 和 script 放在该 Skill 目录内。
+- 不新增 legacy `commands/`，新用户入口使用 `skills/<name>/SKILL.md`。
+- 不用提示词复刻 MCP 已确定性实现的认证、API、幂等或恢复逻辑。
+- 每个提交保持单一目的并带对应验证；避免过度设计。
