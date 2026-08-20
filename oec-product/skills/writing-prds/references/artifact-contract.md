@@ -1,4 +1,4 @@
-# OEC PRD artifact contract
+# PRD artifact contract
 
 ## Paths
 

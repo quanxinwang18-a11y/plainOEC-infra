@@ -29844,7 +29844,7 @@ function createE3McpServer({ service } = {}) {
     }
   };
   mcpServer.registerTool("prepare_prd_publish", {
-    title: "Prepare OEC PRD publication",
+    title: "Prepare PRD publication",
     description: "Validate a PRD handoff and prepare a non-mutating E3 publication plan.",
     inputSchema: {
       workspaceUri: string2().url().describe("A file URI returned by MCP roots/list"),
@@ -29863,14 +29863,14 @@ function createE3McpServer({ service } = {}) {
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
   }, guarded(async (input) => publisher.selectProductSpace(input, await rootsFor(mcpServer))));
   mcpServer.registerTool("execute_prd_publish", {
-    title: "Execute OEC PRD publication",
+    title: "Execute PRD publication",
     description: "Execute a previously prepared immutable E3 publication plan.",
     inputSchema: { planToken: string2().min(32) },
     annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
     _meta: { "anthropic/requiresUserInteraction": true }
   }, guarded(async (input) => publisher.execute(input, await rootsFor(mcpServer))));
   mcpServer.registerTool("get_prd_publish_status", {
-    title: "Verify OEC PRD publication",
+    title: "Verify PRD publication",
     description: "Read the local mapping and verify its E3 requirements and tasks.",
     inputSchema: {
       workspaceUri: string2().url().describe("A file URI returned by MCP roots/list"),

@@ -43,6 +43,30 @@ test('skills have distinct positive triggers and E3 publishing is manual-only', 
   assert.doesNotMatch(publishing.body, /oauth|token file|https?:\/\/|JSON payload|node .*\.mjs|retry/i);
 });
 
+test('model-facing capability text does not depend on the OEC label', () => {
+  const paths = [
+    'agents/oec-pm.md',
+    'skills/writing-prds/SKILL.md',
+    'skills/writing-prds/references/artifact-contract.md',
+    'skills/writing-prds/references/product-language.md',
+    'skills/writing-prds/references/versioning.md',
+    'skills/reviewing-prds/SKILL.md',
+    'skills/reviewing-prds/references/review-rubric.md',
+    'skills/publishing-prds-to-e3/SKILL.md',
+    'skills/publishing-prds-to-e3/references/publish-contract.md',
+    'servers/e3/server.mjs',
+  ];
+  for (const path of paths) {
+    const content = readFileSync(resolve(pluginRoot, path), 'utf8');
+    assert.doesNotMatch(content, /\bOEC\b/, `${path} must describe the capability without an OEC label`);
+  }
+
+  const writing = frontmatter('skills/writing-prds/SKILL.md');
+  assert.match(writing.metadata.description, /versioned PRDs/);
+  assert.match(writing.metadata.description, /child PRDs/);
+  assert.match(writing.metadata.description, /HANDOFF artifacts/);
+});
+
 test('writing assets cover the product SSOT and use safe exact-path commit syntax', () => {
   for (const path of [
     'skills/writing-prds/assets/root-prd.md',

@@ -1,6 +1,6 @@
 ---
 name: publishing-prds-to-e3
-description: Publishes completed OEC child PRDs and HANDOFF mappings to E3. Use for explicit E3 publishing requests.
+description: Publishes completed child PRDs and HANDOFF mappings to E3. Use for explicit E3 publishing requests.
 argument-hint: "[vX.Y.Z]"
 disable-model-invocation: true
 ---

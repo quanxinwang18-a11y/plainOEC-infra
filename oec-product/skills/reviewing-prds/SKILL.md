@@ -1,10 +1,10 @@
 ---
 name: reviewing-prds
-description: Performs a read-only red-team review of an OEC PRD. Use when the user asks to review a PRD, challenge assumptions, find product risks, or decide whether a requirement is ready to submit.
+description: Performs a read-only red-team review of a PRD. Use when the user asks to review a PRD, challenge assumptions, find product risks, or decide whether a requirement is ready to submit.
 argument-hint: "[PRD path or version]"
 ---
 
-# Reviewing OEC PRDs
+# Reviewing PRDs
 
 Review the product reasoning, not merely the presence of headings. Extract load-bearing claims,
 steelman each claim, then challenge the strongest version with concrete falsifiable conditions.

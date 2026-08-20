@@ -1,10 +1,10 @@
 ---
 name: writing-prds
-description: Creates, revises, finalizes, and splits OEC PRDs. Use when the user asks to write a PRD, create or change a requirement, generate a version PRD, or merge an external child requirement into the product SSOT.
+description: Creates, revises, and finalizes versioned PRDs, then splits them into child PRDs and HANDOFF artifacts. Use when the user asks to write a PRD, create or change a requirement, generate a version PRD, or merge an external child requirement into the product SSOT.
 argument-hint: "[requirement, PRD path, or version]"
 ---
 
-# Writing OEC PRDs
+# Writing PRDs
 
 Produce product-facing requirements from the user's facts and decisions. Preserve uncertainty
 as a pending decision; do not invent values to make a document look complete.
