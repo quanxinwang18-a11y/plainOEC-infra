@@ -3,11 +3,34 @@ import { mkdir, readFile, readdir, realpath, rename, stat, writeFile } from 'nod
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
+import { checkArtifacts } from '../../skills/writing-prds/scripts/check-artifacts.mjs';
 import { E3_ORIGIN } from './auth.mjs';
 import { mappingCounts, mappingIsComplete, newMapping, readMapping, writeMapping } from './mapping.mjs';
 
 const VERSION_PATTERN = /^v\d+\.\d+\.\d+$/;
 const PLAN_TTL_MS = 15 * 60 * 1000;
+
+function formatIssue(issue) {
+  if (typeof issue === 'string') return issue;
+  return `[${issue.code}] ${issue.path ? `${issue.path}: ` : ''}${issue.message}`;
+}
+
+function normalizeWarnings(...groups) {
+  return groups.flat().filter(Boolean).map((warning) => (
+    typeof warning === 'string' ? { code: 'handoff-warning', message: warning } : warning
+  ));
+}
+
+async function loadValidatedPublishArtifacts(workspace, requestedVersion) {
+  const gate = checkArtifacts({ workspace, version: requestedVersion, stage: 'pre-publish' });
+  if (!gate.ok) {
+    const error = new Error('PRD artifacts failed the pre-publish contract');
+    error.issues = gate.errors;
+    throw error;
+  }
+  const artifacts = await loadPublishArtifacts(workspace, gate.version);
+  return { ...artifacts, warnings: normalizeWarnings(gate.warnings, artifacts.warnings) };
+}
 
 function pluginDataRoot(value = process.env.OEC_PLUGIN_DATA) {
   if (!value) throw new Error('OEC_PLUGIN_DATA is not available');
@@ -319,7 +342,16 @@ export class PublisherService {
       return { status: 'blocked', errors: ['E3 MCP requires Node.js 20 or newer'] };
     }
     const workspace = await resolveAuthorizedWorkspace(workspaceUri, roots);
-    const artifacts = await loadPublishArtifacts(workspace, version);
+    let artifacts;
+    try {
+      artifacts = await loadValidatedPublishArtifacts(workspace, version);
+    } catch (error) {
+      return {
+        status: 'blocked',
+        version,
+        errors: (error.issues ?? [error.message]).map(formatIssue),
+      };
+    }
     const config = await loadConfig(this.dataDirectory);
     if (!config?.productSpace || !config?.pompProject) {
       const spaces = await this.client.listSpaces();
@@ -383,7 +415,7 @@ export class PublisherService {
     const plan = await loadPlan(planToken, this.dataDirectory, this.now());
     const workspace = await resolveAuthorizedWorkspace(plan.workspaceUri, roots);
     if (workspace !== plan.workspace) throw new Error('Workspace root changed after prepare');
-    const artifacts = await loadPublishArtifacts(workspace, plan.version);
+    const artifacts = await loadValidatedPublishArtifacts(workspace, plan.version);
     if (artifacts.fingerprint !== plan.fingerprint) throw new Error('PRD artifacts changed after prepare');
     const config = await loadConfig(this.dataDirectory);
     if (!sameConfig(config, plan.config)) throw new Error('E3 product-space configuration changed after prepare');

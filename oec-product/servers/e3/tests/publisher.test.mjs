@@ -18,7 +18,7 @@ async function fixture(storyCount = 1) {
     title: `Story ${index + 1}`,
     source_section: '用户故事',
   }));
-  const storyRows = stories.map((story) => `| ${story.id} | As a user, I want <safe> ${story.title} | P1 |`).join('\n');
+  const storyRows = stories.map((story) => `| ${story.id} | As a user, I want safe ${story.title} | P1 |`).join('\n');
   const acceptanceRows = stories.map((story) => `- ${story.id}: Given context, when action, then result.`).join('\n');
   const child = `# Alpha — v1.2.3
 
@@ -44,6 +44,10 @@ All product decisions are confirmed.
 `;
   const childPath = 'ai-docs/versions/v1.2.3/prd/prd-v1.2.3-alpha.md';
   await writeFile(join(workspace, childPath), child);
+  await mkdir(join(workspace, 'ai-docs', 'prd'), { recursive: true });
+  await writeFile(join(workspace, 'ai-docs', 'prd', 'prd-all.md'), child);
+  await writeFile(join(workspace, 'ai-docs', 'prd', 'prd-all-changelog.md'), '# Changelog\n\n- v1.2.3: Alpha module.\n');
+  await writeFile(join(prdDirectory, 'prd-v1.2.3.md'), child);
   await writeFile(join(prdDirectory, 'HANDOFF.yaml'), YAML.stringify({
     schema_version: 4,
     prd_version: 'v1.2.3',
@@ -68,9 +72,10 @@ class FakeE3Client {
     this.failStoryId = null;
     this.unknownRequirementResult = false;
     this.projects = [{ code: 'pomp-1', name: 'Default POMP', isDefault: true }];
+    this.calls = 0;
   }
 
-  async listSpaces() { return [{ id: 'space-1', name: 'Non-production' }]; }
+  async listSpaces() { this.calls += 1; return [{ id: 'space-1', name: 'Non-production' }]; }
   async listPompProjects() { return this.projects; }
   async requirementMetadata() {
     return { workItemId: 12, flowDefinition: 'flow-1', pomProjectId: 'pom-1', inChargeBy: 'owner', rdManager: 'rd', qaManager: 'qa' };
@@ -112,6 +117,17 @@ test('MCP roots require an exact client-provided workspace and HTML is escaped',
   assert.equal(await resolveAuthorizedWorkspace(value.workspaceUri, value.roots), await realpath(value.workspace));
   await assert.rejects(resolveAuthorizedWorkspace(value.workspaceUri, []), /not one of/);
   assert.equal(escapeHtml('<script> & "x"'), '&lt;script&gt; &amp; &quot;x&quot;');
+});
+
+test('prepare enforces the complete artifact contract before calling E3', async () => {
+  const value = await fixture();
+  const client = new FakeE3Client();
+  await writeFile(join(value.workspace, 'ai-docs', 'prd', 'prd-all.md'), '');
+  const service = new PublisherService({ client, dataDirectory: value.dataDirectory });
+  const prepared = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  assert.equal(prepared.status, 'blocked');
+  assert.match(prepared.errors.join('\n'), /artifact-empty/);
+  assert.equal(client.calls, 0);
 });
 
 test('prepare is read-only, execute recovers an unknown POST result, and status verifies publication', async () => {
