@@ -76,7 +76,8 @@ export class E3Client {
 
   async request(method, path, { query, body, retryOn401 = true } = {}) {
     const tokenInfo = await this.auth.getAccessToken();
-    const url = new URL(path, path.startsWith('/ccf/') ? E3_ORIGIN : CYXT_ORIGIN);
+    const base = path.startsWith('/ccf/') ? E3_ORIGIN : CYXT_ORIGIN;
+    const url = new URL(`${base}${path.startsWith('/') ? path : `/${path}`}`);
     for (const [key, value] of Object.entries(query ?? {})) {
       if (value !== undefined && value !== null) url.searchParams.set(key, String(value));
     }
