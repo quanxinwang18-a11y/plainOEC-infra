@@ -41,7 +41,11 @@ test('skills have distinct positive triggers and E3 publishing is manual-only', 
 test('plugin relies on native discovery and has no forbidden root component framework', () => {
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-product');
-  assert.equal(manifest.version, '2.0.0');
+  assert.equal(manifest.version, '2.1.0');
+  const packageManifest = JSON.parse(readFileSync(resolve(pluginRoot, 'package.json'), 'utf8'));
+  assert.equal(packageManifest.version, manifest.version);
+  const marketplace = JSON.parse(readFileSync(resolve(pluginRoot, '..', '.claude-plugin', 'marketplace.json'), 'utf8'));
+  assert.equal(marketplace.version, manifest.version);
   for (const key of ['skills', 'agents', 'mcpServers', 'commands', 'hooks']) assert.equal(key in manifest, false);
   for (const path of ['commands', 'hooks', 'settings.json', 'references', 'assets', 'lib']) {
     assert.equal(existsSync(resolve(pluginRoot, path)), false, `${path} must not exist at plugin root`);
