@@ -102,7 +102,7 @@ flowchart LR
     E --> X["E3"]
 ```
 
-实测当前 `oec-product@2.1.0` 的组件清单是：
+实测当前 `oec-product@2.2.0` 的组件清单是：
 
 ```text
 Skills:      3

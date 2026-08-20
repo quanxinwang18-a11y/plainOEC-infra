@@ -21,7 +21,7 @@ async function rootsFor(mcpServer) {
 }
 
 export function createE3McpServer({ service } = {}) {
-  const mcpServer = new McpServer({ name: 'oec-product-e3', version: '2.1.0' });
+  const mcpServer = new McpServer({ name: 'oec-product-e3', version: '2.2.0' });
   const publisher = service ?? new PublisherService({
     client: new E3Client({ auth: new AuthManager() }),
   });

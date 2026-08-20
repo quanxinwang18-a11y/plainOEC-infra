@@ -36,7 +36,7 @@ test('MCP protocol exposes four tools and forwards client roots to guarded opera
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
   try {
-    assert.equal(client.getServerVersion().version, '2.1.0');
+    assert.equal(client.getServerVersion().version, '2.2.0');
     const tools = await client.listTools();
     assert.deepEqual(tools.tools.map((tool) => tool.name), [
       'prepare_prd_publish',
