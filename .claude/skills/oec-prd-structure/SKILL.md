@@ -54,6 +54,15 @@ See `templates/increment-prd.md` for the full template, `examples/daily-draw.md`
 ## Rules
 
 - No invention: input doesn't mention → mark [待确认] + default assumption. Don't fabricate.
-- No tech leakage: product language only. See `oec-pm-language` skill.
 - No half-finished: chapters with TODO/待补充 cannot be reported complete.
 - Split is slice-only: increment must be complete. Split adds nothing.
+
+## Product Language (enforced throughout PRD work)
+
+PRDs describe what the user sees and does, never how the system is implemented. Technical details belong in `oec-detail-design`.
+
+Forbidden: API/REST/GraphQL/HTTP/JSON | VARCHAR/INT/主键/外键/索引 | localStorage/Redis/MySQL | `<Xxx/>`/el-/Vue./React. | `color:#`/px/font-size/z-index | 幂等/事务/消息队列/Kafka | P95/QPS/并发数 | 微服务/网关/部署/Docker | hash/JWT/OAuth
+
+Rewrite: "接口返回 200"→"用户看到中奖弹窗" | "幂等键防重复"→"用户重复点击不会被扣两次" | "P95<500ms"→"点击到反馈<1秒"
+
+Full list with regex patterns: `references/forbidden-terms.md`.

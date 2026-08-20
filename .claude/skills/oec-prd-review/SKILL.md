@@ -36,7 +36,7 @@ A PRD review is not a checklist. It doesn't ask "does section 3 exist." It asks:
 [Gaps without enough info to judge.]
 
 ### Product Language Issues
-[Forbidden terms found. See oec-pm-language skill.]
+[Forbidden terms found. See oec-prd-structure skill for the product language rules.]
 
 ### Health Rating
 **Grade**: A(85-100)/B(70-84)/C(50-69)/D(<50)
