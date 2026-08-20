@@ -92,6 +92,9 @@ class FakeE3Client {
     return item;
   }
   async listTasks(_spaceId, requirementId) { return this.tasks.get(String(requirementId)) ?? []; }
+  async getTask(_spaceId, taskId) {
+    return [...this.tasks.values()].flat().find((item) => String(item.id) === String(taskId)) ?? null;
+  }
   async findTasksByExactTitle(spaceId, requirementId, title) {
     return (await this.listTasks(spaceId, requirementId)).filter((item) => item.title === title);
   }
@@ -198,6 +201,26 @@ test('mapped remote identity drift blocks planning and status', async () => {
   verified = await service.status({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
   assert.equal(verified.status, 'blocked');
   assert.equal(verified.objects.find((item) => item.type === 'task').state, 'drifted');
+});
+
+test('execute rechecks remote identity after prepare and never replaces drifted objects', async () => {
+  const value = await fixture();
+  const client = new FakeE3Client();
+  const service = new PublisherService({ client, dataDirectory: value.dataDirectory });
+  await configure(service, value);
+  let plan = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  assert.equal((await service.execute({ planToken: plan.planToken }, value.roots)).status, 'published');
+
+  plan = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  const mappingFile = join(value.workspace, (await readMapping(value.workspace, 'v1.2.3')).path);
+  const mappingBeforeDrift = await readFile(mappingFile, 'utf8');
+  const task = [...client.tasks.values()][0][0];
+  task.title = 'Changed after prepare';
+  const result = await service.execute({ planToken: plan.planToken }, value.roots);
+  assert.equal(result.status, 'blocked');
+  assert.match(result.errors.join('\n'), /remote-object-drift/);
+  assert.equal([...client.tasks.values()].flat().length, 1);
+  assert.equal(await readFile(mappingFile, 'utf8'), mappingBeforeDrift);
 });
 
 test('a legacy mapping requires confirmed adoption before publication is current', async () => {

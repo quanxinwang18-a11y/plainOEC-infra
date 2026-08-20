@@ -297,6 +297,18 @@ export class E3Client {
     return listFromPage(data).map(normalizeTask).filter(Boolean);
   }
 
+  async getTask(spaceId, taskId) {
+    try {
+      const { data } = await this.request('GET', '/api/panshi/v2/product/task/info', {
+        query: { id: taskId, productId: spaceId },
+      });
+      return normalizeTask(data);
+    } catch (error) {
+      if (/HTTP 404|not found/i.test(error.message)) return null;
+      throw error;
+    }
+  }
+
   async findTasksByExactTitle(spaceId, requirementId, title) {
     return (await this.listTasks(spaceId, requirementId))
       .filter((item) => item.title === title);

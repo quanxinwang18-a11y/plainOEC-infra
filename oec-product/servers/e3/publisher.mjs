@@ -311,10 +311,13 @@ async function resolveTask(client, config, requirementId, story, mappingItem) {
   const tasks = await client.listTasks(config.productSpace.id, requirementId);
   const mappedId = mappingItem?.e3_task?.id;
   if (mappedId) {
-    const mapped = tasks.find((item) => String(item.id) === String(mappedId));
+    const mapped = await client.getTask(config.productSpace.id, mappedId);
     if (mapped) {
       assertRemoteTitle(mapped, story.remoteTitle, 'task');
       assertTaskParent(mapped, requirementId);
+      if (!tasks.some((item) => String(item.id) === String(mappedId))) {
+        throw new Error(`remote-object-drift: mapped task ${mapped.id} is no longer under requirement ${requirementId}`);
+      }
       return { ...mapped, source: 'mapping' };
     }
   }
@@ -519,6 +522,16 @@ export class PublisherService {
     const compatibility = mappingCompatibility(existing.mapping, artifacts, config);
     const metadata = await this.client.requirementMetadata(config.productSpace.id);
     const warnings = normalizeWarnings(artifacts.warnings, compatibility.warnings, metadata.warnings);
+    try {
+      await planRemoteObjects(this.client, config, artifacts.artifacts, compatibility.usableMapping);
+    } catch (error) {
+      return {
+        status: 'blocked',
+        mappingPath: existing.path,
+        counts: mappingCounts(existing.mapping),
+        errors: [error.message],
+      };
+    }
     let mapping = compatibility.adoption || !compatibility.usableMapping
       ? adoptMappingCheckpoints(newMapping({
         version: artifacts.version,
@@ -569,7 +582,8 @@ export class PublisherService {
       mapping.sync_state = 'partial';
       mapping.last_error = error.message;
       checkpoint = await writeMapping(workspace, artifacts.version, mapping);
-      return { status: 'partial', mappingPath: checkpoint.path, changes, counts: mappingCounts(checkpoint.mapping), errors: [error.message] };
+      const status = /remote-object-drift|Ambiguous E3/i.test(error.message) ? 'blocked' : 'partial';
+      return { status, mappingPath: checkpoint.path, changes, counts: mappingCounts(checkpoint.mapping), errors: [error.message] };
     }
   }
 
@@ -614,10 +628,12 @@ export class PublisherService {
       for (const task of requirement.story_tasks ?? []) {
         const expectedStory = artifact?.stories.find((item) => item.id === task.story_id);
         const id = task.e3_task?.id;
-        const remoteTask = id ? remoteTasks.find((item) => String(item.id) === String(id)) : null;
+        const remoteTask = id ? await this.client.getTask(config.productSpace.id, id) : null;
+        const taskInExpectedParent = Boolean(id && remoteTasks.some((item) => String(item.id) === String(id)));
         const taskExists = Boolean(remoteTask);
         const taskDrifted = taskExists && (
-          remoteTask.title !== (expectedStory?.remoteTitle ?? task.e3_task?.title)
+          !taskInExpectedParent
+          || remoteTask.title !== (expectedStory?.remoteTitle ?? task.e3_task?.title)
           || (remoteTask.requirementId && String(remoteTask.requirementId) !== String(requirementId))
         );
         if (!taskExists) complete = false;

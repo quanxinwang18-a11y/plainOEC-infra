@@ -64,3 +64,23 @@ test('E3 client keeps business APIs under fixed /cyxt origin and CCF APIs at the
     'https://one.iflytek.com/ccf/example',
   ]);
 });
+
+test('E3 client fetches and normalizes task identity by ID', async () => {
+  const urls = [];
+  const client = new E3Client({
+    auth: { async getAccessToken() { return { token: 'test-token', source: 'local' }; } },
+    fetchFn: async (url) => {
+      urls.push(url.toString());
+      return new Response(JSON.stringify({
+        code: 'E00000000',
+        info: { id: 34, name: 'Task', storyId: 12 },
+      }), { status: 200 });
+    },
+  });
+  assert.deepEqual(await client.getTask('space-1', '34'), {
+    id: '34', title: 'Task', requirementId: '12',
+  });
+  assert.deepEqual(urls, [
+    'https://one.iflytek.com/cyxt/api/panshi/v2/product/task/info?id=34&productId=space-1',
+  ]);
+});
