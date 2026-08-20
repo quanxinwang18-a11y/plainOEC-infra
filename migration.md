@@ -371,6 +371,14 @@ POMP 决策规则为：
 系统需求 POMP、研发负责人和测试负责人同样只接受唯一候选或唯一默认值；存在歧义时省略并产生
 warning，而不是取列表第一项。
 
+产品空间和 POMP 选择使用 15 分钟有效的 selectionToken。Token 绑定 canonical MCP root、
+选择阶段和候选集合；配置保存到 `${CLAUDE_PLUGIN_DATA}/e3/workspaces/<root-sha256>/config.json`，
+因此一个产品仓库的选择不能覆盖另一个仓库。OAuth token 仍由插件实例复用。
+
+Status 不把当前 workspace 配置当作历史发布归属。Schema v2 mapping 中的 `product_space.id` 是
+只读验证的权威空间；配置缺失或不同只产生 warning。Legacy mapping 没有空间时，只有当前
+workspace 已配置空间才能进行诊断，并且确认 adoption 前不能返回 `published`。
+
 ## 6. 能力迁移结果
 
 ### 6.1 已迁移并强化
@@ -474,11 +482,11 @@ flowchart LR
 当前仓库验证结果：
 
 ```text
-cd oec-product
+npm run build
 npm test
 
-tests: 42
-pass:  42
+tests: 50
+pass:  50
 fail:  0
 ```
 
@@ -490,10 +498,12 @@ fail:  0
 - OAuth PKCE、state、refresh、401 和脱敏。
 - MCP 四个工具和 roots 限制。
 - planToken 过期、workspace/config/fingerprint 变化。
+- selectionToken 过期、跨 workspace 使用和配置隔离。
 - mapping v1 兼容、v2 原子写入和 legacy adoption。
 - 需求/任务创建、复用、歧义、远端漂移和 partial resume。
 - POMP 单候选、唯一默认值、多默认值、无默认值、零候选和 pending 恢复。
 - 缺失任一任务 ID 时禁止返回 `published`。
+- 无 `node_modules` 的 bundled checker 和 E3 MCP stdio discovery。
 
 Plugin 验证结果：
 

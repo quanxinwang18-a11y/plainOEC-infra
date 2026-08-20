@@ -8,27 +8,45 @@
 - Skills：`writing-prds`、`reviewing-prds`、`publishing-prds-to-e3`。
 - MCP Server：`e3`，提供 prepare、空间选择、execute 和 status 四个发布工具。
 
-Agent 只预加载 PRD 写作与评审能力。E3 发布必须由用户显式调用：
+Agent 只预加载 PRD 写作与评审能力。完整 PM 会话通过显式 Agent 启动：
+
+```bash
+claude --agent oec-product:oec-pm
+```
+
+E3 发布必须由用户显式调用：
 
 ```text
 /oec-product:publishing-prds-to-e3 v1.2.3
 ```
 
 发布采用 prepare/confirm/execute/status 四段边界。prepare 不创建远端对象；execute 只接受
-15 分钟有效的计划令牌，并在每个远端成功结果后原子更新 workspace 内的 E3 mapping。
+15 分钟有效的计划令牌、要求宿主进行人类确认，并在每个远端成功结果后原子更新 workspace
+内的 E3 mapping。
+
+产品空间和 POMP 选择使用绑定 canonical MCP root 的 15 分钟 selection token。空间配置按
+workspace 隔离；OAuth token 仍由插件实例安全复用。Status 以 schema v2 mapping 中记录的空间
+为历史发布归属，即使当前 workspace 配置缺失或不同也只读验证该空间。
 
 发布版本在产生任一 E3 ID 后即与当前产物 fingerprint 和产品空间绑定。后续内容变化必须形成
 新版本；远端对象 ID、标题或任务父子关系发生漂移时，插件会阻断而不会自动创建替代对象。
 POMP 和系统需求元数据只在存在唯一候选或唯一默认值时自动选择。
 
+## 分发
+
+插件目录包含自足的 E3 MCP 和 artifact checker bundles。Claude Code 从 Git Marketplace 安装
+后不需要 npm registry、`node_modules` 或运行时依赖安装。源码依赖和构建工具位于 Marketplace
+根，仅供维护者运行测试和重新生成 bundle。
+
 ## 本地验证
 
-需要 Node.js 20 或更新版本：
+在 Marketplace 根执行，需要 Node.js 20 或更新版本：
 
 ```bash
 npm ci --ignore-scripts
+npm run build
 npm test
-claude plugin validate .
+claude plugin validate ./oec-product
 ```
 
 真实 E3 写入必须使用获得授权的非生产空间。没有完成该验证时，不应把 mock 测试描述为真实
