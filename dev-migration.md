@@ -395,3 +395,15 @@ flowchart LR
 
 E3、SAE、UTP 和真实部署不属于 `oec-engineering@1.0.0` 验收范围。在这些平台的类型化接口和
 非生产 E2E 完成前，不以 Markdown、mock 或静态测试宣称旧平台能力已复现。
+
+## 10. 当前实现状态
+
+`oec-engineering@1.0.0` 已按上述边界实现：
+
+- 6 个原生 Skills，0 Agent、0 MCP、0 Command、0 Hook。
+- `oec-spec` source、CLI、可执行入口和无依赖 bundle。
+- Spec/ADR/change contract、路径选择、链接与引用校验、旧安装只读审计。
+- Java/Spring 和前端路径 fixture、bundle 隔离执行及正负触发 cases。
+- `oec-product` 回归测试与工程插件测试在同一根测试命令中执行。
+
+本版本没有实施 E3、SAE、UTP 或真实部署写操作，也没有自动清理任何旧项目资产。
