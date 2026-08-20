@@ -1,0 +1,283 @@
+import { E3_ORIGIN, AuthManager, redactSecrets } from './auth.mjs';
+
+const CYXT_ORIGIN = `${E3_ORIGIN}/cyxt`;
+const SUCCESS_CODES = new Set(['E00000000', '0', '200', 0, 200]);
+const REQUIREMENT_PRIORITY = { P0: 4, P1: 3, P2: 2, P3: 1 };
+const TASK_PRIORITY = { P0: 0, P1: 1, P2: 2, P3: 3 };
+
+export function isE3Success(response) {
+  if (!response || typeof response !== 'object' || Array.isArray(response)) return true;
+  if ('code' in response) return SUCCESS_CODES.has(response.code);
+  if ('success' in response) return response.success === true;
+  return true;
+}
+
+export function extractE3Data(response, path = '') {
+  if (!response || typeof response !== 'object' || Array.isArray(response)) return response;
+  if (path === '/api/panshi/v1/ccf/workItemId/list') return response.info ?? response.data;
+  if (path.includes('/ccf/')) return response.data;
+  if (response.code === 'E00000000') return response.info;
+  return response.data ?? response.info ?? response;
+}
+
+export function extractCreatedId(response, path = '') {
+  let data = extractE3Data(response, path);
+  if (Array.isArray(data)) data = data[0];
+  if (data && typeof data === 'object') return data.id ?? data.taskId ?? data.storyId ?? data.workItemId;
+  return data;
+}
+
+function errorMessage(response) {
+  if (!response || typeof response !== 'object') return 'Unknown E3 error';
+  return response.msg ?? response.message ?? response.error ?? `E3 code ${response.code ?? 'unknown'}`;
+}
+
+function decodeJwtAccount(token) {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const claims = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+    for (const key of ['user_name', 'username', 'preferred_username', 'account', 'login', 'sub', 'uid', 'userId']) {
+      if (typeof claims[key] === 'string' && claims[key]) return claims[key];
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function fieldValue(item, key) {
+  const value = item?.fieldInfoMap?.[key];
+  if (value && typeof value === 'object') return value.value ?? value.displayValue;
+  return value ?? item?.[key];
+}
+
+function listFromPage(data) {
+  if (Array.isArray(data)) return data;
+  return data?.list ?? data?.records ?? data?.info ?? [];
+}
+
+function optionsFrom(data, fieldKey) {
+  if (!data) return [];
+  if (Array.isArray(data) && data[0]?.value !== undefined) return data;
+  if (Array.isArray(data)) {
+    for (const item of data) {
+      if (item?.fieldKey === fieldKey || item?.options || item?.data) return item.options ?? item.data ?? [];
+    }
+  }
+  return data.options ?? data.data ?? data.list ?? [];
+}
+
+export class E3Client {
+  constructor({ auth = new AuthManager(), fetchFn = fetch } = {}) {
+    this.auth = auth;
+    this.fetchFn = fetchFn;
+  }
+
+  async request(method, path, { query, body, retryOn401 = true } = {}) {
+    const tokenInfo = await this.auth.getAccessToken();
+    const url = new URL(path, path.startsWith('/ccf/') ? E3_ORIGIN : CYXT_ORIGIN);
+    for (const [key, value] of Object.entries(query ?? {})) {
+      if (value !== undefined && value !== null) url.searchParams.set(key, String(value));
+    }
+    const perform = async ({ token }) => this.fetchFn(url, {
+      method,
+      headers: { acToken: token, 'Content-Type': 'application/json', Accept: 'application/json' },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+
+    let currentToken = tokenInfo;
+    let response = await perform(currentToken);
+    if (response.status === 401 && retryOn401) {
+      currentToken = await this.auth.recoverAfter401(tokenInfo.source);
+      response = await perform(currentToken);
+    }
+    const rawText = await response.text();
+    let payload;
+    try {
+      payload = rawText ? JSON.parse(rawText) : {};
+    } catch {
+      payload = {};
+    }
+    if (!response.ok) {
+      throw new Error(redactSecrets(`E3 HTTP ${response.status}: ${errorMessage(payload)}`, [currentToken.token]));
+    }
+    if (!isE3Success(payload)) {
+      throw new Error(redactSecrets(`E3 API rejected request: ${errorMessage(payload)}`, [currentToken.token]));
+    }
+    return { payload, data: extractE3Data(payload, path), path };
+  }
+
+  async listSpaces() {
+    const { data } = await this.request('POST', '/api/panshi/product/getProductList', {
+      body: { pageNo: 1, pageSize: 1000 },
+    });
+    return listFromPage(data).map((item) => ({
+      id: String(item.id ?? item.productId),
+      name: item.name ?? item.productName,
+      createBy: item.createBy ?? item.creator ?? item.owner,
+    })).filter((item) => item.id && item.name);
+  }
+
+  async listPompProjects(spaceId) {
+    const { data } = await this.request('GET', '/api/panshi/configCenter/ps-conf-dict/pomp_project', {
+      query: { productId: spaceId, filter: 1 },
+    });
+    return (Array.isArray(data) ? data : []).map((item) => ({
+      code: String(item.dictKey),
+      name: item.dictValue,
+      isDefault: item.isDefault === true,
+    })).filter((item) => item.code && item.name);
+  }
+
+  async getWorkItemId(spaceId) {
+    const path = '/api/panshi/v1/ccf/workItemId/list';
+    const { data } = await this.request('POST', path, {
+      body: { productId: spaceId, keys: ['system_requirement'] },
+    });
+    if (Array.isArray(data)) {
+      const found = data.find((item) => (item.workItemKey ?? item.key) === 'system_requirement');
+      return found?.workItemId ?? found?.id;
+    }
+    return data?.system_requirement;
+  }
+
+  async listFieldOptions(spaceId, workItemId, fieldKey, pomProjectId) {
+    const otherParam = { productId: Number(spaceId), workItemId: Number(workItemId) };
+    if (fieldKey === 'rdManager' || fieldKey === 'qaManager') {
+      otherParam.pomProjectId = pomProjectId ?? null;
+      otherParam.projectConstructionId = null;
+    }
+    const path = `/ccf/form/v1/work_item_field/options/${workItemId}/list`;
+    const { data } = await this.request('POST', path, {
+      body: [{ fieldKey, pageNo: 1, pageSize: 100, operateType: '1', otherParam }],
+    });
+    return optionsFrom(data, fieldKey);
+  }
+
+  async currentAccount() {
+    for (const key of ['SKILL_USER_ACCOUNT', 'SKILL_USER_NAME', 'OPENCLAW_USER']) {
+      if (process.env[key]) return process.env[key];
+    }
+    const { token } = await this.auth.getAccessToken();
+    const jwt = decodeJwtAccount(token);
+    if (jwt) return jwt;
+    const spaces = await this.listSpaces();
+    return spaces[0]?.createBy ?? null;
+  }
+
+  async requirementMetadata(spaceId) {
+    const workItemId = await this.getWorkItemId(spaceId);
+    if (!workItemId) throw new Error('Selected E3 space has no system-requirement work item');
+    const flowPath = `/api/dm/story/v1/list/allFlow/${workItemId}`;
+    const [{ data: flows }, pomOptions, account] = await Promise.all([
+      this.request('GET', flowPath, { query: { productId: spaceId } }),
+      this.listFieldOptions(spaceId, workItemId, 'pomProjectId'),
+      this.currentAccount(),
+    ]);
+    const flowDefinition = Array.isArray(flows) ? flows[0]?.key : null;
+    const pomProjectId = pomOptions[0]?.value;
+    if (!flowDefinition) throw new Error('E3 returned no system-requirement flow');
+    if (!account) throw new Error('Unable to determine the current E3 account');
+    const [rdOptions, qaOptions] = await Promise.all([
+      this.listFieldOptions(spaceId, workItemId, 'rdManager', pomProjectId),
+      this.listFieldOptions(spaceId, workItemId, 'qaManager', pomProjectId),
+    ]);
+    return {
+      workItemId,
+      flowDefinition,
+      pomProjectId,
+      inChargeBy: account,
+      rdManager: rdOptions[0]?.value,
+      qaManager: qaOptions[0]?.value,
+    };
+  }
+
+  async findRequirementsByExactTitle(spaceId, title) {
+    const { data } = await this.request('POST', '/api/dm/story/v1/page', {
+      query: { productId: spaceId },
+      body: { productId: spaceId, curPage: 1, pageSize: 100, searchKeyword: title },
+    });
+    return listFromPage(data).filter((item) => fieldValue(item, 'title') === title).map((item) => ({
+      id: String(item.id ?? fieldValue(item, 'id')),
+      title,
+    }));
+  }
+
+  async getRequirement(spaceId, workItemId, requirementId) {
+    try {
+      const { data } = await this.request('GET', `/api/dm/story/v1/${requirementId}/info`, {
+        query: { workItemId, productId: spaceId },
+      });
+      return data ?? null;
+    } catch (error) {
+      if (/HTTP 404|not found/i.test(error.message)) return null;
+      throw error;
+    }
+  }
+
+  async createRequirement(spaceId, metadata, requirement) {
+    const formJson = {
+      title: requirement.remoteTitle,
+      description: requirement.descriptionHtml,
+      priority: REQUIREMENT_PRIORITY[requirement.priority] ?? REQUIREMENT_PRIORITY.P2,
+      flowDefinition: metadata.flowDefinition,
+      inChargeBy: metadata.inChargeBy,
+      ...(metadata.rdManager ? { rdManager: metadata.rdManager } : {}),
+      ...(metadata.qaManager ? { qaManager: metadata.qaManager } : {}),
+      ...(metadata.pomProjectId ? { pomProjectId: metadata.pomProjectId } : {}),
+    };
+    const path = '/api/dm/story/v1/batchSave';
+    const { payload } = await this.request('POST', path, {
+      query: { productId: spaceId },
+      body: { createStoryDTOs: [{ productId: spaceId, workItemId: metadata.workItemId, formJson }], index: 0 },
+      retryOn401: true,
+    });
+    const id = extractCreatedId(payload, path);
+    if (!id) throw new Error('E3 requirement creation succeeded without a verifiable ID');
+    return { id: String(id), title: requirement.remoteTitle };
+  }
+
+  async listTasks(spaceId, requirementId) {
+    const { data } = await this.request('POST', `/api/panshi/v2/product/${spaceId}/task/page`, {
+      query: { productId: spaceId },
+      body: {
+        pageNo: 1,
+        size: 999,
+        condition: { storyId: [requirementId], storyIds: [requirementId], productId: [spaceId] },
+      },
+    });
+    return listFromPage(data);
+  }
+
+  async findTasksByExactTitle(spaceId, requirementId, title) {
+    return (await this.listTasks(spaceId, requirementId))
+      .filter((item) => (item.name ?? item.taskName) === title)
+      .map((item) => ({ id: String(item.id ?? item.taskId), title }));
+  }
+
+  async createTask(spaceId, requirementId, config, story, account) {
+    const date = new Date().toISOString().slice(0, 10);
+    const path = `/api/panshi/v2/product/${spaceId}/task`;
+    const { payload } = await this.request('POST', path, {
+      query: { productId: spaceId },
+      body: {
+        name: story.remoteTitle,
+        description: story.descriptionHtml,
+        taskType: 3,
+        planWorkload: 4,
+        etplanWorkload: 4,
+        inChargeBy: account,
+        planStartTime: date,
+        planEndTime: date,
+        pompProjectCode: config.pompProject.code,
+        storyId: String(requirementId),
+        priority: TASK_PRIORITY[story.priority] ?? TASK_PRIORITY.P2,
+      },
+      retryOn401: true,
+    });
+    const id = extractCreatedId(payload, path);
+    if (!id) throw new Error('E3 task creation succeeded without a verifiable ID');
+    return { id: String(id), title: story.remoteTitle };
+  }
+}
