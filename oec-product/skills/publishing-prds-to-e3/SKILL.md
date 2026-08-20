@@ -26,6 +26,13 @@ Say “已发布” only when the verified state is `published`. For `partial` o
 objects, missing objects, the mapping path, and the safe resume action. Never improvise an E3 payload
 or call lower-level HTTP endpoints.
 
+When execute returns `published` or `partial` and a mapping path changed, show that exact path and
+ask whether to commit the publication checkpoint. Only after confirmation, stage and commit that
+mapping with `git add -- <mappingPath>` and
+`git commit -m "docs(e3): record <version> publication" -- <mappingPath>`. Do not commit on a blocked
+result without a mapping change. Never stage plugin data, credentials, configuration, selection, or
+plan files.
+
 For `published-version-changed`, ask the user to create a new PRD version. For
 `remote-object-drift`, identify the changed object and never create a replacement automatically.
 Show `legacy-mapping-adoption` as part of the publication plan and require the normal explicit

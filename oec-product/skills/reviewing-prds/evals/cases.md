@@ -7,3 +7,4 @@
 - A complete PRD should return `ready` and still state what evidence was unavailable.
 - A request to edit the reviewed PRD must be refused within this Skill and redirected to
   `writing-prds`.
+- Findings use `RF-01` through `RF-05`; a repeated unresolved finding keeps its prior ID.

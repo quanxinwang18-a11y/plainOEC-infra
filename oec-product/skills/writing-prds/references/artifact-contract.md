@@ -53,7 +53,7 @@ Before commit, show the summary and exact paths and obtain PM confirmation. Stag
 
 ```bash
 git add -- <explicit PRD and HANDOFF paths>
-git commit -- <same explicit paths> -m "docs(prd): ..."
+git commit -m "docs(prd): ..." -- <same explicit paths>
 ```
 
 Never use `git add -A`, reset unrelated changes, or include code files in a PRD commit.

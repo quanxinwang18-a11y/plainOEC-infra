@@ -24,8 +24,10 @@ only when deciding whether a change creates a version. Use
 [references/product-language.md](references/product-language.md) when translating technical
 input into observable product behavior.
 
-Use the templates in [assets/](assets/) as structural starting points, adapting conditional
-sections to the requirement. Do not emit empty conditional sections or placeholder values.
+Use `assets/root-prd.md` and `assets/root-prd-changelog.md` when initializing the product SSOT.
+Use the remaining templates in [assets/](assets/) for version increments, child PRDs, and HANDOFF.
+Adapt conditional sections to the requirement. Do not emit empty conditional sections or
+placeholder values.
 
 Before presenting an artifact as complete, run:
 

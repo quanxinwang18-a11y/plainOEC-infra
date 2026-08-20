@@ -1,6 +1,6 @@
 # PRD red-team rubric
 
-For each ranked finding provide:
+Assign ranked findings sequential IDs `RF-01` through `RF-05`. For each finding provide:
 
 1. **承重假设**: the claim on which value, adoption, feasibility, or correctness depends.
 2. **最强成立理由**: the strongest evidence-based case that the claim is true.

@@ -9,8 +9,10 @@ argument-hint: "[PRD path or version]"
 Review the product reasoning, not merely the presence of headings. Extract load-bearing claims,
 steelman each claim, then challenge the strongest version with concrete falsifiable conditions.
 
-Use [references/review-rubric.md](references/review-rubric.md). Return at most five ranked findings,
-then list what is well-reasoned and what cannot be assessed from available evidence.
+Use [references/review-rubric.md](references/review-rubric.md). Return at most five ranked findings
+with stable IDs `RF-01` through `RF-05`, then list what is well-reasoned and what cannot be assessed
+from available evidence. Preserve an existing finding's ID when reviewing the same unresolved risk
+again so the user can respond by ID.
 
 Choose one decision:
 
