@@ -1,10 +1,8 @@
 ---
-description: PRD 对抗式评审——steelman 后攻击，找出 load-bearing assumptions 并给出验证方法。Use when reviewing a PRD, assessing quality before finalize, or stress-testing requirements.
+description: Steelman then attack — find load-bearing assumptions in a PRD and return the cheapest test for each. Use when reviewing a PRD, assessing quality before finalize, or stress-testing requirements.
 ---
 
 Find the load-bearing assumptions that would make this PRD fail. Steelman each claim, then attack honestly. Return — for each — the evidence to get, the kill criterion, and the cheapest test. Five real kill-assumptions with tests beat twenty generic concerns.
-
-A PRD review is not a checklist. It doesn't ask "does section 3 exist." It asks: "if this claim is wrong, does the product still work?"
 
 ## Method
 
