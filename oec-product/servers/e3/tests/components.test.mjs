@@ -60,6 +60,10 @@ test('plugin relies on native discovery and has no forbidden root component fram
   assert.equal(manifest.version, '2.1.0');
   const packageManifest = JSON.parse(readFileSync(resolve(pluginRoot, '..', 'package.json'), 'utf8'));
   assert.equal(packageManifest.version, manifest.version);
+  assert.equal('dependencies' in packageManifest, false);
+  assert.equal(packageManifest.devDependencies.esbuild, '0.28.2');
+  assert.equal(existsSync(resolve(pluginRoot, 'package.json')), false);
+  assert.equal(existsSync(resolve(pluginRoot, 'package-lock.json')), false);
   const marketplace = JSON.parse(readFileSync(resolve(pluginRoot, '..', '.claude-plugin', 'marketplace.json'), 'utf8'));
   assert.equal(marketplace.version, manifest.version);
   for (const key of ['skills', 'agents', 'mcpServers', 'commands', 'hooks']) assert.equal(key in manifest, false);
@@ -68,4 +72,7 @@ test('plugin relies on native discovery and has no forbidden root component fram
   }
   const mcp = JSON.parse(readFileSync(resolve(pluginRoot, '.mcp.json'), 'utf8'));
   assert.deepEqual(Object.keys(mcp.mcpServers), ['e3']);
+  assert.deepEqual(mcp.mcpServers.e3.args, ['${CLAUDE_PLUGIN_ROOT}/dist/e3-server.mjs']);
+  assert.equal(existsSync(resolve(pluginRoot, 'dist/e3-server.mjs')), true);
+  assert.equal(existsSync(resolve(pluginRoot, 'skills/writing-prds/runtime/check-artifacts.mjs')), true);
 });
