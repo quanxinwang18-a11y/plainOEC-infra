@@ -130,6 +130,17 @@ test('prepare enforces the complete artifact contract before calling E3', async 
   assert.equal(client.calls, 0);
 });
 
+test('execute repeats the complete artifact contract before remote writes', async () => {
+  const value = await fixture();
+  const client = new FakeE3Client();
+  const service = new PublisherService({ client, dataDirectory: value.dataDirectory });
+  await configure(service, value);
+  const prepared = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  await writeFile(join(value.workspace, 'ai-docs', 'prd', 'prd-all.md'), '');
+  await assert.rejects(service.execute({ planToken: prepared.planToken }, value.roots), /pre-publish contract/);
+  assert.equal(client.requirements.length, 0);
+});
+
 test('prepare is read-only, execute recovers an unknown POST result, and status verifies publication', async () => {
   const value = await fixture();
   const client = new FakeE3Client();
@@ -227,6 +238,7 @@ test('partial mapping checkpoints resume without duplicate objects', async () =>
   assert.equal(client.requirements.length, 1);
   assert.equal([...client.tasks.values()].flat().length, 1);
   assert.equal((await readMapping(value.workspace, 'v1.2.3')).mapping.sync_state, 'partial');
+  assert.equal((await service.status({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots)).status, 'partial');
 
   client.failStoryId = null;
   const secondPlan = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
@@ -345,6 +357,22 @@ test('POMP auto-selection requires exactly one candidate or exactly one default'
   await assert.rejects(emptyService.selectProductSpace({ spaceId: 'space-1' }), /no-pomp-projects/);
 });
 
+test('pending POMP preparation blocks when the selected space no longer has projects', async () => {
+  const value = await fixture();
+  const client = new FakeE3Client();
+  client.projects = [
+    { code: 'pomp-a', name: 'Project A', isDefault: false },
+    { code: 'pomp-b', name: 'Project B', isDefault: false },
+  ];
+  const service = new PublisherService({ client, dataDirectory: value.dataDirectory });
+  await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  assert.equal((await service.selectProductSpace({ spaceId: 'space-1' })).status, 'needs_pomp_selection');
+  client.projects = [];
+  const resumed = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  assert.equal(resumed.status, 'blocked');
+  assert.match(resumed.errors.join('\n'), /no-pomp-projects/);
+});
+
 test('prepare surfaces E3 metadata ambiguity without guessing a field value', async () => {
   const value = await fixture();
   const client = new FakeE3Client();
@@ -370,4 +398,19 @@ test('exact-title duplicates block preparation instead of guessing', async () =>
   const prepared = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
   assert.equal(prepared.status, 'blocked');
   assert.match(prepared.errors[0], /Ambiguous/);
+});
+
+test('duplicate exact task titles block preparation instead of guessing', async () => {
+  const value = await fixture();
+  const client = new FakeE3Client();
+  client.requirements.push({ id: 'r-1', title: '[v1.2.3] Alpha module' });
+  client.tasks.set('r-1', [
+    { id: 't-1', title: '[US-001] Story 1', requirementId: 'r-1' },
+    { id: 't-2', title: '[US-001] Story 1', requirementId: 'r-1' },
+  ]);
+  const service = new PublisherService({ client, dataDirectory: value.dataDirectory });
+  await configure(service, value);
+  const prepared = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  assert.equal(prepared.status, 'blocked');
+  assert.match(prepared.errors.join('\n'), /Ambiguous E3 tasks/);
 });

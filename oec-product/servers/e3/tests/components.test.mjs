@@ -32,6 +32,9 @@ test('skills have distinct positive triggers and E3 publishing is manual-only', 
   assert.doesNotMatch(reviewing.description, /write|create|change a requirement/i);
   assert.equal(publishing.metadata['disable-model-invocation'], true);
   assert.match(publishing.metadata.description, /explicit E3 publishing requests/);
+  assert.match(publishing.body, /original `spaceId`.*selected `pompProjectCode`/s);
+  assert.match(publishing.body, /published-version-changed/);
+  assert.match(publishing.body, /remote-object-drift/);
   assert.doesNotMatch(publishing.body, /oauth|token file|https?:\/\/|JSON payload|node .*\.mjs|retry/i);
 });
 
