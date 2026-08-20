@@ -46,6 +46,7 @@ test('MCP protocol exposes four tools and forwards client roots to guarded opera
     ]);
     const execute = tools.tools.find((tool) => tool.name === 'execute_prd_publish');
     assert.equal(execute.annotations.destructiveHint, true);
+    assert.equal(execute._meta['anthropic/requiresUserInteraction'], true);
 
     const prepared = await client.callTool({
       name: 'prepare_prd_publish',

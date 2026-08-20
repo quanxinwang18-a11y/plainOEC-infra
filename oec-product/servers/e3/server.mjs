@@ -65,6 +65,7 @@ export function createE3McpServer({ service } = {}) {
     description: 'Execute a previously prepared immutable E3 publication plan.',
     inputSchema: { planToken: z.string().min(32) },
     annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
+    _meta: { 'anthropic/requiresUserInteraction': true },
   }, guarded(async (input) => publisher.execute(input, await rootsFor(mcpServer))));
 
   mcpServer.registerTool('get_prd_publish_status', {
