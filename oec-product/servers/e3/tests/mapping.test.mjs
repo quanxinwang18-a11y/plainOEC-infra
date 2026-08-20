@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import YAML from 'yaml';
-import { mappingIsComplete, readMapping, writeMapping } from '../mapping.mjs';
+import { adoptMappingCheckpoints, mappingHasRemoteIds, mappingIsComplete, readMapping, writeMapping } from '../mapping.mjs';
 
 test('mapping v1 reads legacy sub_prd_file and v2 writes child_prd atomically', async () => {
   const workspace = await mkdtemp(join(tmpdir(), 'oec-map-'));
@@ -36,4 +36,26 @@ test('published gate requires every requirement and every story task ID', () => 
   assert.equal(mappingIsComplete(mapping), false);
   mapping.requirements[0].story_tasks[1].e3_task = { id: 't-2' };
   assert.equal(mappingIsComplete(mapping), true);
+});
+
+test('mapping ID detection and legacy checkpoint adoption preserve known remote objects', () => {
+  const legacy = {
+    requirements: [{
+      featureName: 'alpha',
+      e3_requirement: { id: 'r-1' },
+      story_tasks: [{ story_id: 'US-001', e3_task: { id: 't-1' } }],
+    }],
+  };
+  const target = {
+    requirements: [{
+      featureName: 'alpha',
+      e3_requirement: null,
+      story_tasks: [{ story_id: 'US-001', e3_task: null }],
+    }],
+  };
+  assert.equal(mappingHasRemoteIds(legacy), true);
+  assert.equal(mappingHasRemoteIds(target), false);
+  adoptMappingCheckpoints(target, legacy);
+  assert.equal(target.requirements[0].e3_requirement.id, 'r-1');
+  assert.equal(target.requirements[0].story_tasks[0].e3_task.id, 't-1');
 });

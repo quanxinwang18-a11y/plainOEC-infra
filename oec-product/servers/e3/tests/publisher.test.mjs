@@ -182,6 +182,34 @@ test('partial mapping checkpoints resume without duplicate objects', async () =>
   assert.equal([...client.tasks.values()].flat().length, 2);
 });
 
+test('a mapped version is immutable and bound to its original product space', async () => {
+  const value = await fixture();
+  const client = new FakeE3Client();
+  const service = new PublisherService({ client, dataDirectory: value.dataDirectory });
+  await configure(service, value);
+  const prepared = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  assert.equal((await service.execute({ planToken: prepared.planToken }, value.roots)).status, 'published');
+
+  const mappingResult = await readMapping(value.workspace, 'v1.2.3');
+  const mappingFile = join(value.workspace, mappingResult.path);
+  const before = await readFile(mappingFile, 'utf8');
+  const childBefore = await readFile(join(value.workspace, value.childPath), 'utf8');
+  await writeFile(join(value.workspace, value.childPath), `${childBefore}\nClarified copy.\n`);
+  const changed = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  assert.equal(changed.status, 'blocked');
+  assert.match(changed.errors.join('\n'), /published-version-changed/);
+  assert.equal(await readFile(mappingFile, 'utf8'), before);
+
+  await writeFile(join(value.workspace, value.childPath), childBefore);
+  const configFile = join(value.dataDirectory, 'e3', 'config.json');
+  const config = JSON.parse(await readFile(configFile, 'utf8'));
+  config.productSpace = { id: 'space-2', name: 'Another space' };
+  await writeFile(configFile, JSON.stringify(config));
+  const wrongSpace = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  assert.equal(wrongSpace.status, 'blocked');
+  assert.match(wrongSpace.errors.join('\n'), /mapping-space-mismatch/);
+});
+
 test('execute rejects expired plans, changed roots, and changed artifact fingerprints', async () => {
   const value = await fixture();
   let now = 1_000;

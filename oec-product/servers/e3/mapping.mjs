@@ -89,6 +89,30 @@ export function mappingIsComplete(mapping) {
     && requirement.story_tasks.every((task) => task.e3_task?.id));
 }
 
+export function mappingHasRemoteIds(mapping) {
+  return (mapping?.requirements ?? []).some((requirement) => (
+    requirement.e3_requirement?.id
+    || (requirement.story_tasks ?? []).some((task) => task.e3_task?.id)
+  ));
+}
+
+export function adoptMappingCheckpoints(target, source) {
+  if (!source) return target;
+  for (const requirement of target.requirements ?? []) {
+    const previous = (source.requirements ?? []).find((item) => (
+      item.featureName === requirement.featureName
+      || (item.child_prd && item.child_prd === requirement.child_prd)
+    ));
+    if (!previous) continue;
+    requirement.e3_requirement = previous.e3_requirement ?? null;
+    for (const task of requirement.story_tasks ?? []) {
+      const oldTask = (previous.story_tasks ?? []).find((item) => item.story_id === task.story_id);
+      if (oldTask?.e3_task) task.e3_task = oldTask.e3_task;
+    }
+  }
+  return target;
+}
+
 export function mappingCounts(mapping) {
   const requirements = mapping?.requirements ?? [];
   const tasks = requirements.flatMap((item) => item.story_tasks ?? []);

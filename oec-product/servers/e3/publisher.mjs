@@ -5,7 +5,15 @@ import { fileURLToPath } from 'node:url';
 import YAML from 'yaml';
 import { checkArtifacts } from '../../skills/writing-prds/scripts/check-artifacts.mjs';
 import { E3_ORIGIN } from './auth.mjs';
-import { mappingCounts, mappingIsComplete, newMapping, readMapping, writeMapping } from './mapping.mjs';
+import {
+  adoptMappingCheckpoints,
+  mappingCounts,
+  mappingHasRemoteIds,
+  mappingIsComplete,
+  newMapping,
+  readMapping,
+  writeMapping,
+} from './mapping.mjs';
 
 const VERSION_PATTERN = /^v\d+\.\d+\.\d+$/;
 const PLAN_TTL_MS = 15 * 60 * 1000;
@@ -239,6 +247,31 @@ function sameConfig(left, right) {
     && left?.pompProject?.code === right?.pompProject?.code;
 }
 
+function mappingCompatibility(mapping, artifacts, config) {
+  if (!mapping) return { usableMapping: null, adoption: false, warnings: [] };
+  const mappedSpaceId = mapping.product_space?.id;
+  if (mappedSpaceId && String(mappedSpaceId) !== String(config.productSpace.id)) {
+    throw new Error('mapping-space-mismatch: this PRD version is already bound to another E3 product space');
+  }
+  if (!mapping.artifact_fingerprint) {
+    return {
+      usableMapping: mapping,
+      adoption: true,
+      warnings: [{
+        code: 'legacy-mapping-adoption',
+        message: 'Legacy E3 mapping has no artifact fingerprint and will be adopted as schema v2 only after confirmation',
+      }],
+    };
+  }
+  if (mapping.artifact_fingerprint !== artifacts.fingerprint) {
+    if (mappingHasRemoteIds(mapping)) {
+      throw new Error('published-version-changed: this PRD version already has E3 objects; create a new PRD version');
+    }
+    return { usableMapping: null, adoption: false, warnings: [] };
+  }
+  return { usableMapping: mapping, adoption: false, warnings: [] };
+}
+
 async function resolveMappedRequirement(client, config, metadata, mappingItem) {
   const id = mappingItem?.e3_requirement?.id;
   if (!id) return null;
@@ -363,10 +396,9 @@ export class PublisherService {
     }
     try {
       const mappingResult = await readMapping(workspace, artifacts.version);
-      const usableMapping = mappingResult.mapping?.artifact_fingerprint === artifacts.fingerprint
-        && String(mappingResult.mapping?.product_space?.id) === String(config.productSpace.id)
-        ? mappingResult.mapping : null;
-      const remote = await planRemoteObjects(this.client, config, artifacts.artifacts, usableMapping);
+      const compatibility = mappingCompatibility(mappingResult.mapping, artifacts, config);
+      const remote = await planRemoteObjects(this.client, config, artifacts.artifacts, compatibility.usableMapping);
+      const warnings = normalizeWarnings(artifacts.warnings, compatibility.warnings);
       const plan = {
         workspaceUri,
         workspace,
@@ -385,7 +417,7 @@ export class PublisherService {
         productSpace: config.productSpace.name,
         counts: remote.counts,
         requirements: remote.requirements,
-        warnings: artifacts.warnings,
+        warnings,
       };
     } catch (error) {
       return { status: 'blocked', version: artifacts.version, errors: [error.message] };
@@ -421,17 +453,19 @@ export class PublisherService {
     if (!sameConfig(config, plan.config)) throw new Error('E3 product-space configuration changed after prepare');
 
     const existing = await readMapping(workspace, artifacts.version);
-    let mapping = existing.mapping?.artifact_fingerprint === artifacts.fingerprint
-      && String(existing.mapping?.product_space?.id) === String(config.productSpace.id)
-      ? existing.mapping
-      : newMapping({
+    const compatibility = mappingCompatibility(existing.mapping, artifacts, config);
+    const warnings = normalizeWarnings(artifacts.warnings, compatibility.warnings);
+    let mapping = compatibility.adoption || !compatibility.usableMapping
+      ? adoptMappingCheckpoints(newMapping({
         version: artifacts.version,
         handoffPath: artifacts.handoffPath,
         fingerprint: artifacts.fingerprint,
         config,
         artifacts: artifacts.artifacts,
-        warnings: artifacts.warnings,
-      });
+        warnings,
+      }), compatibility.usableMapping)
+      : compatibility.usableMapping;
+    mapping.quality_gate = { ...mapping.quality_gate, warnings };
     mapping.sync_state = 'partial';
     let checkpoint = await writeMapping(workspace, artifacts.version, mapping);
     mapping = checkpoint.mapping;
