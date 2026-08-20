@@ -1,0 +1,10 @@
+{
+  "name": "oec-engineering",
+  "version": "1.0.0",
+  "description": "OEC engineering plugin for durable team Specs and focused software development capabilities.",
+  "author": {
+    "name": "OEC"
+  },
+  "keywords": ["engineering", "team-specs", "code-review", "tdd", "diagnosis"],
+  "license": "MIT"
+}
