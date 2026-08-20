@@ -11,7 +11,7 @@
 Agent 只预加载 PRD 写作与评审能力。完整 PM 会话通过显式 Agent 启动：
 
 ```bash
-claude --agent oec-product:oec-pm
+claude --agent oec-pm
 ```
 
 E3 发布必须由用户显式调用：

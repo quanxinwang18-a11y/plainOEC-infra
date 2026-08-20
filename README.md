@@ -54,7 +54,7 @@ GitHub Packages 或 SessionStart 安装 Hook。
 完整 PM 会话使用：
 
 ```bash
-claude --agent oec-product:oec-pm
+claude --agent oec-pm
 ```
 
 `oec-pm` 不会默认接管普通 Claude 主线程，也不会预加载具有外部副作用的 E3 发布 Skill。
