@@ -136,10 +136,11 @@ function openBrowser(url) {
 function waitForOAuthCallback(expectedState, timeoutMs = 120_000) {
   return new Promise((resolvePromise, reject) => {
     let settled = false;
+    let timer;
     const finish = (error, result) => {
       if (settled) return;
       settled = true;
-      clearTimeout(timer);
+      if (timer) clearTimeout(timer);
       server.close();
       if (error) reject(error);
       else resolvePromise(result);
@@ -166,7 +167,7 @@ function waitForOAuthCallback(expectedState, timeoutMs = 120_000) {
     });
     server.on('error', (error) => finish(error));
     server.listen(CALLBACK_PORT, '127.0.0.1');
-    const timer = setTimeout(() => finish(new Error('OAuth authorization timed out after 120 seconds')), timeoutMs);
+    timer = setTimeout(() => finish(new Error('OAuth authorization timed out after 120 seconds')), timeoutMs);
   });
 }
 

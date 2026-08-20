@@ -42,11 +42,14 @@ export function newMapping({ version, handoffPath, fingerprint, config, artifact
 
 export function normalizeMapping(raw) {
   if (!raw || typeof raw !== 'object') return null;
-  const requirements = Array.isArray(raw.requirements) ? raw.requirements.map((item) => ({
-    ...item,
-    child_prd: item.child_prd ?? item.sub_prd_file,
-    story_tasks: Array.isArray(item.story_tasks) ? item.story_tasks : [],
-  })) : [];
+  const requirements = Array.isArray(raw.requirements) ? raw.requirements.map((item) => {
+    const { sub_prd_file: legacyChildPrd, ...current } = item;
+    return {
+      ...current,
+      child_prd: item.child_prd ?? legacyChildPrd,
+      story_tasks: Array.isArray(item.story_tasks) ? item.story_tasks : [],
+    };
+  }) : [];
   return {
     ...raw,
     schema_version: Number(raw.schema_version ?? 1),

@@ -315,6 +315,9 @@ export class PublisherService {
   }
 
   async prepare({ workspaceUri, version }, roots) {
+    if (Number(process.versions.node.split('.')[0]) < 20) {
+      return { status: 'blocked', errors: ['E3 MCP requires Node.js 20 or newer'] };
+    }
     const workspace = await resolveAuthorizedWorkspace(workspaceUri, roots);
     const artifacts = await loadPublishArtifacts(workspace, version);
     const config = await loadConfig(this.dataDirectory);
@@ -455,20 +458,28 @@ export class PublisherService {
         ? Boolean(await this.client.getRequirement(config.productSpace.id, metadata.workItemId, requirementId))
         : false;
       if (!exists) complete = false;
-      objects.push({ type: 'requirement', featureName: requirement.featureName, id: requirementId, state: exists ? 'verified' : 'missing' });
+      objects.push({
+        type: 'requirement',
+        featureName: requirement.featureName,
+        id: requirementId,
+        action: requirement.e3_requirement?.action ?? 'unknown',
+        state: exists ? 'verified' : 'missing',
+      });
       const remoteTasks = exists ? await this.client.listTasks(config.productSpace.id, requirementId) : [];
       for (const task of requirement.story_tasks ?? []) {
         const id = task.e3_task?.id;
         const taskExists = id && remoteTasks.some((item) => String(item.id ?? item.taskId) === String(id));
         if (!taskExists) complete = false;
-        objects.push({ type: 'task', storyId: task.story_id, id, state: taskExists ? 'verified' : 'missing' });
+        objects.push({
+          type: 'task',
+          storyId: task.story_id,
+          id,
+          action: task.e3_task?.action ?? 'unknown',
+          state: taskExists ? 'verified' : 'missing',
+        });
       }
     }
     const status = complete && mappingIsComplete(mapping) ? 'published' : 'partial';
-    if (mapping.sync_state !== status) {
-      mapping.sync_state = status;
-      await writeMapping(workspace, artifacts.version, mapping);
-    }
     return { status, mappingPath: path, counts: mappingCounts(mapping), objects };
   }
 }
