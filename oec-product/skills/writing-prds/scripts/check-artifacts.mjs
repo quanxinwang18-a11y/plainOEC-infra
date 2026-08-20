@@ -1,12 +1,8 @@
-#!/usr/bin/env node
-
 import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import YAML from 'yaml';
 
 const VERSION_PATTERN = /^v\d+\.\d+\.\d+$/;
-const STAGES = new Set(['finalize', 'pre-publish']);
 const CORE_SECTIONS = ['模块概述', '用户故事', '验收标准', '待确认事项'];
 const TECHNICAL_LANGUAGE = [
   ['api', /\b(?:API|REST|GraphQL|HTTP|JSON)\b/i],
@@ -14,24 +10,6 @@ const TECHNICAL_LANGUAGE = [
   ['implementation', /\b(?:localStorage|Kafka|Docker|JWT|OAuth|微服务|消息队列|事务|幂等)\b/i],
   ['engineering-metric', /\b(?:P95|QPS|TPS)\b/i],
 ];
-
-function parseArgs(argv) {
-  const args = { workspace: process.cwd(), stage: 'finalize', json: false, strictWarnings: false };
-  for (let index = 0; index < argv.length; index += 1) {
-    const token = argv[index];
-    if (token === '--workspace') args.workspace = argv[++index];
-    else if (token === '--version') args.version = argv[++index];
-    else if (token === '--stage') args.stage = argv[++index];
-    else if (token === '--json') args.json = true;
-    else if (token === '--strict-warnings') args.strictWarnings = true;
-    else if (token === '--help' || token === '-h') args.help = true;
-    else throw new Error(`Unknown argument: ${token}`);
-  }
-  if (!STAGES.has(args.stage)) throw new Error(`Invalid --stage: ${args.stage}`);
-  if (!args.workspace) throw new Error('--workspace requires a value');
-  if (args.version && !VERSION_PATTERN.test(args.version)) throw new Error(`Invalid --version: ${args.version}`);
-  return args;
-}
 
 function compareVersions(left, right) {
   const a = left.slice(1).split('.').map(Number);
@@ -251,46 +229,3 @@ export function checkArtifacts({ workspace, version, stage = 'finalize', strictW
     warnings,
   };
 }
-
-function renderHuman(result) {
-  const lines = [
-    `oec-prd-check: ${result.ok ? 'pass' : 'fail'}`,
-    `stage: ${result.stage}`,
-    `version: ${result.version ?? '<none>'}`,
-  ];
-  for (const [label, entries] of [['errors', result.errors], ['warnings', result.warnings]]) {
-    if (entries.length === 0) continue;
-    lines.push(`${label}:`);
-    for (const entry of entries) lines.push(`- [${entry.code}] ${entry.path ? `${entry.path}: ` : ''}${entry.message}`);
-  }
-  return `${lines.join('\n')}\n`;
-}
-
-function usage() {
-  return 'Usage: check-artifacts.mjs --workspace <path> [--version vX.Y.Z] --stage finalize|pre-publish [--json] [--strict-warnings]\n';
-}
-
-function main() {
-  let args;
-  try {
-    args = parseArgs(process.argv.slice(2));
-  } catch (error) {
-    process.stderr.write(`${error.message}\n${usage()}`);
-    process.exit(2);
-  }
-  if (args.help) {
-    process.stdout.write(usage());
-    return;
-  }
-  let result;
-  try {
-    result = checkArtifacts(args);
-  } catch (error) {
-    process.stderr.write(`Unable to check artifacts: ${error.message}\n`);
-    process.exit(2);
-  }
-  process.stdout.write(args.json ? `${JSON.stringify(result, null, 2)}\n` : renderHuman(result));
-  process.exit(result.ok ? 0 : 1);
-}
-
-if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) main();

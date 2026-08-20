@@ -1,9 +1,4 @@
-#!/usr/bin/env node
-
-import { resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import * as z from 'zod/v4';
 import { AuthManager, redactSecrets } from './auth.mjs';
 import { E3Client } from './client.mjs';
@@ -79,16 +74,4 @@ export function createE3McpServer({ service } = {}) {
   }, guarded(async (input) => publisher.status(input, await rootsFor(mcpServer))));
 
   return mcpServer;
-}
-
-async function main() {
-  const server = createE3McpServer();
-  await server.connect(new StdioServerTransport());
-}
-
-if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  main().catch((error) => {
-    process.stderr.write(`E3 MCP server failed: ${redactSecrets(error.message)}\n`);
-    process.exitCode = 1;
-  });
 }

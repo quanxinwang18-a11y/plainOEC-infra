@@ -32,7 +32,7 @@ placeholder values.
 Before presenting an artifact as complete, run:
 
 ```bash
-node "${CLAUDE_SKILL_DIR}/scripts/check-artifacts.mjs" --workspace "$PWD" --version <vX.Y.Z> --stage pre-publish
+node "${CLAUDE_SKILL_DIR}/runtime/check-artifacts.mjs" --workspace "$PWD" --version <vX.Y.Z> --stage pre-publish
 ```
 
 Use `--stage finalize` before HANDOFF exists. Errors block completion; warnings require a concise

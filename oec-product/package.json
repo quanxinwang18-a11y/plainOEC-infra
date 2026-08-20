@@ -7,10 +7,13 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test"
+    "build": "node build-runtime.mjs",
+    "test": "node --test",
+    "verify": "npm run build && npm test"
   },
-  "dependencies": {
+  "devDependencies": {
     "@modelcontextprotocol/sdk": "1.30.0",
+    "esbuild": "0.28.2",
     "yaml": "2.9.0",
     "zod": "3.25.76"
   }

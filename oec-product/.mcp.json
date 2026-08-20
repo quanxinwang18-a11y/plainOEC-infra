@@ -2,7 +2,7 @@
   "mcpServers": {
     "e3": {
       "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/servers/e3/server.mjs"],
+      "args": ["${CLAUDE_PLUGIN_ROOT}/dist/e3-server.mjs"],
       "env": {
         "OEC_PLUGIN_DATA": "${CLAUDE_PLUGIN_DATA}"
       }
