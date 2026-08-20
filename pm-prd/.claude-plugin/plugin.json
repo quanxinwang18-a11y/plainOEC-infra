@@ -1,0 +1,10 @@
+{
+  "name": "pm-prd",
+  "version": "1.0.0",
+  "description": "PRD 全生命周期管理：从想法到版本增量 PRD、评审修订、收口到根 SSOT、拆分子 PRD、发布到 E3。",
+  "author": {
+    "name": "OEC"
+  },
+  "keywords": ["product-management", "prd", "requirements", "e3"],
+  "license": "MIT"
+}

@@ -1,0 +1,13 @@
+{
+  "name": "plainOEC-infra",
+  "version": "1.0.0",
+  "description": "OEC 基础设施 skill 市场。",
+  "plugins": [
+    {
+      "name": "pm-prd",
+      "description": "PRD 全生命周期管理：做需求、改需求、发布需求。含 PRD 结构、评审、E3 集成。",
+      "source": "./pm-prd",
+      "category": "product-management"
+    }
+  ]
+}

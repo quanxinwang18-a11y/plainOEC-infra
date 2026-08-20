@@ -1,10 +1,6 @@
----
-description: OEC PRD 变更日志格式——记录 prd-all.md 的每次修改。Use when updating prd-all-changelog.md, recording PRD amendments, or documenting changes to the root PRD.
----
+# Changelog Format
 
-# OEC PRD Changelog
-
-Every change to `prd-all.md` must be traceable. Parse the git diff, draft a summary, get PM confirmation, append.
+Every change to `prd-all.md` must be traceable.
 
 ## Entry Format
 
@@ -17,7 +13,7 @@ Every change to `prd-all.md` must be traceable. Parse the git diff, draft a summ
 ---
 ```
 
-Latest entry at the top. See `examples/changelog-entry.md` for a worked example.
+Latest entry at the top.
 
 ## Method
 
@@ -28,8 +24,21 @@ Latest entry at the top. See `examples/changelog-entry.md` for a worked example.
 5. Append to `prd-all-changelog.md` at the top.
 6. Remind PM to stage and commit both files.
 
+## Example
+
+```markdown
+## 2026-06-15 14:30:00 — 修订 (decider: 张三)
+
+**摘要**: 修订 §6 FR-013.5 扭蛋资格的续订宽限期描述（7天→14天），并补充 §8.1.1 的网络异常处理说明。
+
+**涉及子段**:
+- 会员 → FR-013.5 扭蛋资格与频次 (modified)
+- 会员 → 8.1.1 网络异常处理 (added)
+---
+```
+
 ## Notes
 
-- Version finalize changelog entries are written by `oec-prd-finalize`, not this skill.
+- Version finalize changelog entries are written by the finalize step, not this format.
 - Multiple amendments → multiple entries. No deduplication. Every change is traceable.
 - Changelog doesn't exist yet → create it with a header, then append.
