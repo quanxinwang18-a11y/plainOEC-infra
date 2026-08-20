@@ -58,7 +58,7 @@ test('plugin relies on native discovery and has no forbidden root component fram
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-product');
   assert.equal(manifest.version, '2.1.0');
-  const packageManifest = JSON.parse(readFileSync(resolve(pluginRoot, 'package.json'), 'utf8'));
+  const packageManifest = JSON.parse(readFileSync(resolve(pluginRoot, '..', 'package.json'), 'utf8'));
   assert.equal(packageManifest.version, manifest.version);
   const marketplace = JSON.parse(readFileSync(resolve(pluginRoot, '..', '.claude-plugin', 'marketplace.json'), 'utf8'));
   assert.equal(marketplace.version, manifest.version);

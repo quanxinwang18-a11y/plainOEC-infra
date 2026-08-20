@@ -1,5 +1,5 @@
 {
-  "name": "@oec/oec-product-plugin",
+  "name": "@oec/plain-oec-infra",
   "version": "2.1.0",
   "private": true,
   "type": "module",

@@ -1,7 +1,10 @@
 import { build } from 'esbuild';
+import { resolve } from 'node:path';
+
+const pluginRoot = resolve(import.meta.dirname, 'oec-product');
 
 const common = {
-  absWorkingDir: import.meta.dirname,
+  absWorkingDir: pluginRoot,
   bundle: true,
   platform: 'node',
   format: 'esm',
