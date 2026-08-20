@@ -7,6 +7,7 @@ import {
   isE3Success,
   normalizeRequirement,
   normalizeTask,
+  selectMetadataOption,
 } from '../client.mjs';
 
 test('E3 success classifier accepts known codes and rejects permission errors', () => {
@@ -31,6 +32,20 @@ test('E3 requirement and task responses normalize identity fields', () => {
   assert.deepEqual(normalizeTask({ id: 34, name: 'Task', storyId: 12 }), {
     id: '34', title: 'Task', requirementId: '12',
   });
+});
+
+test('E3 metadata selection requires a unique candidate or unique default', () => {
+  assert.equal(selectMetadataOption([{ value: 'only' }], 'rdManager').value, 'only');
+  assert.equal(selectMetadataOption([
+    { value: 'a', isDefault: false },
+    { value: 'b', isDefault: true },
+  ], 'rdManager').value, 'b');
+  assert.equal(selectMetadataOption([{ value: 'a' }, { value: 'b' }], 'rdManager').value, undefined);
+  assert.equal(selectMetadataOption([
+    { value: 'a', isDefault: true },
+    { value: 'b', isDefault: true },
+  ], 'rdManager').warnings[0].code, 'e3-metadata-ambiguous');
+  assert.equal(selectMetadataOption([], 'qaManager').warnings[0].code, 'e3-metadata-ambiguous');
 });
 
 test('E3 client keeps business APIs under fixed /cyxt origin and CCF APIs at the portal origin', async () => {

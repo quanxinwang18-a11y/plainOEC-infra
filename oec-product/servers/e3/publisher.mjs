@@ -29,6 +29,12 @@ function normalizeWarnings(...groups) {
   ));
 }
 
+function automaticPompProject(projects) {
+  if (projects.length === 1) return projects[0];
+  const defaults = projects.filter((item) => item.isDefault);
+  return defaults.length === 1 ? defaults[0] : null;
+}
+
 async function loadValidatedPublishArtifacts(workspace, requestedVersion) {
   const gate = checkArtifacts({ workspace, version: requestedVersion, stage: 'pre-publish' });
   if (!gate.ok) {
@@ -421,7 +427,7 @@ export class PublisherService {
       };
     }
     const config = await loadConfig(this.dataDirectory);
-    if (!config?.productSpace || !config?.pompProject) {
+    if (!config?.productSpace) {
       const spaces = await this.client.listSpaces();
       await atomicJson(candidatesPath(this.dataDirectory), {
         expiresAt: this.now() + PLAN_TTL_MS,
@@ -429,11 +435,32 @@ export class PublisherService {
       });
       return { status: 'needs_space_selection', version: artifacts.version, spaces };
     }
+    if (!config.pompProject) {
+      const spaces = await this.client.listSpaces();
+      const currentSpace = spaces.find((item) => String(item.id) === String(config.productSpace.id));
+      if (!currentSpace) {
+        return { status: 'blocked', version: artifacts.version, errors: ['Selected E3 product space is no longer available'] };
+      }
+      await atomicJson(candidatesPath(this.dataDirectory), {
+        expiresAt: this.now() + PLAN_TTL_MS,
+        spaces,
+      });
+      const projects = await this.client.listPompProjects(currentSpace.id);
+      if (projects.length === 0) {
+        return { status: 'blocked', version: artifacts.version, errors: ['no-pomp-projects: selected E3 space has no POMP projects'] };
+      }
+      return {
+        status: 'needs_pomp_selection',
+        version: artifacts.version,
+        productSpace: currentSpace.name,
+        pompProjects: projects,
+      };
+    }
     try {
       const mappingResult = await readMapping(workspace, artifacts.version);
       const compatibility = mappingCompatibility(mappingResult.mapping, artifacts, config);
       const remote = await planRemoteObjects(this.client, config, artifacts.artifacts, compatibility.usableMapping);
-      const warnings = normalizeWarnings(artifacts.warnings, compatibility.warnings);
+      const warnings = normalizeWarnings(artifacts.warnings, compatibility.warnings, remote.metadata.warnings);
       const plan = {
         workspaceUri,
         workspace,
@@ -465,9 +492,10 @@ export class PublisherService {
     const space = candidates.spaces.find((item) => String(item.id) === String(spaceId));
     if (!space) throw new Error('spaceId was not returned by the most recent prepare call');
     const projects = await this.client.listPompProjects(space.id);
+    if (projects.length === 0) throw new Error('no-pomp-projects: selected E3 space has no POMP projects');
     let selected = pompProjectCode
       ? projects.find((item) => item.code === String(pompProjectCode))
-      : projects.find((item) => item.isDefault) ?? (projects.length === 1 ? projects[0] : null);
+      : automaticPompProject(projects);
     if (pompProjectCode && !selected) throw new Error('pompProjectCode is not a candidate for the selected space');
     if (!selected) {
       await atomicJson(configPath(this.dataDirectory), { productSpace: space, pendingPompSelection: true });
@@ -489,7 +517,8 @@ export class PublisherService {
 
     const existing = await readMapping(workspace, artifacts.version);
     const compatibility = mappingCompatibility(existing.mapping, artifacts, config);
-    const warnings = normalizeWarnings(artifacts.warnings, compatibility.warnings);
+    const metadata = await this.client.requirementMetadata(config.productSpace.id);
+    const warnings = normalizeWarnings(artifacts.warnings, compatibility.warnings, metadata.warnings);
     let mapping = compatibility.adoption || !compatibility.usableMapping
       ? adoptMappingCheckpoints(newMapping({
         version: artifacts.version,
@@ -506,7 +535,6 @@ export class PublisherService {
     mapping = checkpoint.mapping;
     const changes = [];
     try {
-      const metadata = await this.client.requirementMetadata(config.productSpace.id);
       for (const artifact of artifacts.artifacts) {
         const mappingItem = mapping.requirements.find((item) => item.featureName === artifact.featureName);
         const requirement = await reconcileRequirement(this.client, config, metadata, artifact, mappingItem);

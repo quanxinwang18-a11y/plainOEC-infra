@@ -94,6 +94,25 @@ function optionsFrom(data, fieldKey) {
   return data.options ?? data.data ?? data.list ?? [];
 }
 
+function isDefaultOption(option) {
+  return option?.isDefault === true || option?.isDefault === 1 || option?.isDefault === '1';
+}
+
+export function selectMetadataOption(options, fieldKey) {
+  const values = (options ?? []).filter((item) => item?.value !== undefined && item?.value !== null);
+  const defaults = values.filter(isDefaultOption);
+  if (defaults.length === 1) return { value: defaults[0].value, warnings: [] };
+  if (values.length === 1) return { value: values[0].value, warnings: [] };
+  const reason = values.length === 0 ? 'has no candidate' : 'has no unique default';
+  return {
+    value: undefined,
+    warnings: [{
+      code: 'e3-metadata-ambiguous',
+      message: `${fieldKey} ${reason}; the field will be omitted`,
+    }],
+  };
+}
+
 export class E3Client {
   constructor({ auth = new AuthManager(), fetchFn = fetch } = {}) {
     this.auth = auth;
@@ -153,7 +172,7 @@ export class E3Client {
     return (Array.isArray(data) ? data : []).map((item) => ({
       code: String(item.dictKey),
       name: item.dictValue,
-      isDefault: item.isDefault === true,
+      isDefault: isDefaultOption(item),
     })).filter((item) => item.code && item.name);
   }
 
@@ -203,20 +222,24 @@ export class E3Client {
       this.currentAccount(),
     ]);
     const flowDefinition = Array.isArray(flows) ? flows[0]?.key : null;
-    const pomProjectId = pomOptions[0]?.value;
+    const pomSelection = selectMetadataOption(pomOptions, 'pomProjectId');
+    const pomProjectId = pomSelection.value;
     if (!flowDefinition) throw new Error('E3 returned no system-requirement flow');
     if (!account) throw new Error('Unable to determine the current E3 account');
     const [rdOptions, qaOptions] = await Promise.all([
       this.listFieldOptions(spaceId, workItemId, 'rdManager', pomProjectId),
       this.listFieldOptions(spaceId, workItemId, 'qaManager', pomProjectId),
     ]);
+    const rdSelection = selectMetadataOption(rdOptions, 'rdManager');
+    const qaSelection = selectMetadataOption(qaOptions, 'qaManager');
     return {
       workItemId,
       flowDefinition,
       pomProjectId,
       inChargeBy: account,
-      rdManager: rdOptions[0]?.value,
-      qaManager: qaOptions[0]?.value,
+      rdManager: rdSelection.value,
+      qaManager: qaSelection.value,
+      warnings: [...pomSelection.warnings, ...rdSelection.warnings, ...qaSelection.warnings],
     };
   }
 

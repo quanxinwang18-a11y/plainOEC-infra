@@ -305,10 +305,60 @@ test('multiple POMP projects require selection from the latest candidate set', a
   await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
   const pending = await service.selectProductSpace({ spaceId: 'space-1' });
   assert.equal(pending.status, 'needs_pomp_selection');
+  const resumed = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  assert.equal(resumed.status, 'needs_pomp_selection');
+  assert.deepEqual(resumed.pompProjects.map((item) => item.code), ['pomp-a', 'pomp-b']);
   await assert.rejects(service.selectProductSpace({ spaceId: 'space-1', pompProjectCode: 'not-a-candidate' }), /not a candidate/);
   const selected = await service.selectProductSpace({ spaceId: 'space-1', pompProjectCode: 'pomp-b' });
   assert.equal(selected.status, 'selected');
   assert.equal(selected.pompProject, 'Project B');
+  assert.equal((await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots)).status, 'ready');
+});
+
+test('POMP auto-selection requires exactly one candidate or exactly one default', async () => {
+  const value = await fixture();
+  const client = new FakeE3Client();
+  const service = new PublisherService({ client, dataDirectory: value.dataDirectory });
+  await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+
+  client.projects = [
+    { code: 'pomp-a', name: 'Project A', isDefault: false },
+    { code: 'pomp-b', name: 'Project B', isDefault: true },
+  ];
+  assert.equal((await service.selectProductSpace({ spaceId: 'space-1' })).pompProject, 'Project B');
+
+  const second = await fixture();
+  const ambiguousClient = new FakeE3Client();
+  ambiguousClient.projects = [
+    { code: 'pomp-a', name: 'Project A', isDefault: true },
+    { code: 'pomp-b', name: 'Project B', isDefault: true },
+  ];
+  const ambiguousService = new PublisherService({ client: ambiguousClient, dataDirectory: second.dataDirectory });
+  await ambiguousService.prepare({ workspaceUri: second.workspaceUri, version: 'v1.2.3' }, second.roots);
+  assert.equal((await ambiguousService.selectProductSpace({ spaceId: 'space-1' })).status, 'needs_pomp_selection');
+
+  const third = await fixture();
+  const emptyClient = new FakeE3Client();
+  emptyClient.projects = [];
+  const emptyService = new PublisherService({ client: emptyClient, dataDirectory: third.dataDirectory });
+  await emptyService.prepare({ workspaceUri: third.workspaceUri, version: 'v1.2.3' }, third.roots);
+  await assert.rejects(emptyService.selectProductSpace({ spaceId: 'space-1' }), /no-pomp-projects/);
+});
+
+test('prepare surfaces E3 metadata ambiguity without guessing a field value', async () => {
+  const value = await fixture();
+  const client = new FakeE3Client();
+  client.requirementMetadata = async () => ({
+    workItemId: 12,
+    flowDefinition: 'flow-1',
+    inChargeBy: 'owner',
+    warnings: [{ code: 'e3-metadata-ambiguous', message: 'rdManager has no unique default; the field will be omitted' }],
+  });
+  const service = new PublisherService({ client, dataDirectory: value.dataDirectory });
+  await configure(service, value);
+  const prepared = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  assert.equal(prepared.status, 'ready');
+  assert.equal(prepared.warnings.some((warning) => warning.code === 'e3-metadata-ambiguous'), true);
 });
 
 test('exact-title duplicates block preparation instead of guessing', async () => {
