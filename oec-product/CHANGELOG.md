@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.2.1
+
+- Agent、Skills、supporting references 和 E3 MCP tool titles 直接描述能力与触发边界，不再使用
+  无定义的 `OEC` 限定词影响模型判断。
+- 增加模型判断面回归测试；`oec-product`、`oec-pm` 等技术标识与 Marketplace 品牌保持不变。
+
 ## 2.2.0
 
 - Marketplace 直接从 Git 仓库分发自足 runtime bundles，产品经理安装时不再需要 npm registry、

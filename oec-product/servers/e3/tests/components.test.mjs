@@ -81,7 +81,7 @@ test('writing assets cover the product SSOT and use safe exact-path commit synta
 test('plugin relies on native discovery and has no forbidden root component framework', () => {
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-product');
-  assert.equal(manifest.version, '2.2.0');
+  assert.equal(manifest.version, '2.2.1');
   const packageManifest = JSON.parse(readFileSync(resolve(pluginRoot, '..', 'package.json'), 'utf8'));
   assert.equal(packageManifest.version, manifest.version);
   assert.equal('dependencies' in packageManifest, false);

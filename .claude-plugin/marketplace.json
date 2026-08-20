@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "plainOEC-infra",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "OEC 面向 Claude Code 的组织级能力市场。",
   "owner": {
     "name": "OEC"
@@ -12,7 +12,7 @@
   "plugins": [
     {
       "name": "oec-product",
-      "version": "2.2.0",
+      "version": "2.2.1",
       "description": "OEC 产品管理能力：PRD 编写、红队评审以及通过 E3 发布需求。",
       "source": "./oec-product",
       "category": "product-management"
