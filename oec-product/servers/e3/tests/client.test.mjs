@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { E3Client, extractCreatedId, extractE3Data, isE3Success } from '../client.mjs';
+import {
+  E3Client,
+  extractCreatedId,
+  extractE3Data,
+  isE3Success,
+  normalizeRequirement,
+  normalizeTask,
+} from '../client.mjs';
 
 test('E3 success classifier accepts known codes and rejects permission errors', () => {
   for (const code of ['E00000000', '0', 0, '200', 200]) assert.equal(isE3Success({ code }), true);
@@ -14,6 +21,16 @@ test('E3 response adapters support info/data and known created-ID shapes', () =>
   assert.equal(extractCreatedId({ code: '200', data: [2064739] }, '/api/dm/story/v1/batchSave'), 2064739);
   assert.equal(extractCreatedId({ code: '0', data: [{ id: 12 }] }), 12);
   assert.equal(extractCreatedId({ code: '0', data: { taskId: 't-1' } }), 't-1');
+});
+
+test('E3 requirement and task responses normalize identity fields', () => {
+  assert.deepEqual(normalizeRequirement({
+    id: 12,
+    fieldInfoMap: { title: { value: 'Requirement' }, description: { value: '<p>Body</p>' } },
+  }), { id: '12', title: 'Requirement', description: '<p>Body</p>', priority: undefined });
+  assert.deepEqual(normalizeTask({ id: 34, name: 'Task', storyId: 12 }), {
+    id: '34', title: 'Task', requirementId: '12',
+  });
 });
 
 test('E3 client keeps business APIs under fixed /cyxt origin and CCF APIs at the portal origin', async () => {

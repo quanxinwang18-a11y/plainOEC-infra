@@ -247,6 +247,26 @@ function sameConfig(left, right) {
     && left?.pompProject?.code === right?.pompProject?.code;
 }
 
+function requirementUrl(spaceId, requirementId) {
+  return `${E3_ORIGIN}/cloud-work/cyxt/panshi/storyManageNew/detail/${requirementId}?productId=${spaceId}&flowType=2`;
+}
+
+function taskUrl(spaceId, taskId) {
+  return `${E3_ORIGIN}/cloud-work/cyxt/panshi/staticdata/statictask/${taskId}?productId=${spaceId}`;
+}
+
+function assertRemoteTitle(remote, expected, type) {
+  if (remote.title !== expected) {
+    throw new Error(`remote-object-drift: mapped ${type} ${remote.id} title differs from ${expected}`);
+  }
+}
+
+function assertTaskParent(task, requirementId) {
+  if (task.requirementId && String(task.requirementId) !== String(requirementId)) {
+    throw new Error(`remote-object-drift: mapped task ${task.id} belongs to another requirement`);
+  }
+}
+
 function mappingCompatibility(mapping, artifacts, config) {
   if (!mapping) return { usableMapping: null, adoption: false, warnings: [] };
   const mappedSpaceId = mapping.product_space?.id;
@@ -272,11 +292,30 @@ function mappingCompatibility(mapping, artifacts, config) {
   return { usableMapping: mapping, adoption: false, warnings: [] };
 }
 
-async function resolveMappedRequirement(client, config, metadata, mappingItem) {
+async function resolveMappedRequirement(client, config, metadata, mappingItem, expectedTitle) {
   const id = mappingItem?.e3_requirement?.id;
   if (!id) return null;
   const found = await client.getRequirement(config.productSpace.id, metadata.workItemId, id);
-  return found ? { id: String(id), title: mappingItem.e3_requirement.title, source: 'mapping' } : null;
+  if (!found) return null;
+  assertRemoteTitle(found, expectedTitle, 'requirement');
+  return { id: String(id), title: found.title, source: 'mapping' };
+}
+
+async function resolveTask(client, config, requirementId, story, mappingItem) {
+  const tasks = await client.listTasks(config.productSpace.id, requirementId);
+  const mappedId = mappingItem?.e3_task?.id;
+  if (mappedId) {
+    const mapped = tasks.find((item) => String(item.id) === String(mappedId));
+    if (mapped) {
+      assertRemoteTitle(mapped, story.remoteTitle, 'task');
+      assertTaskParent(mapped, requirementId);
+      return { ...mapped, source: 'mapping' };
+    }
+  }
+  const matches = tasks.filter((item) => item.title === story.remoteTitle);
+  if (matches.length > 1) throw new Error(`Ambiguous E3 tasks for exact title: ${story.remoteTitle}`);
+  if (matches[0]) assertTaskParent(matches[0], requirementId);
+  return matches[0] ?? null;
 }
 
 async function planRemoteObjects(client, config, artifacts, mapping) {
@@ -288,7 +327,7 @@ async function planRemoteObjects(client, config, artifacts, mapping) {
   let reuseTasks = 0;
   for (const artifact of artifacts) {
     const mapped = mapping?.requirements?.find((item) => item.featureName === artifact.featureName);
-    let requirement = await resolveMappedRequirement(client, config, metadata, mapped);
+    let requirement = await resolveMappedRequirement(client, config, metadata, mapped, artifact.remoteTitle);
     if (!requirement) {
       const matches = await client.findRequirementsByExactTitle(config.productSpace.id, artifact.remoteTitle);
       if (matches.length > 1) throw new Error(`Ambiguous E3 requirements for exact title: ${artifact.remoteTitle}`);
@@ -300,10 +339,8 @@ async function planRemoteObjects(client, config, artifacts, mapping) {
     for (const story of artifact.stories) {
       let task = null;
       if (requirement) {
-        const mappedTask = mapped?.story_tasks?.find((item) => item.story_id === story.id)?.e3_task;
-        const existing = await client.findTasksByExactTitle(config.productSpace.id, requirement.id, story.remoteTitle);
-        if (existing.length > 1) throw new Error(`Ambiguous E3 tasks for exact title: ${story.remoteTitle}`);
-        task = existing.find((item) => String(item.id) === String(mappedTask?.id)) ?? existing[0] ?? null;
+        const mappedTask = mapped?.story_tasks?.find((item) => item.story_id === story.id);
+        task = await resolveTask(client, config, requirement.id, story, mappedTask);
       }
       if (task) reuseTasks += 1;
       else createTasks += 1;
@@ -334,7 +371,7 @@ async function loadPlan(token, dataDirectory, now) {
 }
 
 async function reconcileRequirement(client, config, metadata, artifact, mappingItem) {
-  let found = await resolveMappedRequirement(client, config, metadata, mappingItem);
+  let found = await resolveMappedRequirement(client, config, metadata, mappingItem, artifact.remoteTitle);
   if (found) return { ...found, action: 'reused' };
   let matches = await client.findRequirementsByExactTitle(config.productSpace.id, artifact.remoteTitle);
   if (matches.length > 1) throw new Error(`Ambiguous E3 requirements for exact title: ${artifact.remoteTitle}`);
@@ -349,16 +386,14 @@ async function reconcileRequirement(client, config, metadata, artifact, mappingI
   }
 }
 
-async function reconcileTask(client, config, account, requirementId, story) {
-  let matches = await client.findTasksByExactTitle(config.productSpace.id, requirementId, story.remoteTitle);
-  if (matches.length > 1) throw new Error(`Ambiguous E3 tasks for exact title: ${story.remoteTitle}`);
-  if (matches.length === 1) return { ...matches[0], action: 'reused' };
+async function reconcileTask(client, config, account, requirementId, story, mappingItem) {
+  let found = await resolveTask(client, config, requirementId, story, mappingItem);
+  if (found) return { ...found, action: 'reused' };
   try {
     return { ...(await client.createTask(config.productSpace.id, requirementId, config, story, account)), action: 'created' };
   } catch (error) {
-    matches = await client.findTasksByExactTitle(config.productSpace.id, requirementId, story.remoteTitle);
-    if (matches.length === 1) return { ...matches[0], action: 'reused-after-unknown-result' };
-    if (matches.length > 1) throw new Error(`Task create result is ambiguous: ${story.remoteTitle}`);
+    found = await resolveTask(client, config, requirementId, story, null);
+    if (found) return { ...found, action: 'reused-after-unknown-result' };
     throw error;
   }
 }
@@ -478,7 +513,7 @@ export class PublisherService {
         mappingItem.e3_requirement = {
           id: requirement.id,
           title: artifact.remoteTitle,
-          url: `${E3_ORIGIN}/cloud-work/cyxt/panshi/storyManageNew/detail/${requirement.id}?productId=${config.productSpace.id}&flowType=2`,
+          url: requirementUrl(config.productSpace.id, requirement.id),
           action: requirement.action,
         };
         changes.push({ type: 'requirement', featureName: artifact.featureName, ...requirement });
@@ -486,9 +521,14 @@ export class PublisherService {
         mapping = checkpoint.mapping;
 
         for (const story of artifact.stories) {
-          const task = await reconcileTask(this.client, config, metadata.inChargeBy, requirement.id, story);
           const taskItem = mappingItem.story_tasks.find((item) => item.story_id === story.id);
-          taskItem.e3_task = { id: task.id, title: story.remoteTitle, action: task.action };
+          const task = await reconcileTask(this.client, config, metadata.inChargeBy, requirement.id, story, taskItem);
+          taskItem.e3_task = {
+            id: task.id,
+            title: story.remoteTitle,
+            url: taskUrl(config.productSpace.id, task.id),
+            action: task.action,
+          };
           changes.push({ type: 'task', storyId: story.id, ...task });
           checkpoint = await writeMapping(workspace, artifacts.version, mapping);
           mapping = checkpoint.mapping;
@@ -507,7 +547,7 @@ export class PublisherService {
 
   async status({ workspaceUri, version }, roots) {
     const workspace = await resolveAuthorizedWorkspace(workspaceUri, roots);
-    const artifacts = await loadPublishArtifacts(workspace, version);
+    const artifacts = await loadValidatedPublishArtifacts(workspace, version);
     const config = await loadConfig(this.dataDirectory);
     if (!config?.productSpace || !config?.pompProject) return { status: 'blocked', errors: ['E3 product space is not configured'] };
     const { path, mapping } = await readMapping(workspace, artifacts.version);
@@ -515,37 +555,62 @@ export class PublisherService {
     if (mapping.artifact_fingerprint && mapping.artifact_fingerprint !== artifacts.fingerprint) {
       return { status: 'blocked', mappingPath: path, errors: ['Mapping artifact fingerprint does not match current PRDs'] };
     }
+    if (mapping.product_space?.id && String(mapping.product_space.id) !== String(config.productSpace.id)) {
+      return { status: 'blocked', mappingPath: path, errors: ['mapping-space-mismatch: mapping and E3 configuration use different spaces'] };
+    }
     const metadata = await this.client.requirementMetadata(config.productSpace.id);
     const objects = [];
     let complete = true;
+    let drifted = false;
+    const legacyMapping = !mapping.artifact_fingerprint;
     for (const requirement of mapping.requirements) {
+      const artifact = artifacts.artifacts.find((item) => item.featureName === requirement.featureName);
       const requirementId = requirement.e3_requirement?.id;
-      const exists = requirementId
-        ? Boolean(await this.client.getRequirement(config.productSpace.id, metadata.workItemId, requirementId))
-        : false;
+      const remoteRequirement = requirementId
+        ? await this.client.getRequirement(config.productSpace.id, metadata.workItemId, requirementId)
+        : null;
+      const exists = Boolean(remoteRequirement);
+      const expectedRequirementTitle = artifact?.remoteTitle ?? requirement.e3_requirement?.title;
+      const requirementDrifted = exists && remoteRequirement.title !== expectedRequirementTitle;
       if (!exists) complete = false;
+      if (requirementDrifted) drifted = true;
       objects.push({
         type: 'requirement',
         featureName: requirement.featureName,
         id: requirementId,
         action: requirement.e3_requirement?.action ?? 'unknown',
-        state: exists ? 'verified' : 'missing',
+        url: requirementId ? requirementUrl(config.productSpace.id, requirementId) : undefined,
+        state: requirementDrifted ? 'drifted' : (exists ? 'verified' : 'missing'),
       });
       const remoteTasks = exists ? await this.client.listTasks(config.productSpace.id, requirementId) : [];
       for (const task of requirement.story_tasks ?? []) {
+        const expectedStory = artifact?.stories.find((item) => item.id === task.story_id);
         const id = task.e3_task?.id;
-        const taskExists = id && remoteTasks.some((item) => String(item.id ?? item.taskId) === String(id));
+        const remoteTask = id ? remoteTasks.find((item) => String(item.id) === String(id)) : null;
+        const taskExists = Boolean(remoteTask);
+        const taskDrifted = taskExists && (
+          remoteTask.title !== (expectedStory?.remoteTitle ?? task.e3_task?.title)
+          || (remoteTask.requirementId && String(remoteTask.requirementId) !== String(requirementId))
+        );
         if (!taskExists) complete = false;
+        if (taskDrifted) drifted = true;
         objects.push({
           type: 'task',
           storyId: task.story_id,
           id,
           action: task.e3_task?.action ?? 'unknown',
-          state: taskExists ? 'verified' : 'missing',
+          url: id ? taskUrl(config.productSpace.id, id) : undefined,
+          state: taskDrifted ? 'drifted' : (taskExists ? 'verified' : 'missing'),
         });
       }
     }
-    const status = complete && mappingIsComplete(mapping) ? 'published' : 'partial';
-    return { status, mappingPath: path, counts: mappingCounts(mapping), objects };
+    const status = drifted
+      ? 'blocked'
+      : (complete && mappingIsComplete(mapping) && !legacyMapping ? 'published' : 'partial');
+    const warnings = legacyMapping ? [{
+      code: 'legacy-mapping-adoption',
+      message: 'Legacy E3 mapping is identity-verified but is not bound to the current artifact fingerprint',
+    }] : [];
+    return { status, mappingPath: path, counts: mappingCounts(mapping), objects, warnings };
   }
 }

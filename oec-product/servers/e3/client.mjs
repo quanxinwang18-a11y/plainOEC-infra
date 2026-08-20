@@ -52,6 +52,32 @@ function fieldValue(item, key) {
   return value ?? item?.[key];
 }
 
+export function normalizeRequirement(item, fallbackId) {
+  if (!item || typeof item !== 'object') return null;
+  const id = item.id ?? fieldValue(item, 'id') ?? fallbackId;
+  const title = fieldValue(item, 'title') ?? item.title;
+  if (id === undefined || id === null) return null;
+  return {
+    id: String(id),
+    title: title === undefined || title === null ? '' : String(title),
+    description: fieldValue(item, 'description') ?? item.description,
+    priority: fieldValue(item, 'priority') ?? item.priority,
+  };
+}
+
+export function normalizeTask(item) {
+  if (!item || typeof item !== 'object') return null;
+  const id = item.id ?? item.taskId;
+  const title = item.name ?? item.taskName ?? item.title;
+  if (id === undefined || id === null) return null;
+  const requirementId = item.storyId ?? item.requirementId ?? item.parentStoryId;
+  return {
+    id: String(id),
+    title: title === undefined || title === null ? '' : String(title),
+    ...(requirementId === undefined || requirementId === null ? {} : { requirementId: String(requirementId) }),
+  };
+}
+
 function listFromPage(data) {
   if (Array.isArray(data)) return data;
   return data?.list ?? data?.records ?? data?.info ?? [];
@@ -199,10 +225,7 @@ export class E3Client {
       query: { productId: spaceId },
       body: { productId: spaceId, curPage: 1, pageSize: 100, searchKeyword: title },
     });
-    return listFromPage(data).filter((item) => fieldValue(item, 'title') === title).map((item) => ({
-      id: String(item.id ?? fieldValue(item, 'id')),
-      title,
-    }));
+    return listFromPage(data).map((item) => normalizeRequirement(item)).filter((item) => item?.title === title);
   }
 
   async getRequirement(spaceId, workItemId, requirementId) {
@@ -210,7 +233,7 @@ export class E3Client {
       const { data } = await this.request('GET', `/api/dm/story/v1/${requirementId}/info`, {
         query: { workItemId, productId: spaceId },
       });
-      return data ?? null;
+      return normalizeRequirement(data, requirementId);
     } catch (error) {
       if (/HTTP 404|not found/i.test(error.message)) return null;
       throw error;
@@ -248,13 +271,12 @@ export class E3Client {
         condition: { storyId: [requirementId], storyIds: [requirementId], productId: [spaceId] },
       },
     });
-    return listFromPage(data);
+    return listFromPage(data).map(normalizeTask).filter(Boolean);
   }
 
   async findTasksByExactTitle(spaceId, requirementId, title) {
     return (await this.listTasks(spaceId, requirementId))
-      .filter((item) => (item.name ?? item.taskName) === title)
-      .map((item) => ({ id: String(item.id ?? item.taskId), title }));
+      .filter((item) => item.title === title);
   }
 
   async createTask(spaceId, requirementId, config, story, account) {

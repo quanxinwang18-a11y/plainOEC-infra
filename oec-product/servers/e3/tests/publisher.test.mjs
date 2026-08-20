@@ -97,7 +97,7 @@ class FakeE3Client {
   }
   async createTask(_spaceId, requirementId, _config, story) {
     if (story.id === this.failStoryId) throw new Error('task creation failed');
-    const item = { id: `t-${this.nextTask++}`, title: story.remoteTitle };
+    const item = { id: `t-${this.nextTask++}`, title: story.remoteTitle, requirementId: String(requirementId) };
     const tasks = this.tasks.get(String(requirementId)) ?? [];
     tasks.push(item);
     this.tasks.set(String(requirementId), tasks);
@@ -149,14 +149,70 @@ test('prepare is read-only, execute recovers an unknown POST result, and status 
   const verified = await service.status({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
   assert.equal(verified.status, 'published');
   assert.equal(verified.objects.every((item) => item.state === 'verified'), true);
+  assert.equal(verified.objects.every((item) => item.url?.startsWith('https://one.iflytek.com/')), true);
 
   const mappingResult = await readMapping(value.workspace, 'v1.2.3');
+  assert.match(mappingResult.mapping.requirements[0].e3_requirement.url, /storyManageNew\/detail\/r-1/);
+  assert.match(mappingResult.mapping.requirements[0].story_tasks[0].e3_task.url, /statictask\/t-1\?productId=space-1/);
   mappingResult.mapping.sync_state = 'partial';
   const mappingFile = join(value.workspace, mappingResult.path);
   await writeFile(mappingFile, YAML.stringify(mappingResult.mapping));
   const beforeStatus = await readFile(mappingFile, 'utf8');
   assert.equal((await service.status({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots)).status, 'published');
   assert.equal(await readFile(mappingFile, 'utf8'), beforeStatus, 'status tool must not mutate mapping');
+});
+
+test('mapped remote identity drift blocks planning and status', async () => {
+  const value = await fixture();
+  const client = new FakeE3Client();
+  const service = new PublisherService({ client, dataDirectory: value.dataDirectory });
+  await configure(service, value);
+  const plan = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  assert.equal((await service.execute({ planToken: plan.planToken }, value.roots)).status, 'published');
+
+  client.requirements[0].title = 'Changed remotely';
+  const requirementDrift = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  assert.equal(requirementDrift.status, 'blocked');
+  assert.match(requirementDrift.errors.join('\n'), /remote-object-drift/);
+  let verified = await service.status({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  assert.equal(verified.status, 'blocked');
+  assert.equal(verified.objects.find((item) => item.type === 'requirement').state, 'drifted');
+
+  client.requirements[0].title = '[v1.2.3] Alpha module';
+  const task = [...client.tasks.values()][0][0];
+  task.requirementId = 'another-requirement';
+  const taskDrift = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  assert.equal(taskDrift.status, 'blocked');
+  assert.match(taskDrift.errors.join('\n'), /remote-object-drift/);
+  verified = await service.status({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  assert.equal(verified.status, 'blocked');
+  assert.equal(verified.objects.find((item) => item.type === 'task').state, 'drifted');
+});
+
+test('a legacy mapping requires confirmed adoption before publication is current', async () => {
+  const value = await fixture();
+  const client = new FakeE3Client();
+  const service = new PublisherService({ client, dataDirectory: value.dataDirectory });
+  await configure(service, value);
+  const initialPlan = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  assert.equal((await service.execute({ planToken: initialPlan.planToken }, value.roots)).status, 'published');
+
+  const result = await readMapping(value.workspace, 'v1.2.3');
+  delete result.mapping.artifact_fingerprint;
+  delete result.mapping.product_space;
+  result.mapping.schema_version = 1;
+  await writeFile(join(value.workspace, result.path), YAML.stringify(result.mapping));
+  const beforeAdoption = await service.status({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  assert.equal(beforeAdoption.status, 'partial');
+  assert.equal(beforeAdoption.warnings[0].code, 'legacy-mapping-adoption');
+
+  const adoption = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  assert.equal(adoption.status, 'ready');
+  assert.equal(adoption.warnings.some((warning) => warning.code === 'legacy-mapping-adoption'), true);
+  assert.equal((await service.execute({ planToken: adoption.planToken }, value.roots)).status, 'published');
+  const adopted = await readMapping(value.workspace, 'v1.2.3');
+  assert.equal(adopted.mapping.schema_version, 2);
+  assert.match(adopted.mapping.artifact_fingerprint, /^sha256:/);
 });
 
 test('partial mapping checkpoints resume without duplicate objects', async () => {
