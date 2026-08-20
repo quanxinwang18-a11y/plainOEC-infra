@@ -12,9 +12,10 @@ Publish only an already finalized version. Do not write or re-split PRD content 
 1. Call the bundled E3 MCP tool `prepare_prd_publish` with the current workspace root and the version
    from `$ARGUMENTS`, or omit the version to use the latest valid version.
 2. If it returns `needs_space_selection`, show only the candidate space names, obtain the user's
-   choice, and call `select_product_space`. If that returns `needs_pomp_selection`, show the POMP
-   project names, obtain the user's choice, and call the same tool with the original `spaceId` and
-   the selected `pompProjectCode`. Then prepare again.
+   choice, and call `select_product_space` with the returned `selectionToken` and chosen `spaceId`.
+   If that returns `needs_pomp_selection`, show the POMP project names, obtain the user's choice,
+   and call the same tool with that response's `selectionToken`, the original `spaceId`, and the
+   selected `pompProjectCode`. Then prepare again.
 3. If it returns `blocked`, report the exact artifact or configuration problems and stop.
 4. For `ready`, show the product-space name, requirements to create or reuse, story tasks to create
    or reuse, and warnings. Ask for explicit confirmation of that plan.

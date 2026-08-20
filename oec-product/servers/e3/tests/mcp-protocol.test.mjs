@@ -12,8 +12,8 @@ test('MCP protocol exposes four tools and forwards client roots to guarded opera
       observed.push({ operation: 'prepare', input, roots });
       return { status: 'ready', planToken: 'x'.repeat(43) };
     },
-    async selectProductSpace(input) {
-      observed.push({ operation: 'select', input });
+    async selectProductSpace(input, roots) {
+      observed.push({ operation: 'select', input, roots });
       return { status: 'selected' };
     },
     async execute(input, roots) {
@@ -52,7 +52,10 @@ test('MCP protocol exposes four tools and forwards client roots to guarded opera
       arguments: { workspaceUri: 'file:///authorized/workspace', version: 'v1.2.3' },
     });
     assert.equal(prepared.structuredContent.status, 'ready');
-    await client.callTool({ name: 'select_product_space', arguments: { spaceId: 'space-1' } });
+    await client.callTool({
+      name: 'select_product_space',
+      arguments: { selectionToken: 's'.repeat(43), spaceId: 'space-1' },
+    });
     await client.callTool({ name: 'execute_prd_publish', arguments: { planToken: 'x'.repeat(43) } });
     await client.callTool({
       name: 'get_prd_publish_status',

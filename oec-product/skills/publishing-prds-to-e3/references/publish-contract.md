@@ -17,3 +17,8 @@
   parent relationships are verified and the user confirms adoption into schema v2.
 - A POMP project is selected automatically only when it is the sole candidate or the sole explicit
   default. Otherwise the user chooses from the current E3 candidates; an empty list blocks publishing.
+- Product-space and POMP selections use a 15-minute opaque token bound to the authorized workspace
+  and returned candidates. A selection from one workspace cannot configure another workspace.
+- Status verifies schema v2 mappings in their recorded product space even if current workspace
+  configuration is absent or different. A legacy mapping without a recorded space needs workspace
+  configuration for diagnosis and cannot report `published` before confirmed adoption.

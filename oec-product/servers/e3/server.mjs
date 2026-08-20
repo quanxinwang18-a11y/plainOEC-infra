@@ -51,13 +51,14 @@ export function createE3McpServer({ service } = {}) {
 
   mcpServer.registerTool('select_product_space', {
     title: 'Select E3 product space',
-    description: 'Persist a product space returned by the most recent publication preparation.',
+    description: 'Persist a workspace-bound product space returned by publication preparation.',
     inputSchema: {
+      selectionToken: z.string().min(32),
       spaceId: z.string().min(1),
       pompProjectCode: z.string().min(1).optional(),
     },
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
-  }, guarded((input) => publisher.selectProductSpace(input)));
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+  }, guarded(async (input) => publisher.selectProductSpace(input, await rootsFor(mcpServer))));
 
   mcpServer.registerTool('execute_prd_publish', {
     title: 'Execute OEC PRD publication',

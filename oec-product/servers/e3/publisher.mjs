@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { mkdir, readFile, readdir, realpath, rename, stat, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import YAML from 'yaml';
 import { checkArtifacts } from '../../skills/writing-prds/scripts/check-artifacts.mjs';
 import { E3_ORIGIN } from './auth.mjs';
@@ -17,6 +17,7 @@ import {
 
 const VERSION_PATTERN = /^v\d+\.\d+\.\d+$/;
 const PLAN_TTL_MS = 15 * 60 * 1000;
+const TOKEN_PATTERN = /^[A-Za-z0-9_-]{32,}$/;
 
 function formatIssue(issue) {
   if (typeof issue === 'string') return issue;
@@ -51,16 +52,21 @@ function pluginDataRoot(value = process.env.OEC_PLUGIN_DATA) {
   return resolve(value, 'e3');
 }
 
-function configPath(dataDirectory) {
-  return join(pluginDataRoot(dataDirectory), 'config.json');
+function workspaceKey(workspace) {
+  return createHash('sha256').update(workspace).digest('hex');
 }
 
-function candidatesPath(dataDirectory) {
-  return join(pluginDataRoot(dataDirectory), 'space-candidates.json');
+function configPath(workspace, dataDirectory) {
+  return join(pluginDataRoot(dataDirectory), 'workspaces', workspaceKey(workspace), 'config.json');
+}
+
+function selectionPath(token, dataDirectory) {
+  if (!TOKEN_PATTERN.test(token)) throw new Error('Invalid selection token');
+  return join(pluginDataRoot(dataDirectory), 'selections', `${token}.json`);
 }
 
 function planPath(token, dataDirectory) {
-  if (!/^[A-Za-z0-9_-]{32,}$/.test(token)) throw new Error('Invalid plan token');
+  if (!TOKEN_PATTERN.test(token)) throw new Error('Invalid plan token');
   return join(pluginDataRoot(dataDirectory), 'plans', `${token}.json`);
 }
 
@@ -244,8 +250,8 @@ export async function loadPublishArtifacts(workspace, requestedVersion) {
   return { version, handoffPath, artifacts, warnings, fingerprint: artifactFingerprint(files) };
 }
 
-async function loadConfig(dataDirectory) {
-  return readJson(configPath(dataDirectory));
+async function loadConfig(workspace, dataDirectory) {
+  return readJson(configPath(workspace, dataDirectory));
 }
 
 function sameConfig(left, right) {
@@ -372,6 +378,25 @@ async function storePlan(plan, dataDirectory) {
   return token;
 }
 
+async function storeSelection(selection, dataDirectory, token = randomBytes(32).toString('base64url')) {
+  await atomicJson(selectionPath(token, dataDirectory), selection);
+  return token;
+}
+
+async function loadSelection(token, dataDirectory, now) {
+  const selection = await readJson(selectionPath(token, dataDirectory));
+  if (!selection) throw new Error('Selection does not exist');
+  if (selection.expiresAt <= now) throw new Error('Selection expired; prepare again');
+  if (selection.usedAt) throw new Error('Selection has already been completed');
+  return selection;
+}
+
+async function assertSelectionWorkspace(selection, roots) {
+  const workspace = await resolveAuthorizedWorkspace(pathToFileURL(selection.workspace).href, roots);
+  if (workspace !== selection.workspace) throw new Error('Selection workspace changed after prepare');
+  return workspace;
+}
+
 async function loadPlan(token, dataDirectory, now) {
   const plan = await readJson(planPath(token, dataDirectory));
   if (!plan) throw new Error('Publish plan does not exist');
@@ -429,14 +454,24 @@ export class PublisherService {
         errors: (error.issues ?? [error.message]).map(formatIssue),
       };
     }
-    const config = await loadConfig(this.dataDirectory);
+    const config = await loadConfig(workspace, this.dataDirectory);
     if (!config?.productSpace) {
       const spaces = await this.client.listSpaces();
-      await atomicJson(candidatesPath(this.dataDirectory), {
-        expiresAt: this.now() + PLAN_TTL_MS,
-        spaces,
-      });
-      return { status: 'needs_space_selection', version: artifacts.version, spaces };
+      const expiresAt = this.now() + PLAN_TTL_MS;
+      const selectionToken = await storeSelection({
+        workspace,
+        phase: 'space',
+        candidates: spaces,
+        createdAt: this.now(),
+        expiresAt,
+      }, this.dataDirectory);
+      return {
+        status: 'needs_space_selection',
+        version: artifacts.version,
+        selectionToken,
+        expiresAt: new Date(expiresAt).toISOString(),
+        candidates: spaces,
+      };
     }
     if (!config.pompProject) {
       const spaces = await this.client.listSpaces();
@@ -444,19 +479,27 @@ export class PublisherService {
       if (!currentSpace) {
         return { status: 'blocked', version: artifacts.version, errors: ['Selected E3 product space is no longer available'] };
       }
-      await atomicJson(candidatesPath(this.dataDirectory), {
-        expiresAt: this.now() + PLAN_TTL_MS,
-        spaces,
-      });
       const projects = await this.client.listPompProjects(currentSpace.id);
       if (projects.length === 0) {
         return { status: 'blocked', version: artifacts.version, errors: ['no-pomp-projects: selected E3 space has no POMP projects'] };
       }
+      const expiresAt = this.now() + PLAN_TTL_MS;
+      const selectionToken = await storeSelection({
+        workspace,
+        phase: 'pomp',
+        selectedSpace: currentSpace,
+        candidates: projects,
+        createdAt: this.now(),
+        expiresAt,
+      }, this.dataDirectory);
       return {
         status: 'needs_pomp_selection',
         version: artifacts.version,
+        selectionToken,
+        expiresAt: new Date(expiresAt).toISOString(),
+        spaceId: String(currentSpace.id),
         productSpace: currentSpace.name,
-        pompProjects: projects,
+        candidates: projects,
       };
     }
     try {
@@ -489,23 +532,55 @@ export class PublisherService {
     }
   }
 
-  async selectProductSpace({ spaceId, pompProjectCode }) {
-    const candidates = await readJson(candidatesPath(this.dataDirectory));
-    if (!candidates || candidates.expiresAt <= this.now()) throw new Error('Space candidates expired; prepare again');
-    const space = candidates.spaces.find((item) => String(item.id) === String(spaceId));
-    if (!space) throw new Error('spaceId was not returned by the most recent prepare call');
+  async selectProductSpace({ selectionToken, spaceId, pompProjectCode }, roots) {
+    const selection = await loadSelection(selectionToken, this.dataDirectory, this.now());
+    const workspace = await assertSelectionWorkspace(selection, roots);
+    const spaces = await this.client.listSpaces();
+    const authorizedSpace = selection.phase === 'space'
+      ? selection.candidates.find((item) => String(item.id) === String(spaceId))
+      : selection.selectedSpace;
+    if (!authorizedSpace || String(authorizedSpace.id) !== String(spaceId)) {
+      throw new Error('spaceId was not returned for this selection');
+    }
+    const space = spaces.find((item) => String(item.id) === String(spaceId));
+    if (!space) throw new Error('Selected E3 product space is no longer available');
     const projects = await this.client.listPompProjects(space.id);
     if (projects.length === 0) throw new Error('no-pomp-projects: selected E3 space has no POMP projects');
+    if (selection.phase === 'space' && pompProjectCode) {
+      throw new Error('pompProjectCode is not valid until POMP candidates are returned');
+    }
+    const authorizedProjectCodes = new Set(
+      (selection.phase === 'pomp' ? selection.candidates : projects).map((item) => String(item.code)),
+    );
     let selected = pompProjectCode
       ? projects.find((item) => item.code === String(pompProjectCode))
       : automaticPompProject(projects);
-    if (pompProjectCode && !selected) throw new Error('pompProjectCode is not a candidate for the selected space');
+    if (pompProjectCode && (!selected || !authorizedProjectCodes.has(String(pompProjectCode)))) {
+      throw new Error('pompProjectCode is not a candidate for this selection');
+    }
+    if (selected && !authorizedProjectCodes.has(String(selected.code))) {
+      throw new Error('POMP candidates changed; prepare again');
+    }
     if (!selected) {
-      await atomicJson(configPath(this.dataDirectory), { productSpace: space, pendingPompSelection: true });
-      return { status: 'needs_pomp_selection', productSpace: space.name, pompProjects: projects };
+      await atomicJson(configPath(workspace, this.dataDirectory), { productSpace: space, pendingPompSelection: true });
+      await storeSelection({
+        ...selection,
+        phase: 'pomp',
+        selectedSpace: space,
+        candidates: projects,
+      }, this.dataDirectory, selectionToken);
+      return {
+        status: 'needs_pomp_selection',
+        selectionToken,
+        expiresAt: new Date(selection.expiresAt).toISOString(),
+        spaceId: String(space.id),
+        productSpace: space.name,
+        candidates: projects,
+      };
     }
     const config = { productSpace: space, pompProject: selected, updatedAt: new Date(this.now()).toISOString() };
-    await atomicJson(configPath(this.dataDirectory), config);
+    await atomicJson(configPath(workspace, this.dataDirectory), config);
+    await storeSelection({ ...selection, usedAt: this.now() }, this.dataDirectory, selectionToken);
     return { status: 'selected', productSpace: space.name, pompProject: selected.name };
   }
 
@@ -515,7 +590,7 @@ export class PublisherService {
     if (workspace !== plan.workspace) throw new Error('Workspace root changed after prepare');
     const artifacts = await loadValidatedPublishArtifacts(workspace, plan.version);
     if (artifacts.fingerprint !== plan.fingerprint) throw new Error('PRD artifacts changed after prepare');
-    const config = await loadConfig(this.dataDirectory);
+    const config = await loadConfig(workspace, this.dataDirectory);
     if (!sameConfig(config, plan.config)) throw new Error('E3 product-space configuration changed after prepare');
 
     const existing = await readMapping(workspace, artifacts.version);
@@ -590,26 +665,46 @@ export class PublisherService {
   async status({ workspaceUri, version }, roots) {
     const workspace = await resolveAuthorizedWorkspace(workspaceUri, roots);
     const artifacts = await loadValidatedPublishArtifacts(workspace, version);
-    const config = await loadConfig(this.dataDirectory);
-    if (!config?.productSpace || !config?.pompProject) return { status: 'blocked', errors: ['E3 product space is not configured'] };
     const { path, mapping } = await readMapping(workspace, artifacts.version);
     if (!mapping) return { status: 'blocked', mappingPath: path, errors: ['E3 mapping does not exist'] };
     if (mapping.artifact_fingerprint && mapping.artifact_fingerprint !== artifacts.fingerprint) {
       return { status: 'blocked', mappingPath: path, errors: ['Mapping artifact fingerprint does not match current PRDs'] };
     }
-    if (mapping.product_space?.id && String(mapping.product_space.id) !== String(config.productSpace.id)) {
-      return { status: 'blocked', mappingPath: path, errors: ['mapping-space-mismatch: mapping and E3 configuration use different spaces'] };
+    const config = await loadConfig(workspace, this.dataDirectory);
+    const mappedSpace = mapping.product_space;
+    const legacyMapping = mapping.schema_version < 2 || !mapping.artifact_fingerprint || !mappedSpace?.id;
+    const verificationSpace = mappedSpace?.id ? mappedSpace : config?.productSpace;
+    if (!verificationSpace?.id) {
+      return {
+        status: 'blocked',
+        mappingPath: path,
+        errors: ['legacy-mapping-space-unknown: legacy E3 mapping has no product space and this workspace is not configured'],
+      };
     }
-    const metadata = await this.client.requirementMetadata(config.productSpace.id);
+    const warnings = [];
+    if (mappedSpace?.id && config?.productSpace?.id
+        && String(mappedSpace.id) !== String(config.productSpace.id)) {
+      warnings.push({
+        code: 'workspace-config-differs-from-mapping',
+        message: 'The workspace configuration differs from this version mapping; status used the mapped product space',
+      });
+    }
+    if (legacyMapping) {
+      warnings.push({
+        code: 'legacy-mapping-adoption',
+        message: 'Legacy E3 mapping is identity-verified but is not bound to the current artifact fingerprint and product space',
+      });
+    }
+    const spaceId = verificationSpace.id;
+    const metadata = await this.client.requirementMetadata(spaceId);
     const objects = [];
     let complete = true;
     let drifted = false;
-    const legacyMapping = !mapping.artifact_fingerprint;
     for (const requirement of mapping.requirements) {
       const artifact = artifacts.artifacts.find((item) => item.featureName === requirement.featureName);
       const requirementId = requirement.e3_requirement?.id;
       const remoteRequirement = requirementId
-        ? await this.client.getRequirement(config.productSpace.id, metadata.workItemId, requirementId)
+        ? await this.client.getRequirement(spaceId, metadata.workItemId, requirementId)
         : null;
       const exists = Boolean(remoteRequirement);
       const expectedRequirementTitle = artifact?.remoteTitle ?? requirement.e3_requirement?.title;
@@ -621,14 +716,14 @@ export class PublisherService {
         featureName: requirement.featureName,
         id: requirementId,
         action: requirement.e3_requirement?.action ?? 'unknown',
-        url: requirementId ? requirementUrl(config.productSpace.id, requirementId) : undefined,
+        url: requirementId ? requirementUrl(spaceId, requirementId) : undefined,
         state: requirementDrifted ? 'drifted' : (exists ? 'verified' : 'missing'),
       });
-      const remoteTasks = exists ? await this.client.listTasks(config.productSpace.id, requirementId) : [];
+      const remoteTasks = exists ? await this.client.listTasks(spaceId, requirementId) : [];
       for (const task of requirement.story_tasks ?? []) {
         const expectedStory = artifact?.stories.find((item) => item.id === task.story_id);
         const id = task.e3_task?.id;
-        const remoteTask = id ? await this.client.getTask(config.productSpace.id, id) : null;
+        const remoteTask = id ? await this.client.getTask(spaceId, id) : null;
         const taskInExpectedParent = Boolean(id && remoteTasks.some((item) => String(item.id) === String(id)));
         const taskExists = Boolean(remoteTask);
         const taskDrifted = taskExists && (
@@ -643,7 +738,7 @@ export class PublisherService {
           storyId: task.story_id,
           id,
           action: task.e3_task?.action ?? 'unknown',
-          url: id ? taskUrl(config.productSpace.id, id) : undefined,
+          url: id ? taskUrl(spaceId, id) : undefined,
           state: taskDrifted ? 'drifted' : (taskExists ? 'verified' : 'missing'),
         });
       }
@@ -651,10 +746,6 @@ export class PublisherService {
     const status = drifted
       ? 'blocked'
       : (complete && mappingIsComplete(mapping) && !legacyMapping ? 'published' : 'partial');
-    const warnings = legacyMapping ? [{
-      code: 'legacy-mapping-adoption',
-      message: 'Legacy E3 mapping is identity-verified but is not bound to the current artifact fingerprint',
-    }] : [];
     return { status, mappingPath: path, counts: mappingCounts(mapping), objects, warnings };
   }
 }
