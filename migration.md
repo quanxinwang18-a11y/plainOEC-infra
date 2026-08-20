@@ -520,7 +520,7 @@ claude plugin validate ./oec-product
 
 ### 7.3 真实 E3 验收
 
-2026-08-20，`oec-product@2.1.0` 已在获得授权的非生产空间“OBU-AI提效组”完成真实发布验收：
+2026-08-20，`oec-product@2.2.0` 已在获得授权的非生产空间“OBU-AI提效组”完成真实发布验收：
 
 1. 完整 fixture 通过 pre-publish artifact gate。
 2. prepare 计划创建一条系统需求和一条 Story 任务。
@@ -529,15 +529,16 @@ claude plugin validate ./oec-product
 5. 再次 prepare 的创建数为 0，系统需求和 Story 任务各复用一条。
 6. 修改带既有 mapping 的 fixture 副本后，prepare 返回 `published-version-changed`，mapping 不变。
 7. 临时 token、空间配置、计划文件和 fixture 已清理；远端验收对象按授权保留。
+8. 从干净 Git archive 安装后，插件缓存没有 `node_modules`，bundled MCP 仍注册四个工具。
 
 真实验收边界：
 
-- 真实空间只有一个 POMP 候选，多候选歧义由自动测试覆盖。
+- 本次真实流程没有进入 POMP 歧义选择分支，多候选歧义由自动测试覆盖。
 - 未在真实 E3 人为制造 partial 写入故障，partial resume 仍是 mock 测试证据。
-- Plugin 发现和 MCP E2E 已验证；一次真实 Agent 模型调用受 Claude 配额 403 阻断，因此不能把组件
-  发现等同于完整 PM 对话质量 E2E。
+- Plugin 发现、`claude --agent oec-pm` 启动和 MCP E2E 已验证；这证明入口与平台链路可用，不等同
+  于覆盖所有产品领域的 PM 对话质量评估。
 
-详见 [oec-product README](oec-product/README.md#210-真实-e3-验收)。
+详见 [oec-product README](oec-product/README.md#220-真实-e3-验收)。
 
 ## 8. 当前边界和后续注意事项
 
