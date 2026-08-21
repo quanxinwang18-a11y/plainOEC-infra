@@ -1,8 +1,9 @@
 import { build } from 'esbuild';
 import { resolve } from 'node:path';
 
-const productRoot = resolve(import.meta.dirname, 'oec-product');
-const engineeringRoot = resolve(import.meta.dirname, 'oec-engineering');
+const workspaceRoot = import.meta.dirname;
+const productRoot = resolve(workspaceRoot, 'oec-product');
+const engineeringRoot = resolve(workspaceRoot, 'oec-engineering');
 
 const common = {
   bundle: true,
@@ -11,6 +12,9 @@ const common = {
   target: 'node20',
   sourcemap: false,
   legalComments: 'eof',
+  alias: {
+    yaml: resolve(workspaceRoot, 'node_modules/yaml'),
+  },
   banner: {
     js: 'import { createRequire as __oecCreateRequire } from "node:module"; const require = __oecCreateRequire(import.meta.url);',
   },
