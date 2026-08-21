@@ -1,36 +1,5 @@
 # OEC-infra 下一步完整优化思路
 
-> 面向对象：技术与管理混合决策者  
-> 旧实现基线：`oec-ai-infra@7935600`（`oec-ai@0.2.2`）  
-> 当前实现基线：`plainOEC-infra@9f70ae8`（Marketplace `3.0.0`）  
-> 当前验证宿主：Claude Code `2.1.237`
-> 文档日期：2026-08-21
-
-## 0. 阅读口径
-
-本文把结论分成四类，避免将设计、代码和真实可用性混为一谈：
-
-- **事实**：由固定 commit、实际初始化结果、Plugin manifest 或测试输出直接证明。
-- **判断**：基于事实对职责、模型判断面和维护成本的分析。
-- **已实现**：当前仓库已经存在并通过自动验证的能力。
-- **下一步规划**：尚未完成，不以目录、Prompt、mock 或静态检查宣称可用。
-
-为便于复核，正文中的关键章节还标注证据性质：
-
-- **源代码事实**：固定 commit 中可以直接定位的 manifest、目录、Prompt、脚本或测试。
-- **机制推论**：由这些结构能够推出的风险，不等价于已经采集到的线上故障统计。
-- **治理建议**：需要组织决策、Owner 和后续数据验证的方案。
-
-外部系统能力再单独区分：
-
-![从源码检查到生产可用的五级证据链，前一级不能自动证明后一级](assets/oec-infra-next-optimization/00-evidence-levels.svg)
-
-*图：证据必须逐级建立；每一级都需要说明已证明与尚未证明的边界。*
-
-本文不是以“Prompt 越短越好”为目标。真正的目标是：让模型只承担需要语义理解和权衡的工作，让
-确定性代码保障不变量，让平台 MCP 承担外部系统执行，并让每种能力以正确的 Claude Code 原生组件
-进行分发。
-
 ## 1. 管理摘要
 
 ### 1.1 核心判断
@@ -92,9 +61,6 @@ Skill，认证、远端选择、写入、幂等和状态验证则进入 MCP；�
 *图：已有工程事实证明迁移方向；下一步应以证据缺口驱动治理、Owner 和准入决策。*
 
 ## 2. 旧 OEC-infra 的真实使用流程
-
-> 证据性质：**源代码事实**。本章基于旧仓库固定 commit 的 registry、构建脚本、Plugin payload 和
-> 实际临时初始化结果；复核命令见附录 C。
 
 ### 2.1 需要区分的三种结构
 
@@ -253,9 +219,6 @@ Dispatcher 明确要求调用方读取 `skills/<name>/SKILL.md`；Agent 总览�
 
 ## 3. 旧配置的结构性问题
 
-> 证据性质：**源代码事实 + 机制推论**。文件数量、路径和明确指令来自旧 commit；对模型误路由、
-> 任务扩张和维护成本的描述是机制风险，仍需在固定任务集和真实运行 trace 中量化。
-
 ### 3.1 嵌套文件索引冒充 Skill 加载
 
 Claude Code 原生 Skill 的关键关系是：宿主发现 `<name>/SKILL.md` 的 name/description，相关时加载
@@ -399,16 +362,13 @@ status read-back。
 
 ## 4. Skill 研发与评审框架
 
-> 证据性质：**治理建议**。评审维度来自 Claude Code 组件机制、参考文章和当前迁移实践；是否保留
-> 某项旧能力，仍需使用率、Owner、固定任务 eval 和真实反馈支撑。
-
 ### 4.1 第一性原则
 
 Skill 的价值不是替模型复述常识，而是在正确触发时提供模型原本不知道、但完成目标确实需要的知识、
 约束、产物契约和轻量编排。
 
 《浅谈 SKILL 研发的最佳实践——以百补详情助手为例》提供了三个有价值的视角：渐进披露、自由度与
-任务脆弱性匹配、真实运行现场闭环。本文进一步补上平台安全、跨宿主语义和正式 eval：
+任务脆弱性匹配、真实运行现场闭环。在此基础上还需要平台安全、跨宿主语义和正式 eval：
 
 - 模型需要判断的内容，提供目标、证据和边界，不固定唯一过程。
 - 输出必须确定一致的内容，用脚本或校验器实现。
@@ -475,9 +435,6 @@ Skill 的价值不是替模型复述常识，而是在正确触发时提供模�
 | 只有在独立上下文中有明确收益的任务 | Agent 候选 | 必须用 eval 证明隔离/并行价值 |
 
 ## 5. Agent、Skill、MCP、Plugin 的职责
-
-> 证据性质：**官方组件边界 + 架构判断**。组件的原生位置和发现机制以 Claude Code 官方文档为准；
-> OEC 如何拆分 Plugin 是基于生命周期、权限和 Owner 的设计决定。
 
 Claude Code 官方将这些能力放在不同扩展位置：[扩展模型](https://code.claude.com/docs/en/features-overview)、
 [Plugin 规范](https://code.claude.com/docs/en/plugins-reference)、
@@ -644,9 +601,6 @@ Plugin 的粒度则由生命周期决定：当外部事实来源、认证权限�
 
 ## 6. 当前 3.0 已实现架构
 
-> 证据性质：**当前源代码事实 + 自动测试 + 脱敏真实验收记录**。自动测试只能证明其覆盖的确定性
-> contract；外部平台结论严格以验收记录为边界。
-
 ### 6.1 组件层级
 
 ![plainOEC-infra 3.0 当前领域 Plugin 与平台 Plugin 架构](assets/oec-infra-next-optimization/05-current-architecture.svg)
@@ -717,9 +671,6 @@ claude plugin install oec-pipeline@plainOEC-infra --scope user
 UTP 也不得借用 E3 证据宣称已验证。
 
 ## 7. 下一阶段目标架构与角色分发
-
-> 证据性质：**治理建议**。已实现组件使用实线，尚未建设或尚未准入的能力使用虚线；目标图不代表
-> 对未来 Plugin 数量的预先承诺。
 
 ### 7.1 目标层级
 
@@ -808,9 +759,6 @@ UTP 也不得借用 E3 证据宣称已验证。
 
 ## 8. 下一步实施路线
 
-> 证据性质：**治理建议**。每一阶段先补证据再进入下一阶段；当前 99 项自动测试不是测试资产迁移
-> 收益或模型判断质量的替代指标。
-
 ![测试资产盘点、统一治理、聚焦 Testing、平台验收和运营闭环组成的五阶段证据门禁路线](assets/oec-infra-next-optimization/08-evidence-gated-roadmap.svg)
 
 *图：阶段之间由退出证据放行，不按排期自动前进，也不以目录或 mock 代替真实能力证明。*
@@ -881,8 +829,6 @@ UTP 也不得借用 E3 证据宣称已验证。
 
 ## 9. 成功标准与领导可见指标
 
-> 证据性质：**治理建议**。以下是需要建立数据源的原始指标，不是当前已经达到的百分比承诺。
-
 不把多个维度压成一个综合分数，直接报告原始证据：
 
 ![分发维护、模型判断、确定性平台安全和证据等级四类领导可见指标](assets/oec-infra-next-optimization/20-success-metrics.svg)
@@ -912,6 +858,10 @@ UTP 也不得借用 E3 证据宣称已验证。
 - 权限、脱敏、提示注入、路径逃逸和越权修改是否有失败测试。
 
 ### 9.4 证据等级
+
+![从源码检查到生产可用的五级证据链，前一级不能自动证明后一级](assets/oec-infra-next-optimization/00-evidence-levels.svg)
+
+*图：证据必须逐级建立；每一级都需要说明已证明与尚未证明的边界。*
 
 - 自动测试总数和失败项。
 - mock/integration 覆盖的失败、歧义、partial 和漂移分支。
@@ -958,8 +908,7 @@ OEC-infra 后续不应继续做“更多 Prompt、更多角色路由、更多统
 - 当前平台层级：[platform-plugin-hierarchy.md](../architecture/platform-plugin-hierarchy.md)。
 - E3 真实验收：[e3-platform-3.0.0-real-acceptance.md](../evidence/e3-platform-3.0.0-real-acceptance.md)。
 - SAE/UTP 准入：[sae-utp-admission-audit.md](../audits/sae-utp-admission-audit.md)。
-- Skill 实践参考：《浅谈 SKILL 研发的最佳实践——以百补详情助手为例》（仅提炼方法，不复制案例
-  正文）。
+- Skill 实践参考：《浅谈 SKILL 研发的最佳实践——以百补详情助手为例》。
 - Claude Code 官方：[扩展模型](https://code.claude.com/docs/en/features-overview)、
   [Skills](https://code.claude.com/docs/en/slash-commands)、
   [Plugins](https://code.claude.com/docs/en/plugins-reference)、
@@ -975,11 +924,11 @@ OEC-infra 后续不应继续做“更多 Prompt、更多角色路由、更多统
 | E3 | `1.0.0`，本地 tag `oec-e3--v1.0.0` |
 | Pipeline | `1.0.0`，本地 tag `oec-pipeline--v1.0.0` |
 | 当前自动测试 | 99/99 |
-| 远端发布 | 本文基线的 3.0 tags 尚未在本次报告工作中执行 push |
+| 远端发布 | 3.0 tags 尚未推送远端 |
 
 ## 附录 C：可复核证据索引
 
-以下索引用于把正文中的关键事实落到固定 commit 或当前仓库文件。旧仓库命令均在
+以下索引用于把关键事实落到固定 commit 或当前仓库文件。旧仓库命令均在
 `/Users/qxwang6/project/oec-ai-infra` 执行，不依赖当前工作树内容。
 
 | 事实 | 可复核证据 | 证据能证明什么 |
@@ -994,15 +943,15 @@ OEC-infra 后续不应继续做“更多 Prompt、更多角色路由、更多统
 | Product/Engineering 的结构与 fixture | [Product 组件测试](../../oec-product/tests/components.test.mjs)、[Engineering 组件测试](../../oec-engineering/tests/components.test.mjs)、[Engineering 分发测试](../../oec-engineering/tests/distribution.test.mjs) | 原生组件、负向触发文本、Spec 工具和无依赖 bundle 等确定性契约 |
 | E3/Pipeline 的 mock 与 bundle | [E3 mock journey](../../oec-e3/servers/e3/tests/journey.test.mjs)、[E3 bundle 测试](../../oec-e3/servers/e3/tests/distribution.test.mjs)、[Pipeline planner 测试](../../oec-pipeline/servers/pipeline/tests/planner.test.mjs)、[Pipeline bundle 测试](../../oec-pipeline/servers/pipeline/tests/distribution.test.mjs) | 测试替身下的计划/恢复分支和 MCP stdio 分发，不证明真实远端运行 |
 | E3 真实非生产旅程 | [脱敏验收记录](../evidence/e3-platform-3.0.0-real-acceptance.md) | 授权空间、唯一标识、execute/status/read-back 和明确未覆盖边界 |
-| 当前宿主版本 | 2026-08-21 执行 `claude --version` 返回 `2.1.237 (Claude Code)` | 本报告验证时使用的 Claude Code 版本，不代表未来版本行为 |
+| 当前宿主版本 | 2026-08-21 执行 `claude --version` 返回 `2.1.237 (Claude Code)` | 当时验证使用的 Claude Code 版本，不代表未来版本行为 |
 
 旧 PM/Dev/Test 的文件数、行数和物化结构还可以分别通过 [migration.md](../../migration.md) 与
-[dev-migration.md](../../dev-migration.md) 中记录的固定基线和临时初始化方法复算。本文引用这些结果，
-不把文档二次转述当成新的独立证据。
+[dev-migration.md](../../dev-migration.md) 中记录的固定基线和临时初始化方法复算。这些结果仍以原始
+初始化和固定 commit 为证据，不把文档二次转述当成新的独立证据。
 
 ## 附录 D：术语表
 
-| 术语 | 本文含义 |
+| 术语 | 含义 |
 | --- | --- |
 | E3 | OEC 使用的需求、Story 和研发任务协作平台；当前通过 `oec-e3` MCP 接入 |
 | UTP | 旧测试资产连接的测试管理/执行平台；尚未通过新架构准入 |
