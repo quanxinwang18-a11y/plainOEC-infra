@@ -116,5 +116,39 @@ export function createE3McpServer({ service, developmentService } = {}) {
     _meta: { 'anthropic/requiresUserInteraction': true },
   }, guarded(async (input) => development.execute(input, await rootsFor(mcpServer))));
 
+  mcpServer.registerTool('prepare_task_progress', {
+    title: 'Prepare E3 task progress',
+    description: 'Verify mapped development tasks and prepare bounded start, worklog, or completion updates without changing E3.',
+    inputSchema: {
+      workspaceUri: z.string().url().describe('A file URI returned by MCP roots/list'),
+      changeId: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{1,127}$/),
+      updates: z.array(z.object({
+        localId: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/),
+        action: z.enum(['start', 'log', 'complete']),
+        worklog: z.string().trim().min(1).optional(),
+        spentHours: z.number().min(0).max(24).optional(),
+      })).min(1),
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+  }, guarded(async (input) => development.prepareProgress(input, await rootsFor(mcpServer))));
+
+  mcpServer.registerTool('execute_task_progress', {
+    title: 'Execute E3 task progress',
+    description: 'Execute a prepared task-progress plan using server-derived E3 worklog metadata and checkpoint each success.',
+    inputSchema: { planToken: z.string().min(32) },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
+    _meta: { 'anthropic/requiresUserInteraction': true },
+  }, guarded(async (input) => development.executeProgress(input, await rootsFor(mcpServer))));
+
+  mcpServer.registerTool('get_development_task_status', {
+    title: 'Verify E3 development tasks',
+    description: 'Read a development mapping and verify task identity, parent linkage, status, and current worklog in E3.',
+    inputSchema: {
+      workspaceUri: z.string().url().describe('A file URI returned by MCP roots/list'),
+      changeId: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{1,127}$/),
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+  }, guarded(async (input) => development.status(input, await rootsFor(mcpServer))));
+
   return mcpServer;
 }

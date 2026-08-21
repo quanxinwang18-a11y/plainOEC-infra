@@ -28588,7 +28588,24 @@ function normalizeTask(item) {
   return {
     id: String(id),
     title: title === void 0 || title === null ? "" : String(title),
-    ...requirementId === void 0 || requirementId === null ? {} : { requirementId: String(requirementId) }
+    ...requirementId === void 0 || requirementId === null ? {} : { requirementId: String(requirementId) },
+    ...item.status === void 0 && item.taskStatus === void 0 && item.state === void 0 ? {} : { status: String(item.status ?? item.taskStatus ?? item.state) }
+  };
+}
+function normalizeTaskLogInfo(item) {
+  if (!item || typeof item !== "object") return null;
+  return {
+    planId: item.planId ?? 0,
+    projectCode: item.pompProjectCode ?? item.projectCode,
+    planWorkload: item.planWorkload,
+    estimatedWorkload: item.etplanWorkload,
+    investedHours: item.hasInvestedHours,
+    spentHours: item.acturelyFillInHours,
+    remainingHours: item.surplusHours,
+    progress: item.progressPercentage,
+    worklog: item.workLog,
+    date: item.date,
+    status: item.status ?? item.taskStatus ?? item.state
   };
 }
 function listFromPage(data) {
@@ -28838,6 +28855,53 @@ var E3Client = class {
     const id = extractCreatedId(payload, path);
     if (!id) throw new Error("E3 task creation succeeded without a verifiable ID");
     return { id: String(id), title: story.remoteTitle, requirementId: String(requirementId) };
+  }
+  async getTaskLogInfo(spaceId, taskId, date3) {
+    const { data } = await this.request("POST", "/api/panshi/iterativePlanTask/getIterativePlanTaskLogInfo", {
+      query: { productId: spaceId },
+      body: { id: taskId, productId: spaceId, ...date3 ? { date: date3 } : {} }
+    });
+    const value = normalizeTaskLogInfo(data);
+    if (!value) throw new Error(`E3 returned no worklog metadata for task ${taskId}`);
+    if (!value.projectCode) throw new Error(`E3 returned no POMP project code for task ${taskId}`);
+    if (value.planWorkload === void 0 || value.planWorkload === null) {
+      throw new Error(`E3 returned no planned workload for task ${taskId}`);
+    }
+    return value;
+  }
+  async startTask(spaceId, taskId) {
+    await this.request("PUT", `/api/panshi/v2/product/task/${taskId}/status`, {
+      query: { productId: spaceId, status: 2 }
+    });
+    return { id: String(taskId), status: "2" };
+  }
+  async writeTaskWorklog(spaceId, taskId, logInfo, update) {
+    const complete = update.action === "complete";
+    const spentHours = update.spentHours ?? Number(logInfo.spentHours ?? 0);
+    if (!Number.isFinite(spentHours) || spentHours < 0 || spentHours > 24) {
+      throw new Error(`E3 task ${taskId} worklog hours must be between 0 and 24`);
+    }
+    const body = {
+      productId: spaceId,
+      planId: logInfo.planId ?? 0,
+      projectCode: logInfo.projectCode,
+      planWorkload: logInfo.planWorkload,
+      acturelyFillInHours: spentHours,
+      ...complete ? { surplusHours: 0, progressPercentage: "100", state: 3 } : {},
+      ...!complete && logInfo.remainingHours !== void 0 && logInfo.remainingHours !== null ? { surplusHours: logInfo.remainingHours } : {},
+      ...!complete && logInfo.progress !== void 0 && logInfo.progress !== null ? { progressPercentage: String(logInfo.progress) } : {},
+      workLog: update.worklog
+    };
+    await this.request("PUT", `/api/panshi/v2/product/task/${taskId}/workLog`, {
+      query: { productId: spaceId },
+      body
+    });
+    return {
+      id: String(taskId),
+      spentHours,
+      worklog: update.worklog,
+      ...complete ? { status: "3", progress: "100" } : {}
+    };
   }
 };
 
@@ -29961,6 +30025,36 @@ function normalizeSource(source = {}) {
 function taskFingerprint(changeId, requirementId, tasks) {
   return `sha256:${createHash3("sha256").update(JSON.stringify({ changeId, requirementId, tasks })).digest("hex")}`;
 }
+function progressFingerprint(changeId, config2, requirement, updates, tasks) {
+  return `sha256:${createHash3("sha256").update(JSON.stringify({
+    changeId,
+    spaceId: String(config2.productSpace.id),
+    requirementId: String(requirement.id),
+    updates,
+    tasks
+  })).digest("hex")}`;
+}
+function normalizeUpdates(updates) {
+  if (!Array.isArray(updates) || updates.length === 0) throw new Error("updates must contain at least one item");
+  const seen = /* @__PURE__ */ new Set();
+  return updates.map((update) => {
+    const localId = String(update?.localId ?? "").trim();
+    const action = update?.action;
+    const worklog = update?.worklog === void 0 ? void 0 : String(update.worklog).trim();
+    if (!LOCAL_ID_PATTERN.test(localId)) throw new Error(`Invalid update localId: ${localId || "<missing>"}`);
+    if (seen.has(localId)) throw new Error(`Duplicate update localId: ${localId}`);
+    if (!["start", "log", "complete"].includes(action)) throw new Error(`${localId} has invalid progress action`);
+    if ((action === "log" || action === "complete") && !worklog) {
+      throw new Error(`${localId} requires worklog for ${action}`);
+    }
+    const spentHours = update.spentHours === void 0 ? void 0 : Number(update.spentHours);
+    if (spentHours !== void 0 && (!Number.isFinite(spentHours) || spentHours < 0 || spentHours > 24)) {
+      throw new Error(`${localId} spentHours must be between 0 and 24`);
+    }
+    seen.add(localId);
+    return { localId, action, ...worklog === void 0 ? {} : { worklog }, ...spentHours === void 0 ? {} : { spentHours } };
+  });
+}
 function assertMappingIdentity(mapping, config2, requirement) {
   if (!mapping) return;
   if (mapping.change_id !== void 0 && mapping.change_id !== requirement.changeId) {
@@ -30082,6 +30176,16 @@ async function inspectTasks(client, workspace, changeId, config2, requirement, t
   }
   return { path, mapping, planned, counts: { createTasks: create, reuseTasks: reuse } };
 }
+function expectedTask(mappingTask) {
+  return { remoteTitle: `[${mappingTask.local_id}] ${mappingTask.title}` };
+}
+function terminalStatus(task) {
+  return task.status === "3" || task.status === "4";
+}
+function sameWorklog(logInfo, update) {
+  const hoursMatch = update.spentHours === void 0 || Number(logInfo.spentHours ?? 0) === Number(update.spentHours);
+  return hoursMatch && String(logInfo.worklog ?? "") === update.worklog;
+}
 var DevelopmentTaskService = class {
   constructor({ client, dataDirectory, now = () => Date.now() }) {
     this.client = client;
@@ -30092,6 +30196,7 @@ var DevelopmentTaskService = class {
     const inspected = await inspectTasks(this.client, workspace, changeId, config2, requirement, tasks);
     const createdAt = this.now();
     const plan = {
+      kind: "task-creation",
       workspaceUri,
       workspace,
       changeId,
@@ -30202,6 +30307,7 @@ var DevelopmentTaskService = class {
   }
   async execute({ planToken }, roots) {
     const plan = await loadDevelopmentPlan(planToken, this.dataDirectory, this.now());
+    if (plan.kind !== "task-creation") throw new Error("planToken is not a development-task creation plan");
     const workspace = await resolveAuthorizedWorkspace(plan.workspaceUri, roots);
     if (workspace !== plan.workspace) throw new Error("Development task workspace changed after prepare");
     const config2 = await loadConfig(workspace, this.dataDirectory);
@@ -30274,6 +30380,209 @@ var DevelopmentTaskService = class {
       const status = /remote-object-drift|Ambiguous|changed|mismatch/i.test(error2.message) ? "blocked" : "partial";
       return { status, changeId: plan.changeId, mappingPath: checkpoint.path, changes, errors: [error2.message] };
     }
+  }
+  async prepareProgress({ workspaceUri, changeId, updates }, roots) {
+    if (!CHANGE_ID_PATTERN.test(changeId ?? "")) return { status: "blocked", errors: ["Invalid changeId"] };
+    const workspace = await resolveAuthorizedWorkspace(workspaceUri, roots);
+    let normalized;
+    try {
+      normalized = normalizeUpdates(updates);
+    } catch (error2) {
+      return { status: "blocked", changeId, errors: [error2.message] };
+    }
+    const config2 = await loadConfig(workspace, this.dataDirectory);
+    const stored = await readDevelopmentMapping(workspace, changeId);
+    if (!config2?.productSpace || !config2?.pompProject) {
+      return { status: "blocked", changeId, errors: ["E3 workspace configuration is incomplete"] };
+    }
+    if (!stored.mapping) return { status: "blocked", changeId, errors: ["Development task mapping does not exist"] };
+    try {
+      assertMappingIdentity(stored.mapping, config2, { ...stored.mapping.requirement, changeId });
+      const snapshots = [];
+      for (const update of normalized) {
+        const mapped = stored.mapping.tasks.find((item) => item.local_id === update.localId);
+        if (!mapped?.e3_task?.id) throw new Error(`Development task ${update.localId} is not mapped to E3`);
+        const remote = await resolveExistingTask(
+          this.client,
+          config2.productSpace.id,
+          stored.mapping.requirement.id,
+          expectedTask(mapped),
+          mapped
+        );
+        let logInfo;
+        if (update.action === "start") {
+          if (terminalStatus(remote)) throw new Error(`${update.localId} is already in a terminal state`);
+        } else {
+          logInfo = await this.client.getTaskLogInfo(config2.productSpace.id, remote.id);
+          const status = String(remote.status ?? logInfo.status ?? "");
+          if (status === "4") throw new Error(`${update.localId} is terminated and cannot receive progress`);
+          if (status === "3" && (update.action !== "complete" || !sameWorklog(logInfo, update))) {
+            throw new Error(`${update.localId} is completed and the requested worklog does not match E3`);
+          }
+        }
+        snapshots.push({
+          localId: update.localId,
+          id: String(remote.id),
+          title: remote.title,
+          requirementId: String(stored.mapping.requirement.id),
+          status: remote.status,
+          ...logInfo ? { logInfo } : {}
+        });
+      }
+      const createdAt = this.now();
+      const plan = {
+        kind: "task-progress",
+        workspaceUri,
+        workspace,
+        changeId,
+        config: config2,
+        requirement: stored.mapping.requirement,
+        updates: normalized,
+        tasks: snapshots,
+        createdAt,
+        expiresAt: createdAt + PLAN_TTL_MS2
+      };
+      plan.fingerprint = progressFingerprint(changeId, config2, plan.requirement, normalized, snapshots);
+      const planToken = await storeDevelopmentPlan(plan, this.dataDirectory);
+      return {
+        status: "ready",
+        changeId,
+        productSpace: config2.productSpace.name,
+        requirement: plan.requirement,
+        updates: snapshots.map((task, index) => ({
+          localId: task.localId,
+          taskId: task.id,
+          action: normalized[index].action,
+          status: task.status
+        })),
+        planToken,
+        expiresAt: new Date(plan.expiresAt).toISOString(),
+        mappingPath: stored.path
+      };
+    } catch (error2) {
+      return { status: "blocked", changeId, mappingPath: stored.path, errors: [error2.message] };
+    }
+  }
+  async executeProgress({ planToken }, roots) {
+    const plan = await loadDevelopmentPlan(planToken, this.dataDirectory, this.now());
+    if (plan.kind !== "task-progress") throw new Error("planToken is not a development-task progress plan");
+    const workspace = await resolveAuthorizedWorkspace(plan.workspaceUri, roots);
+    if (workspace !== plan.workspace) throw new Error("Development task workspace changed after progress prepare");
+    const config2 = await loadConfig(workspace, this.dataDirectory);
+    if (!config2 || String(config2.productSpace.id) !== String(plan.config.productSpace.id) || String(config2.pompProject.code) !== String(plan.config.pompProject.code)) {
+      throw new Error("E3 workspace configuration changed after task-progress prepare");
+    }
+    if (progressFingerprint(plan.changeId, config2, plan.requirement, plan.updates, plan.tasks) !== plan.fingerprint) {
+      throw new Error("Development task progress plan fingerprint is invalid");
+    }
+    let stored = await readDevelopmentMapping(workspace, plan.changeId);
+    if (!stored.mapping) throw new Error("Development task mapping disappeared after progress prepare");
+    assertMappingIdentity(stored.mapping, config2, { ...plan.requirement, changeId: plan.changeId });
+    const changes = [];
+    try {
+      for (let index = 0; index < plan.updates.length; index += 1) {
+        const update = plan.updates[index];
+        const snapshot = plan.tasks[index];
+        const mapped = stored.mapping.tasks.find((item) => item.local_id === update.localId);
+        if (!mapped?.e3_task?.id || String(mapped.e3_task.id) !== snapshot.id) {
+          throw new Error(`development-mapping-task-mismatch: ${update.localId}`);
+        }
+        const remote = await resolveExistingTask(
+          this.client,
+          config2.productSpace.id,
+          plan.requirement.id,
+          expectedTask(mapped),
+          mapped
+        );
+        let action = update.action;
+        if (update.action === "start") {
+          if (remote.status === "3" || remote.status === "4") throw new Error(`${update.localId} entered a terminal state`);
+          if (remote.status !== "2") {
+            try {
+              await this.client.startTask(config2.productSpace.id, remote.id);
+            } catch (error2) {
+              const recovered = await this.client.getTask(config2.productSpace.id, remote.id);
+              if (recovered?.status !== "2") throw error2;
+              action = "start-recovered";
+            }
+          } else action = "already-started";
+        } else {
+          let logInfo = await this.client.getTaskLogInfo(config2.productSpace.id, remote.id);
+          const currentStatus = String(remote.status ?? logInfo.status ?? "");
+          if (currentStatus === "4") throw new Error(`${update.localId} is terminated`);
+          if (currentStatus === "3") {
+            if (update.action !== "complete" || !sameWorklog(logInfo, update)) {
+              throw new Error(`${update.localId} is already completed with different progress`);
+            }
+            action = "already-complete";
+          } else {
+            try {
+              await this.client.writeTaskWorklog(config2.productSpace.id, remote.id, logInfo, update);
+            } catch (error2) {
+              logInfo = await this.client.getTaskLogInfo(config2.productSpace.id, remote.id);
+              const recovered = sameWorklog(logInfo, update) && (update.action !== "complete" || String(logInfo.status ?? logInfo.progress) === "3" || String(logInfo.progress) === "100");
+              if (!recovered) throw error2;
+              action = `${update.action}-recovered`;
+            }
+          }
+        }
+        mapped.last_progress = {
+          action: update.action,
+          worklog: update.worklog,
+          spent_hours: update.spentHours,
+          remote_result: action,
+          updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        };
+        changes.push({ localId: update.localId, taskId: remote.id, action });
+        stored = await writeDevelopmentMapping(workspace, plan.changeId, stored.mapping);
+      }
+      return { status: "synced", changeId: plan.changeId, mappingPath: stored.path, changes };
+    } catch (error2) {
+      const status = /drift|mismatch|terminal|terminated|completed/i.test(error2.message) ? "blocked" : "partial";
+      return { status, changeId: plan.changeId, mappingPath: stored.path, changes, errors: [error2.message] };
+    }
+  }
+  async status({ workspaceUri, changeId }, roots) {
+    if (!CHANGE_ID_PATTERN.test(changeId ?? "")) return { status: "blocked", errors: ["Invalid changeId"] };
+    const workspace = await resolveAuthorizedWorkspace(workspaceUri, roots);
+    const stored = await readDevelopmentMapping(workspace, changeId);
+    if (!stored.mapping) return { status: "partial", changeId, mappingPath: stored.path, tasks: [], errors: ["Development task mapping does not exist"] };
+    const spaceId = stored.mapping.product_space?.id;
+    const requirementId = stored.mapping.requirement?.id;
+    if (!spaceId || !requirementId) {
+      return { status: "blocked", changeId, mappingPath: stored.path, tasks: [], errors: ["Development mapping identity is incomplete"] };
+    }
+    const tasks = [];
+    for (const mapped of stored.mapping.tasks ?? []) {
+      if (!mapped.e3_task?.id) {
+        tasks.push({ localId: mapped.local_id, state: "missing" });
+        continue;
+      }
+      try {
+        const remote = await resolveExistingTask(this.client, spaceId, requirementId, expectedTask(mapped), mapped);
+        const logInfo = await this.client.getTaskLogInfo(spaceId, remote.id);
+        tasks.push({
+          localId: mapped.local_id,
+          id: remote.id,
+          title: remote.title,
+          state: "verified",
+          status: remote.status ?? logInfo.status,
+          progress: logInfo.progress,
+          spentHours: logInfo.spentHours,
+          worklog: logInfo.worklog,
+          url: mapped.e3_task.url
+        });
+      } catch (error2) {
+        tasks.push({
+          localId: mapped.local_id,
+          id: String(mapped.e3_task.id),
+          state: /missing/i.test(error2.message) ? "missing" : "drifted",
+          error: error2.message
+        });
+      }
+    }
+    const state = tasks.some((task) => task.state === "drifted") ? "blocked" : tasks.some((task) => task.state === "missing") || tasks.length === 0 ? "partial" : "synced";
+    return { status: state, changeId, mappingPath: stored.path, productSpace: stored.mapping.product_space, requirement: stored.mapping.requirement, tasks };
   }
 };
 
@@ -30378,6 +30687,37 @@ function createE3McpServer({ service, developmentService } = {}) {
     annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
     _meta: { "anthropic/requiresUserInteraction": true }
   }, guarded(async (input) => development.execute(input, await rootsFor(mcpServer))));
+  mcpServer.registerTool("prepare_task_progress", {
+    title: "Prepare E3 task progress",
+    description: "Verify mapped development tasks and prepare bounded start, worklog, or completion updates without changing E3.",
+    inputSchema: {
+      workspaceUri: string2().url().describe("A file URI returned by MCP roots/list"),
+      changeId: string2().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{1,127}$/),
+      updates: array(object({
+        localId: string2().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/),
+        action: _enum(["start", "log", "complete"]),
+        worklog: string2().trim().min(1).optional(),
+        spentHours: number2().min(0).max(24).optional()
+      })).min(1)
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  }, guarded(async (input) => development.prepareProgress(input, await rootsFor(mcpServer))));
+  mcpServer.registerTool("execute_task_progress", {
+    title: "Execute E3 task progress",
+    description: "Execute a prepared task-progress plan using server-derived E3 worklog metadata and checkpoint each success.",
+    inputSchema: { planToken: string2().min(32) },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
+    _meta: { "anthropic/requiresUserInteraction": true }
+  }, guarded(async (input) => development.executeProgress(input, await rootsFor(mcpServer))));
+  mcpServer.registerTool("get_development_task_status", {
+    title: "Verify E3 development tasks",
+    description: "Read a development mapping and verify task identity, parent linkage, status, and current worklog in E3.",
+    inputSchema: {
+      workspaceUri: string2().url().describe("A file URI returned by MCP roots/list"),
+      changeId: string2().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{1,127}$/)
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  }, guarded(async (input) => development.status(input, await rootsFor(mcpServer))));
   return mcpServer;
 }
 

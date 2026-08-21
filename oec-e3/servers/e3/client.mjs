@@ -75,6 +75,25 @@ export function normalizeTask(item) {
     id: String(id),
     title: title === undefined || title === null ? '' : String(title),
     ...(requirementId === undefined || requirementId === null ? {} : { requirementId: String(requirementId) }),
+    ...(item.status === undefined && item.taskStatus === undefined && item.state === undefined
+      ? {} : { status: String(item.status ?? item.taskStatus ?? item.state) }),
+  };
+}
+
+export function normalizeTaskLogInfo(item) {
+  if (!item || typeof item !== 'object') return null;
+  return {
+    planId: item.planId ?? 0,
+    projectCode: item.pompProjectCode ?? item.projectCode,
+    planWorkload: item.planWorkload,
+    estimatedWorkload: item.etplanWorkload,
+    investedHours: item.hasInvestedHours,
+    spentHours: item.acturelyFillInHours,
+    remainingHours: item.surplusHours,
+    progress: item.progressPercentage,
+    worklog: item.workLog,
+    date: item.date,
+    status: item.status ?? item.taskStatus ?? item.state,
   };
 }
 
@@ -346,5 +365,57 @@ export class E3Client {
     const id = extractCreatedId(payload, path);
     if (!id) throw new Error('E3 task creation succeeded without a verifiable ID');
     return { id: String(id), title: story.remoteTitle, requirementId: String(requirementId) };
+  }
+
+  async getTaskLogInfo(spaceId, taskId, date) {
+    const { data } = await this.request('POST', '/api/panshi/iterativePlanTask/getIterativePlanTaskLogInfo', {
+      query: { productId: spaceId },
+      body: { id: taskId, productId: spaceId, ...(date ? { date } : {}) },
+    });
+    const value = normalizeTaskLogInfo(data);
+    if (!value) throw new Error(`E3 returned no worklog metadata for task ${taskId}`);
+    if (!value.projectCode) throw new Error(`E3 returned no POMP project code for task ${taskId}`);
+    if (value.planWorkload === undefined || value.planWorkload === null) {
+      throw new Error(`E3 returned no planned workload for task ${taskId}`);
+    }
+    return value;
+  }
+
+  async startTask(spaceId, taskId) {
+    await this.request('PUT', `/api/panshi/v2/product/task/${taskId}/status`, {
+      query: { productId: spaceId, status: 2 },
+    });
+    return { id: String(taskId), status: '2' };
+  }
+
+  async writeTaskWorklog(spaceId, taskId, logInfo, update) {
+    const complete = update.action === 'complete';
+    const spentHours = update.spentHours ?? Number(logInfo.spentHours ?? 0);
+    if (!Number.isFinite(spentHours) || spentHours < 0 || spentHours > 24) {
+      throw new Error(`E3 task ${taskId} worklog hours must be between 0 and 24`);
+    }
+    const body = {
+      productId: spaceId,
+      planId: logInfo.planId ?? 0,
+      projectCode: logInfo.projectCode,
+      planWorkload: logInfo.planWorkload,
+      acturelyFillInHours: spentHours,
+      ...(complete ? { surplusHours: 0, progressPercentage: '100', state: 3 } : {}),
+      ...(!complete && logInfo.remainingHours !== undefined && logInfo.remainingHours !== null
+        ? { surplusHours: logInfo.remainingHours } : {}),
+      ...(!complete && logInfo.progress !== undefined && logInfo.progress !== null
+        ? { progressPercentage: String(logInfo.progress) } : {}),
+      workLog: update.worklog,
+    };
+    await this.request('PUT', `/api/panshi/v2/product/task/${taskId}/workLog`, {
+      query: { productId: spaceId },
+      body,
+    });
+    return {
+      id: String(taskId),
+      spentHours,
+      worklog: update.worklog,
+      ...(complete ? { status: '3', progress: '100' } : {}),
+    };
   }
 }

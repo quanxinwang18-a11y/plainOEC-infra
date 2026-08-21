@@ -38,6 +38,18 @@ test('MCP protocol exposes publication and development-planning tools with guard
       observed.push({ operation: 'execute-development', input, roots });
       return { status: 'synced' };
     },
+    async prepareProgress(input, roots) {
+      observed.push({ operation: 'prepare-progress', input, roots });
+      return { status: 'ready', planToken: 'p'.repeat(43) };
+    },
+    async executeProgress(input, roots) {
+      observed.push({ operation: 'execute-progress', input, roots });
+      return { status: 'synced' };
+    },
+    async status(input, roots) {
+      observed.push({ operation: 'development-status', input, roots });
+      return { status: 'synced' };
+    },
   };
   const server = createE3McpServer({ service, developmentService });
   const client = new Client(
@@ -60,6 +72,9 @@ test('MCP protocol exposes publication and development-planning tools with guard
       'prepare_development_tasks',
       'select_development_requirement',
       'execute_development_tasks',
+      'prepare_task_progress',
+      'execute_task_progress',
+      'get_development_task_status',
     ]);
     const execute = tools.tools.find((tool) => tool.name === 'execute_prd_publish');
     assert.equal(execute.annotations.destructiveHint, true);
@@ -67,6 +82,9 @@ test('MCP protocol exposes publication and development-planning tools with guard
     const developmentExecute = tools.tools.find((tool) => tool.name === 'execute_development_tasks');
     assert.equal(developmentExecute.annotations.destructiveHint, true);
     assert.equal(developmentExecute._meta['anthropic/requiresUserInteraction'], true);
+    const progressExecute = tools.tools.find((tool) => tool.name === 'execute_task_progress');
+    assert.equal(progressExecute.annotations.destructiveHint, true);
+    assert.equal(progressExecute._meta['anthropic/requiresUserInteraction'], true);
 
     const prepared = await client.callTool({
       name: 'prepare_prd_publish',
@@ -96,7 +114,20 @@ test('MCP protocol exposes publication and development-planning tools with guard
       arguments: { selectionToken: 's'.repeat(43), requirementId: 'req-1' },
     });
     await client.callTool({ name: 'execute_development_tasks', arguments: { planToken: 'd'.repeat(43) } });
-    assert.equal(observed.length, 7);
+    await client.callTool({
+      name: 'prepare_task_progress',
+      arguments: {
+        workspaceUri: 'file:///authorized/workspace',
+        changeId: 'v1.2.3-alpha',
+        updates: [{ localId: 'DEV-001', action: 'complete', worklog: 'Verified.' }],
+      },
+    });
+    await client.callTool({ name: 'execute_task_progress', arguments: { planToken: 'p'.repeat(43) } });
+    await client.callTool({
+      name: 'get_development_task_status',
+      arguments: { workspaceUri: 'file:///authorized/workspace', changeId: 'v1.2.3-alpha' },
+    });
+    assert.equal(observed.length, 10);
     for (const entry of observed.filter((item) => item.roots)) {
       assert.deepEqual(entry.roots, [{ uri: 'file:///authorized/workspace', name: 'fixture' }]);
     }
