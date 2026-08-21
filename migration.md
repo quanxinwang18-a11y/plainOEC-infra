@@ -723,15 +723,18 @@ claude plugin validate ./oec-pipeline
 7. 从干净 Git archive 安装后，Plugin cache 没有 `node_modules`，bundled MCP 注册四个工具。
 
 `2.2.1` 清理了模型判断面；`3.0.0` 再把 E3 Server 抽离为 dependency，并增加研发任务工具。既有
-2.2.0 真实发布证据可以证明被保留的 PRD API 契约，但不能自动证明新的 Plugin Data、研发任务链或
-Pipeline 已通过真实 E2E。
+2.2.0 真实发布证据证明了被保留的 PRD API 契约；2026-08-21 又使用新的 E3 Plugin Data 完成了
+3.0.0 的真实发布与研发任务验收：PRD status 为 `published`，重复 prepare 精确复用需求和 Story
+任务；研发任务完成创建/复用、start、log、complete，最终 status 为 `synced`，远端状态为 `3`、
+进度为 `100`、工时为 `1.0h`。
 
 真实验收仍有两项明确边界：
 
 - 真实流程没有进入 POMP 歧义分支，多候选选择由自动测试覆盖。
 - 未在真实 E3 人为制造 partial 写入故障，partial resume 仍是 mocked evidence。
+- Pipeline 仍只有 mock/integration 证据，没有执行真实非生产流水线。
 
-详见 [oec-product README](oec-product/README.md) 和 [oec-e3 README](oec-e3/README.md)。
+详见 [E3 平台 3.0.0 真实验收记录](docs/evidence/e3-platform-3.0.0-real-acceptance.md)。
 
 ## 9. 当前边界和后续注意事项
 

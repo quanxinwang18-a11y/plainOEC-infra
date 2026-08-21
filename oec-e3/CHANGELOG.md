@@ -8,3 +8,5 @@
   partial checkpoints, and read-only status verification.
 - Register as the `oec-product@3.x` platform dependency and retain independent Plugin Data for OAuth,
   workspace configuration, selections, and plans.
+- Complete a real authorized non-production journey for PRD publication/reuse and development task
+  creation/reuse, start, worklog, completion, and status verification.

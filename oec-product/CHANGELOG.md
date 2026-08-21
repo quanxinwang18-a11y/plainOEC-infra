@@ -7,6 +7,8 @@
   explicit PM Agent.
 - Keep the product-owned artifact checker bundle; Product installation no longer owns E3 tokens,
   workspace selection, plans, or runtime state.
+- Verify dependency installation without `node_modules` and complete real PRD publication through the
+  new E3 Plugin Data boundary.
 
 ## 2.2.1
 

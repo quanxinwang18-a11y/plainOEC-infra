@@ -53,6 +53,15 @@ claude plugin validate ./oec-product
 真实 E3 写入必须使用获得授权的非生产空间。没有完成该验证时，不应把 mock 测试描述为真实
 E3 E2E。
 
+## 3.0.0 平台依赖验收
+
+2026-08-21，隔离 Git Marketplace 安装验证了 Product 会自动解析 `oec-e3@~1.0.0`，Product cache
+自身不再包含 MCP 或 E3 runtime。随后在“OBU-AI提效组”使用新的 E3 Plugin Data 完成真实 PRD
+发布、status 和重复复用，并完成研发任务的创建/复用、开始、工时日志、完成和最终状态回读。
+
+详细对象标识、结果与未覆盖边界见
+[E3 平台 Plugin 3.0.0 真实验收记录](../docs/evidence/e3-platform-3.0.0-real-acceptance.md)。
+
 ## 2.2.0 真实 E3 验收
 
 2026-08-20，`2.2.0` 在获得明确授权的非生产 E3 空间“OBU-AI提效组”完成了真实发布验收：

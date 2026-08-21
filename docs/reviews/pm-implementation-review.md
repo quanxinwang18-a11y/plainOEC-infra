@@ -135,10 +135,12 @@ schema、服务端校验、不可变计划、workspace 绑定、远端身份验�
   `oec-e3` dependency，并正确发现 Product 0 MCP、E3 1 MCP。
 - PRD 发布回归、六个研发任务工具与四个 Pipeline 工具均已进入 99/99 自动测试；自动测试不能替代
   真实远端验收。
-- 研发任务的真实创建、进度和状态验收在本次发布收口阶段执行；完成前不声称这条新主链已在真实
-  E3 验证。
+- `oec-e3@1.0.0` 已在“OBU-AI提效组”完成真实 PRD 发布与研发任务主链：精确复用、start、log、
+  complete 和最终 status 均通过；未人为注入真实 partial。
 - Pipeline 当前只有 mock/integration 证据；没有明确目标仓库、流水线和授权前，不运行真实流水线。
 - 当前 E3 是“PRD 发布 + 研发任务主链”的受控平台接口，不是完整 E3 管理 SDK。
+
+完整记录见 [E3 平台 3.0.0 真实验收](../evidence/e3-platform-3.0.0-real-acceptance.md)。
 
 ## 7. 最终评价
 

@@ -279,10 +279,14 @@ plugin-scoped 身份会变化，因此 Product 使用主版本升级。
 | --- | --- | --- |
 | 共享 PRD artifact contract | 已完成 | Product checker 与 E3 gate 同源并分别 bundle |
 | 四个 PRD 发布工具迁入 `oec-e3` | 已完成 | 既有回归保留；真实 PRD 证据继承自 2.2.0 |
-| 六个研发任务工具 | 已实现 | 自动测试和 mock journey 已完成；真实 E3 验收待发布收口 |
+| 六个研发任务工具 | 已验收 | 自动测试、mock journey 与“OBU-AI提效组”真实主链均完成 |
 | 四个 Pipeline 工具 | 已实现 | 自动测试和 mock/integration 已完成；未执行真实 Pipeline |
 | Product dependency cutover | 已完成 | Product 0 MCP；隔离安装自动解析 E3 dependency |
 | SAE、UTP 准入 | 审计中 | 不创建空 Plugin，不进入 Marketplace |
 
 Product cutover 一次性移除了内嵌 E3 Server，因此仓库和安装结果中都只有一套 E3 工具，不存在同名
 Server 并存期。
+
+真实 E3 对象、复用与状态证据见
+[E3 平台 3.0.0 真实验收记录](../evidence/e3-platform-3.0.0-real-acceptance.md)。Pipeline 的实现状态不因
+E3 验收而改变，仍需另行获得目标仓库、流水线和授权后才能形成真实证据。

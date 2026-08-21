@@ -123,3 +123,4 @@ claude --plugin-dir ./oec-engineering plugin details oec-engineering
 - [PM 实现迁移 Review](docs/reviews/pm-implementation-review.md)：对比旧真实分发结构与当前原生实现。
 - [平台 Plugin 层级与 MCP 迁移设计](docs/architecture/platform-plugin-hierarchy.md)：记录已实现的领域/平台分层、分发关系与验收边界。
 - [SAE 与 UTP 平台能力准入审计](docs/audits/sae-utp-admission-audit.md)：定义尚未进入 Marketplace 的平台能力分类和证据门槛。
+- [E3 平台 Plugin 3.0.0 真实验收](docs/evidence/e3-platform-3.0.0-real-acceptance.md)：记录 PRD 发布与研发任务主链的真实非生产证据和未覆盖边界。
