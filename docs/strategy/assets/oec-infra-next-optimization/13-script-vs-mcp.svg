@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Skill supporting script 与 MCP Tool 的核心差异</title>
+  <desc id="desc">左侧展示模型通过 Bash 组合路径和参数运行本地脚本，右侧展示宿主发现具名 MCP Tool 并通过 schema 和服务端硬门禁访问外部平台。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .section { font-size: 28px; font-weight: 700; text-anchor: middle; }
+      .title { font-size: 22px; font-weight: 700; text-anchor: middle; }
+      .body { font-size: 18px; text-anchor: middle; }
+      .note { font-size: 18px; text-anchor: middle; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linejoin: round; }
+      .arrow { fill: none; stroke: #273142; stroke-width: 3; marker-end: url(#arrow); }
+    </style>
+    <filter id="rough" x="-4%" y="-5%" width="108%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="131" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2"/></filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#273142" stroke-width="2.4"/></marker>
+  </defs>
+  <rect width="1600" height="900" fill="#fffaf0"/>
+  <text x="70" y="62" class="heading">根本区别：普通文件资源，还是宿主可见的正式工具接口</text>
+  <path d="M70 79 C360 68, 710 84, 1060 76" fill="none" stroke="#6b7280" stroke-width="2"/>
+  <g filter="url(#rough)">
+    <rect x="60" y="125" width="700" height="650" rx="32" fill="#e9f4ff" class="outline"/>
+    <rect x="840" y="125" width="700" height="650" rx="32" fill="#d8f3dc" class="outline"/>
+    <rect x="125" y="235" width="230" height="110" rx="22" fill="#ffffff" class="outline"/>
+    <rect x="465" y="235" width="230" height="110" rx="22" fill="#fff0b3" class="outline"/>
+    <rect x="295" y="465" width="230" height="110" rx="22" fill="#e7d8ff" class="outline"/>
+    <path d="M355 290 C395 285, 425 285, 455 290" class="arrow"/>
+    <path d="M580 350 C555 400, 500 445, 510 455" class="arrow"/>
+    <rect x="905" y="235" width="230" height="110" rx="22" fill="#ffffff" class="outline"/>
+    <rect x="1245" y="235" width="230" height="110" rx="22" fill="#fff0b3" class="outline"/>
+    <rect x="1075" y="465" width="230" height="110" rx="22" fill="#ffd6cc" class="outline"/>
+    <path d="M1135 290 C1175 285, 1205 285, 1235 290" class="arrow"/>
+    <path d="M1360 350 C1335 400, 1280 445, 1290 455" class="arrow"/>
+  </g>
+  <text x="410" y="180" class="section">Skill 附带 scripts/</text>
+  <text x="240" y="274" class="title">模型加载 Skill</text><text x="240" y="311" class="body">按说明寻找文件路径</text>
+  <text x="580" y="274" class="title">通用 Bash</text><text x="580" y="311" class="body">模型组合 argv / stdin</text>
+  <text x="410" y="503" class="title">本地脚本</text><text x="410" y="540" class="body">退出码、文本或本地文件</text>
+  <text x="410" y="635" class="body">宿主看到：一次 Bash 执行</text>
+  <text x="410" y="675" class="body">适合：解析、校验、格式化、fingerprint</text>
+  <text x="410" y="715" class="note">脚本存在 ≠ Tool 注册</text>
+
+  <text x="1190" y="180" class="section">MCP 注册 Tool</text>
+  <text x="1020" y="274" class="title">宿主发现工具</text><text x="1020" y="311" class="body">名称、description、schema</text>
+  <text x="1360" y="274" class="title">MCP Server</text><text x="1360" y="311" class="body">业务校验、权限与状态</text>
+  <text x="1190" y="503" class="title">外部平台</text><text x="1190" y="540" class="body">远端身份、写入与 read-back</text>
+  <text x="1190" y="635" class="body">宿主看到：具体业务操作</text>
+  <text x="1190" y="675" class="body">适合：认证、远端状态、副作用、恢复</text>
+  <text x="1190" y="715" class="note">Tool 注册 ≠ 自动安全，Server 仍需硬门禁</text>
+  <text x="800" y="835" class="note">判断标准不是脚本语言，而是是否跨越本地会话与外部系统的信任边界</text>
+</svg>

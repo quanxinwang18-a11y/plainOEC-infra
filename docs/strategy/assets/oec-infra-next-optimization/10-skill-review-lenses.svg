@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Skill 研发与评审的五组观察维度</title>
+  <desc id="desc">把十六项 Skill 评审维度归并为用户目标、上下文知识、工作流工具、平台安全和证据运营五组，避免用单一分数替代判断。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .center { font-size: 29px; font-weight: 700; text-anchor: middle; }
+      .group { font-size: 23px; font-weight: 700; text-anchor: middle; }
+      .item { font-size: 18px; text-anchor: middle; }
+      .note { font-size: 18px; text-anchor: middle; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linejoin: round; }
+      .link { fill: none; stroke: #6b7280; stroke-width: 2.7; stroke-dasharray: 8 7; }
+    </style>
+    <filter id="rough" x="-4%" y="-5%" width="108%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="101" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2"/></filter>
+  </defs>
+  <rect width="1600" height="900" fill="#fffaf0"/>
+  <text x="70" y="62" class="heading">评审一个 Skill，不看“写得像不像”，而看五组真实问题</text>
+  <path d="M70 79 C380 68, 700 84, 1030 76" fill="none" stroke="#6b7280" stroke-width="2"/>
+  <g filter="url(#rough)">
+    <ellipse cx="800" cy="450" rx="190" ry="115" fill="#ffffff" class="outline"/>
+    <rect x="75" y="145" width="410" height="215" rx="26" fill="#dbeafe" class="outline"/>
+    <rect x="1115" y="145" width="410" height="215" rx="26" fill="#d8f3dc" class="outline"/>
+    <rect x="75" y="535" width="410" height="215" rx="26" fill="#fff0b3" class="outline"/>
+    <rect x="1115" y="535" width="410" height="215" rx="26" fill="#ffd6cc" class="outline"/>
+    <rect x="595" y="675" width="410" height="150" rx="26" fill="#e7d8ff" class="outline"/>
+    <path d="M485 285 C575 330, 625 360, 670 395" class="link"/>
+    <path d="M1115 285 C1025 330, 975 360, 930 395" class="link"/>
+    <path d="M485 640 C575 590, 625 555, 670 510" class="link"/>
+    <path d="M1115 640 C1025 590, 975 555, 930 510" class="link"/>
+    <path d="M800 675 C800 620, 800 585, 800 570" class="link"/>
+  </g>
+  <text x="800" y="430" class="center">Skill 候选</text>
+  <text x="800" y="470" class="item">稳定用户目标？</text>
+  <text x="800" y="500" class="item">值得进入模型判断面？</text>
+
+  <text x="280" y="190" class="group">① 用户目标与契约</text>
+  <text x="280" y="233" class="item">目标 · 职责 · 触发</text>
+  <text x="280" y="268" class="item">输入 · 输出 · 失败语义</text>
+  <text x="280" y="315" class="note">先证明结果独立，再谈 Skill 结构</text>
+
+  <text x="1320" y="190" class="group">② 上下文与知识</text>
+  <text x="1320" y="233" class="item">上下文预算 · 渐进披露</text>
+  <text x="1320" y="268" class="item">稳定知识 · 高频事实 · 项目事实</text>
+  <text x="1320" y="315" class="note">只加载当前步骤真正需要的信息</text>
+
+  <text x="280" y="580" class="group">③ 工作流与工具</text>
+  <text x="280" y="623" class="item">流程必要性 · 指令自由度</text>
+  <text x="280" y="658" class="item">模型判断 · 确定性脚本</text>
+  <text x="280" y="705" class="note">脆弱任务才增加必要检查点</text>
+
+  <text x="1320" y="580" class="group">④ 平台与安全</text>
+  <text x="1320" y="623" class="item">副作用 · 状态隔离 · 权限</text>
+  <text x="1320" y="658" class="item">脱敏 · 注入 · 越权修改</text>
+  <text x="1320" y="705" class="note">外部写入必须进入硬执行边界</text>
+
+  <text x="800" y="715" class="group">⑤ 证据与运营</text>
+  <text x="800" y="757" class="item">eval · 真实反馈 · Owner · 版本 · 回滚</text>
+  <text x="800" y="795" class="note">不用综合分数掩盖任一关键失败</text>
+</svg>

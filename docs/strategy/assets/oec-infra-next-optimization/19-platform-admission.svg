@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">平台能力的渐进准入模型</title>
+  <desc id="desc">平台能力先验证只读诊断，再在 API 权限非生产身份和状态回读成立后准入受控写入，任意 payload 与通用管理 CRUD 默认排除。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .title { font-size: 26px; font-weight: 700; text-anchor: middle; }
+      .body { font-size: 18px; text-anchor: middle; }
+      .gate { font-size: 17px; font-weight: 700; text-anchor: middle; }
+      .note { font-size: 18px; text-anchor: middle; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linejoin: round; }
+      .arrow { fill: none; stroke: #273142; stroke-width: 3; marker-end: url(#arrow); }
+    </style>
+    <filter id="rough" x="-4%" y="-5%" width="108%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="191" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2"/></filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#273142" stroke-width="2.4"/></marker>
+  </defs>
+  <rect width="1600" height="900" fill="#fffaf0"/>
+  <text x="70" y="62" class="heading">平台准入按证据升级，不按旧脚本数量恢复</text>
+  <path d="M70 79 C320 69, 600 84, 860 76" fill="none" stroke="#6b7280" stroke-width="2"/>
+  <g filter="url(#rough)">
+    <rect x="70" y="480" width="430" height="265" rx="28" fill="#dbeafe" class="outline"/>
+    <rect x="585" y="260" width="430" height="485" rx="28" fill="#d8f3dc" class="outline"/>
+    <rect x="1100" y="150" width="430" height="595" rx="28" fill="#ffd6cc" class="outline"/>
+    <path d="M500 610 C535 590, 555 560, 575 530" class="arrow"/>
+    <path d="M1015 420 C1050 390, 1070 350, 1090 320" class="arrow"/>
+  </g>
+  <text x="285" y="525" class="title">① 只读诊断候选</text>
+  <text x="285" y="575" class="body">状态 · 版本 · 有限日志</text>
+  <text x="285" y="612" class="body">稳定远端身份 · 分页与脱敏</text>
+  <text x="285" y="668" class="gate">Gate：真实 API + 最小权限 + 结果归一化</text>
+  <text x="800" y="310" class="title">② 受控写入</text>
+  <text x="800" y="365" class="body">prepare → 精确选择 → 展示影响</text>
+  <text x="800" y="402" class="body">用户确认 → execute → status</text>
+  <text x="800" y="458" class="body">workspace · plan · 幂等 · partial</text>
+  <text x="800" y="514" class="gate">Gate：非生产身份 + 状态回读 + 真实 E2E</text>
+  <text x="800" y="620" class="body">只有门禁成立，能力才进入 Marketplace</text>
+  <text x="1315" y="200" class="title">③ 默认排除</text>
+  <text x="1315" y="260" class="body">任意 payload / 任意命令</text>
+  <text x="1315" y="305" class="body">kubectl / helm / shell</text>
+  <text x="1315" y="350" class="body">成员、角色、配额、namespace</text>
+  <text x="1315" y="395" class="body">通用平台管理 CRUD</text>
+  <text x="1315" y="455" class="body">生产环境自动推断或默认选择</text>
+  <text x="1315" y="540" class="gate">不是“以后默认恢复”</text>
+  <text x="1315" y="590" class="body">除非出现新的稳定用户目标、Owner</text>
+  <text x="1315" y="625" class="body">和独立安全论证</text>
+  <text x="800" y="820" class="note">准入判断依据：用户目标、权限范围、远端身份、可恢复性和证据等级</text>
+</svg>

@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">领导可见的四类原始成功指标</title>
+  <desc id="desc">成功度量分为分发维护、模型判断、确定性平台安全和证据等级四类，报告原始数据而不是虚构综合分数或百分比。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .title { font-size: 25px; font-weight: 700; text-anchor: middle; }
+      .body { font-size: 18px; text-anchor: middle; }
+      .center { font-size: 22px; font-weight: 700; text-anchor: middle; }
+      .note { font-size: 18px; text-anchor: middle; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linejoin: round; }
+    </style>
+    <filter id="rough" x="-4%" y="-5%" width="108%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="201" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2"/></filter>
+  </defs>
+  <rect width="1600" height="900" fill="#fffaf0"/>
+  <text x="70" y="62" class="heading">成功标准：报告原始证据，不制造一个“总分”</text>
+  <path d="M70 79 C300 69, 570 84, 820 76" fill="none" stroke="#6b7280" stroke-width="2"/>
+  <g filter="url(#rough)">
+    <rect x="70" y="135" width="650" height="275" rx="28" fill="#dbeafe" class="outline"/>
+    <rect x="880" y="135" width="650" height="275" rx="28" fill="#d8f3dc" class="outline"/>
+    <rect x="70" y="490" width="650" height="275" rx="28" fill="#fff0b3" class="outline"/>
+    <rect x="880" y="490" width="650" height="275" rx="28" fill="#e7d8ff" class="outline"/>
+    <ellipse cx="800" cy="450" rx="165" ry="78" fill="#ffffff" class="outline"/>
+  </g>
+  <text x="395" y="180" class="title">① 分发与维护</text>
+  <text x="395" y="225" class="body">安装写入业务仓库的配置文件数</text>
+  <text x="395" y="262" class="body">是否仍需角色初始化、SessionStart、managed uninstall</text>
+  <text x="395" y="299" class="body">Owner、版本、Changelog、回滚 tag</text>
+  <text x="395" y="350" class="body">无 node_modules 环境能否运行</text>
+
+  <text x="1205" y="180" class="title">② 模型判断质量</text>
+  <text x="1205" y="225" class="body">正向 / 近邻负向 / 歧义触发记录</text>
+  <text x="1205" y="262" class="body">不必要阶段、确认与文件生成次数</text>
+  <text x="1205" y="299" class="body">是否加载真正相关的 Specs</text>
+  <text x="1205" y="350" class="body">小修复能否保持快速路径</text>
+
+  <text x="395" y="535" class="title">③ 确定性与平台安全</text>
+  <text x="395" y="580" class="body">关键契约由脚本还是 Prompt 保证</text>
+  <text x="395" y="617" class="body">写操作是否 prepare / confirm / execute / status</text>
+  <text x="395" y="654" class="body">workspace、权限、脱敏、幂等与恢复</text>
+  <text x="395" y="705" class="body">是否存在任意 payload 或默认候选</text>
+
+  <text x="1205" y="535" class="title">④ 证据等级</text>
+  <text x="1205" y="580" class="body">源码检查、自动测试、mock/integration</text>
+  <text x="1205" y="617" class="body">真实非生产 E2E 与未覆盖边界</text>
+  <text x="1205" y="654" class="body">失败恢复和远端 read-back 证据</text>
+  <text x="1205" y="705" class="body">真实用户完成路径与反馈</text>
+
+  <text x="800" y="442" class="center">不做综合评分</text>
+  <text x="800" y="475" class="body">任一关键失败不能被其他维度抵消</text>
+  <text x="800" y="835" class="note">先建立数据源和基线，再设阈值；图中没有虚构当前百分比</text>
+</svg>

@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">PM、研发与测试的原生 Plugin 安装组合</title>
+  <desc id="desc">PM 安装 Product 并自动获得 E3，研发安装 Engineering 并按需组合 E3 与 Pipeline，测试未来安装 Testing 并在准入后组合 UTP，避免角色套件。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .title { font-size: 26px; font-weight: 700; text-anchor: middle; }
+      .plugin { font-size: 21px; font-weight: 700; text-anchor: middle; }
+      .body { font-size: 18px; text-anchor: middle; }
+      .note { font-size: 18px; text-anchor: middle; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linejoin: round; }
+      .dependency { fill: none; stroke: #273142; stroke-width: 4; marker-end: url(#arrow); }
+      .optional { fill: none; stroke: #7b5ea7; stroke-width: 3; stroke-dasharray: 7 7; marker-end: url(#purple); }
+    </style>
+    <filter id="rough" x="-4%" y="-5%" width="108%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="181" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2"/></filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#273142" stroke-width="2.4"/></marker>
+    <marker id="purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#7b5ea7" stroke-width="2.4"/></marker>
+  </defs>
+  <rect width="1600" height="900" fill="#fffaf0"/>
+  <text x="70" y="62" class="heading">角色是使用场景，不再等于一个大分发包</text>
+  <path d="M70 79 C310 70, 570 84, 820 76" fill="none" stroke="#6b7280" stroke-width="2"/>
+  <g filter="url(#rough)">
+    <rect x="520" y="110" width="560" height="110" rx="25" fill="#e7d8ff" class="outline"/>
+    <rect x="55" y="300" width="440" height="440" rx="30" fill="#dbeafe" class="outline"/>
+    <rect x="580" y="300" width="440" height="440" rx="30" fill="#d8f3dc" class="outline"/>
+    <rect x="1105" y="300" width="440" height="440" rx="30" fill="#fff0b3" class="outline" stroke-dasharray="9 7"/>
+    <rect x="115" y="415" width="320" height="85" rx="20" fill="#ffffff" class="outline"/>
+    <rect x="115" y="565" width="320" height="85" rx="20" fill="#ffd6cc" class="outline"/>
+    <rect x="640" y="415" width="320" height="85" rx="20" fill="#ffffff" class="outline"/>
+    <rect x="625" y="565" width="150" height="85" rx="20" fill="#ffd6cc" class="outline"/>
+    <rect x="825" y="565" width="150" height="85" rx="20" fill="#e7d8ff" class="outline"/>
+    <rect x="1165" y="415" width="320" height="85" rx="20" fill="#ffffff" class="outline" stroke-dasharray="8 6"/>
+    <rect x="1150" y="565" width="150" height="85" rx="20" fill="#ffd6cc" class="outline"/>
+    <rect x="1350" y="565" width="150" height="85" rx="20" fill="#e7d8ff" class="outline" stroke-dasharray="8 6"/>
+    <path d="M275 500 C275 525, 275 540, 275 555" class="dependency"/>
+    <path d="M800 500 C755 525, 720 540, 700 555" class="optional"/>
+    <path d="M800 500 C845 525, 880 540, 900 555" class="optional"/>
+    <path d="M1325 500 C1280 525, 1240 540, 1225 555" class="optional"/>
+    <path d="M1325 500 C1370 525, 1410 540, 1425 555" class="optional"/>
+  </g>
+  <text x="800" y="153" class="plugin">plainOEC-infra Marketplace</text><text x="800" y="188" class="body">原生 Plugin 发现与版本分发</text>
+  <text x="275" y="350" class="title">产品经理</text>
+  <text x="275" y="450" class="plugin">oec-product</text><text x="275" y="482" class="body">Agent + 3 Skills</text>
+  <text x="275" y="600" class="plugin">oec-e3</text><text x="275" y="632" class="body">自动解析 dependency</text>
+  <text x="275" y="700" class="note">只安装 Product 即可进入 PM 主链</text>
+
+  <text x="800" y="350" class="title">研发</text>
+  <text x="800" y="450" class="plugin">oec-engineering</text><text x="800" y="482" class="body">6 个工程 Skills</text>
+  <text x="700" y="600" class="plugin">oec-e3</text><text x="700" y="632" class="body">任务同步</text>
+  <text x="900" y="600" class="plugin">Pipeline</text><text x="900" y="632" class="body">按需运行</text>
+  <text x="800" y="700" class="note">工程方法不强依赖内部平台</text>
+
+  <text x="1325" y="350" class="title">测试（未来）</text>
+  <text x="1325" y="450" class="plugin">oec-testing</text><text x="1325" y="482" class="body">审计后确定能力数量</text>
+  <text x="1225" y="600" class="plugin">Pipeline</text><text x="1225" y="632" class="body">现有</text>
+  <text x="1425" y="600" class="plugin">oec-utp</text><text x="1425" y="632" class="body">准入后</text>
+  <text x="1325" y="700" class="note">不恢复 Dispatcher 或角色套件</text>
+  <text x="800" y="830" class="note">粗实线：明确依赖　　紫色点线：用户按场景安装　　虚线卡片：尚未建设或准入</text>
+</svg>

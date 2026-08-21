@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">PRD 发布中 Skill 与 MCP 的协作链</title>
+  <desc id="desc">用户显式调用发布 Skill，Skill 解释业务契约，MCP 依次 prepare、选择、execute 和 status，只有远端验证 published 后才报告发布成功。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .step { font-size: 21px; font-weight: 700; text-anchor: middle; }
+      .body { font-size: 17px; text-anchor: middle; }
+      .owner { font-size: 17px; font-weight: 700; text-anchor: middle; }
+      .note { font-size: 18px; text-anchor: middle; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linejoin: round; }
+      .arrow { fill: none; stroke: #273142; stroke-width: 3; marker-end: url(#arrow); }
+    </style>
+    <filter id="rough" x="-4%" y="-5%" width="108%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="151" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="1.15"/></filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#273142" stroke-width="2.4"/></marker>
+  </defs>
+  <rect width="1600" height="900" fill="#fffaf0"/>
+  <text x="70" y="62" class="heading">发布成功不是 Skill 的一句话，而是一条可验证的链</text>
+  <path d="M70 79 C340 68, 670 84, 950 76" fill="none" stroke="#6b7280" stroke-width="2"/>
+  <g filter="url(#rough)">
+    <rect x="45" y="255" width="190" height="225" rx="25" fill="#dbeafe" class="outline"/>
+    <rect x="275" y="255" width="190" height="225" rx="25" fill="#e7d8ff" class="outline"/>
+    <rect x="505" y="255" width="190" height="225" rx="25" fill="#d8f3dc" class="outline"/>
+    <rect x="735" y="255" width="190" height="225" rx="25" fill="#fff0b3" class="outline"/>
+    <rect x="965" y="255" width="190" height="225" rx="25" fill="#e7d8ff" class="outline"/>
+    <rect x="1195" y="255" width="190" height="225" rx="25" fill="#ffd6cc" class="outline"/>
+    <rect x="1425" y="255" width="130" height="225" rx="25" fill="#d8f3dc" class="outline"/>
+    <path d="M235 367 C245 360, 255 360, 265 367" class="arrow"/>
+    <path d="M465 367 C475 360, 485 360, 495 367" class="arrow"/>
+    <path d="M695 367 C705 360, 715 360, 725 367" class="arrow"/>
+    <path d="M925 367 C935 360, 945 360, 955 367" class="arrow"/>
+    <path d="M1155 367 C1165 360, 1175 360, 1185 367" class="arrow"/>
+    <path d="M1385 367 C1395 360, 1405 360, 1415 367" class="arrow"/>
+  </g>
+  <text x="140" y="303" class="step">显式调用</text><text x="140" y="343" class="body">用户选择发布版本</text><text x="140" y="428" class="owner">用户</text>
+  <text x="370" y="303" class="step">解释契约</text><text x="370" y="343" class="body">版本、HANDOFF、warning</text><text x="370" y="428" class="owner">Publishing Skill</text>
+  <text x="600" y="303" class="step">prepare</text><text x="600" y="343" class="body">产物、workspace</text><text x="600" y="373" class="body">认证、远端身份</text><text x="600" y="428" class="owner">E3 MCP</text>
+  <text x="830" y="303" class="step">精确选择</text><text x="830" y="343" class="body">只接受本轮候选</text><text x="830" y="428" class="owner">用户 + MCP</text>
+  <text x="1060" y="303" class="step">展示计划</text><text x="1060" y="343" class="body">创建 / 复用 / warnings</text><text x="1060" y="428" class="owner">Skill + 用户确认</text>
+  <text x="1290" y="303" class="step">execute</text><text x="1290" y="343" class="body">重验 plan 与 fingerprint</text><text x="1290" y="373" class="body">逐项 checkpoint</text><text x="1290" y="428" class="owner">E3 MCP</text>
+  <text x="1490" y="303" class="step">status</text><text x="1490" y="343" class="body">远端回读</text><text x="1490" y="373" class="body">published?</text><text x="1490" y="428" class="owner">MCP</text>
+
+  <g filter="url(#rough)"><rect x="235" y="585" width="1130" height="145" rx="28" fill="#ffffff" class="outline"/></g>
+  <text x="800" y="628" class="step">责任不混淆</text>
+  <text x="800" y="672" class="body">Skill：为什么发布、何时发布、如何解释结果　｜　MCP：认证、选择、写入、幂等、恢复与验证</text>
+  <text x="800" y="708" class="body">只有 status = published，Skill 才向用户报告“已发布”</text>
+  <text x="800" y="830" class="note">用户确认是业务决策；plan token 与服务端复查是不可绕过的执行门禁</text>
+</svg>

@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">OEC-infra 优化后的四类责任所有者</title>
+  <desc id="desc">最终模型把语义判断交给模型与领域能力，确定性不变量交给代码，外部执行交给平台 MCP，版本准入和回滚交给组织治理。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .title { font-size: 26px; font-weight: 700; text-anchor: middle; }
+      .body { font-size: 18px; text-anchor: middle; }
+      .result { font-size: 24px; font-weight: 700; text-anchor: middle; }
+      .note { font-size: 18px; text-anchor: middle; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linejoin: round; }
+      .arrow { fill: none; stroke: #273142; stroke-width: 3; marker-end: url(#arrow); }
+    </style>
+    <filter id="rough" x="-4%" y="-5%" width="108%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="211" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2"/></filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#273142" stroke-width="2.4"/></marker>
+  </defs>
+  <rect width="1600" height="900" fill="#fffaf0"/>
+  <text x="70" y="62" class="heading">最后一页：让每类责任回到最可靠的所有者</text>
+  <path d="M70 79 C300 69, 580 84, 850 76" fill="none" stroke="#6b7280" stroke-width="2"/>
+  <g filter="url(#rough)">
+    <rect x="55" y="165" width="330" height="410" rx="30" fill="#dbeafe" class="outline"/>
+    <rect x="440" y="165" width="330" height="410" rx="30" fill="#d8f3dc" class="outline"/>
+    <rect x="825" y="165" width="330" height="410" rx="30" fill="#fff0b3" class="outline"/>
+    <rect x="1210" y="165" width="330" height="410" rx="30" fill="#e7d8ff" class="outline"/>
+    <rect x="300" y="690" width="1000" height="120" rx="28" fill="#ffffff" class="outline"/>
+    <path d="M220 575 C300 640, 420 670, 520 685" class="arrow"/>
+    <path d="M605 575 C650 630, 690 660, 720 685" class="arrow"/>
+    <path d="M990 575 C950 630, 910 660, 880 685" class="arrow"/>
+    <path d="M1375 575 C1280 640, 1170 670, 1080 685" class="arrow"/>
+  </g>
+  <text x="220" y="215" class="title">模型与领域能力</text>
+  <text x="220" y="270" class="body">理解用户目标</text>
+  <text x="220" y="310" class="body">应用业务知识</text>
+  <text x="220" y="350" class="body">权衡方案与风险</text>
+  <text x="220" y="390" class="body">解释结果与待确认事项</text>
+  <text x="220" y="490" class="note">Agent / Skill / 项目事实</text>
+
+  <text x="605" y="215" class="title">确定性代码</text>
+  <text x="605" y="270" class="body">解析与校验</text>
+  <text x="605" y="310" class="body">schema 与 fingerprint</text>
+  <text x="605" y="350" class="body">路径、链接与格式</text>
+  <text x="605" y="390" class="body">可重复失败信号</text>
+  <text x="605" y="490" class="note">supporting script / runtime</text>
+
+  <text x="990" y="215" class="title">平台执行</text>
+  <text x="990" y="270" class="body">认证与最小权限</text>
+  <text x="990" y="310" class="body">精确远端身份</text>
+  <text x="990" y="350" class="body">幂等、恢复与 status</text>
+  <text x="990" y="390" class="body">受控外部副作用</text>
+  <text x="990" y="490" class="note">MCP Server / Tools</text>
+
+  <text x="1375" y="215" class="title">组织治理</text>
+  <text x="1375" y="270" class="body">Plugin 生命周期与 Owner</text>
+  <text x="1375" y="310" class="body">Marketplace 准入</text>
+  <text x="1375" y="350" class="body">真实验收与证据分级</text>
+  <text x="1375" y="390" class="body">版本、发布与回滚</text>
+  <text x="1375" y="490" class="note">Plugin / Marketplace / policy</text>
+
+  <text x="800" y="735" class="result">最终收益：安装可控、判断清晰、执行可验证、失败可恢复</text>
+  <text x="800" y="778" class="body">不是追求更短 Prompt，而是减少错误所有权和冲突判断面</text>
+  <text x="800" y="860" class="note">项目事实留在项目；同一生命周期组成 Plugin；Marketplace 只负责版本化分发</text>
+</svg>

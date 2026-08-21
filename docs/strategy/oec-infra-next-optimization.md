@@ -131,6 +131,10 @@ Skill，认证、远端选择、写入、幂等和状态验证则进入 MCP；�
 使用场景，不是 registry 或运行时 manifest 中的一等角色；测试资产的版本、安装和卸载生命周期被
 绑定到研发工具包。
 
+![旧产品经理、研发和测试配置的实际规模与角色错位](assets/oec-infra-next-optimization/09-role-config-scale.svg)
+
+*图：文件体量只是表象，更关键的是测试场景没有独立角色和生命周期，却占据 Dev preset 的主要资产。*
+
 ### 2.3 产品经理完整流程
 
 `role=designer + tool=claude-code` 初始化后的结构为：
@@ -434,6 +438,10 @@ Skill 的价值不是替模型复述常识，而是在正确触发时提供模�
 | 评测 | 是否覆盖触发、路径、长尾、弱模型和目标宿主？ | 只验证 Markdown 格式或 happy path | 固定 eval corpus |
 | 维护 | Owner、版本、gotcha 过期、回滚和真实反馈是否清楚？ | 正文无限增长、远程版本不可追溯 | Changelog/运行证据 |
 
+![Skill 研发与评审的五组观察维度](assets/oec-infra-next-optimization/10-skill-review-lenses.svg)
+
+*图：十六项检查被归并为五组问题，便于汇报时先讲判断框架，再按表格复核细节。*
+
 ### 4.3 评审处置，而非伪精确评分
 
 每项能力评审后只做以下处置：
@@ -449,6 +457,10 @@ Skill 的价值不是替模型复述常识，而是在正确触发时提供模�
 
 不采用 A/B/C/D 或综合分数，因为不同维度不能互相抵消：一个格式良好的 Skill 如果会误触发生产写
 操作，不能靠“文档清晰”提高总分而获得准入。
+
+![旧能力从用户价值和证据出发分流到 Skill、工具、MCP、Agent、项目事实或删除](assets/oec-infra-next-optimization/11-capability-disposition.svg)
+
+*图：处置是责任分流，不是互斥评分；同一目标可以组合 Skill、script 和 MCP。*
 
 ### 4.4 对旧测试资产的初步应用
 
@@ -515,6 +527,10 @@ Claude Code 官方将这些能力放在不同扩展位置：[扩展模型](https
 6. **最后决定是否需要 Agent**：只有身份、上下文、权限或并行隔离确有价值时才创建；不会因为存在
    一组 Skills 就自动创建一个角色 Agent。
 
+![旧 Mega Skill 中六类混合责任拆向原生组件和项目事实](assets/oec-infra-next-optimization/12-legacy-skill-decomposition.svg)
+
+*图：迁移不是压缩旧 Prompt，而是让身份、知识、模型能力、确定性代码、平台执行和项目事实各归其位。*
+
 | 旧能力集合 | 拆分判断 | 当前或目标落点 |
 | --- | --- | --- |
 | PM Agent + `oec-pm` Mega Skill + PRD 阶段 Skills | PM 身份、写作、评审和发布是不同职责；内部 `SKILL.md` 路由没有独立价值 | `oec-pm` Agent；writing/reviewing/publishing 三个 Skills；模板和契约归属各自 Skill |
@@ -548,6 +564,10 @@ Claude Code 工具列表，以名称、description 和 input schema 暴露稳定
 | 状态与恢复 | 通常由脚本临时文件和调用者串联，跨步骤契约不统一 | Server 可统一绑定 workspace、selection、plan、checkpoint 和过期时间 |
 | 复用与生命周期 | 通常服务于一个 Skill，随该 Skill 内容演进 | 可被多个 Agent/Skill 共用，并按平台 Plugin 独立升级 |
 | 测试边界 | 适合单元测试和 CLI 输入输出测试 | 还可验证协议注册、schema、权限元数据、transport 和远端集成 |
+
+![Skill supporting script 与 MCP 注册 Tool 的宿主可见性和执行边界对比](assets/oec-infra-next-optimization/13-script-vs-mcp.svg)
+
+*图：左侧宿主只看到通用 Bash；右侧宿主能够识别、授权并约束具体平台操作。*
 
 例如，`check-artifacts` 与 `oec-spec` 只读取本地受控文件，负责 YAML、路径、链接、glob 和 fingerprint
 等确定性处理。它们不需要认证、远端状态或跨步骤副作用，因此作为 Skill runtime 更直接，也更容易随
@@ -583,19 +603,11 @@ Tool。
 
 #### 5.3.3 Skill 与 MCP 如何协作，而不是互相替代
 
-以 PRD 发布为例，新的调用链是：
+以 PRD 发布为例，新的调用链如下：
 
-```text
-用户显式调用 publishing Skill
-→ Skill 判断这是哪个版本、解释业务发布契约
-→ prepare_prd_publish 验证本地产物、workspace、认证和远端身份
-→ 如有歧义，select_product_space 只接受本轮候选
-→ Skill 向用户展示空间、创建/复用数量和 warnings
-→ 用户确认
-→ execute_prd_publish 重验 plan、fingerprint 和配置后执行并 checkpoint
-→ get_prd_publish_status 重新读取远端对象
-→ 只有 status 为 published，Skill 才向用户报告“已发布”
-```
+![PRD 发布中用户、Publishing Skill 与 E3 MCP 的可验证协作链](assets/oec-infra-next-optimization/15-prd-publication-sequence.svg)
+
+*图：Skill 保留产品语义，MCP 保障平台执行；用户确认和服务端硬门禁共同组成发布边界。*
 
 其中 Skill 保留“一个子 PRD 对应一个系统需求”“何时应该发布”“如何向用户解释 warning”等领域
 语义；MCP 保证 OAuth、空间绑定、POMP 选择、mapping、远端身份、幂等和恢复。研发任务同步采用同样
@@ -620,6 +632,10 @@ Plugin 的粒度则由生命周期决定：当外部事实来源、认证权限�
 | 未来 SAE Plugin | 应用、环境、实例、版本和运行健康 | 通过准入后独立建设，不借用 Pipeline 的权限或验收结果 |
 | Engineering Skills | 工程判断、团队 Specs、计划、诊断和评审方法 | 不持有任何平台 token、selection、plan 或远端状态 |
 | 主 Agent / 场景 Skill | 根据用户目标决定何时组合领域知识和平台工具 | 不复制各平台认证、payload、幂等或恢复实现 |
+
+![主 Agent 按场景组合 Engineering、E3、Pipeline 与未来 SAE，而不增加 delivery 包装层](assets/oec-infra-next-optimization/14-platform-plugin-granularity.svg)
+
+*图：场景可以跨平台，Plugin 的事实、权限、状态、Owner 和验收生命周期仍然独立。*
 
 因此，“部署当前提交到测试环境”可以在会话中依次组合 Pipeline 运行和未来 SAE 状态验证，但这种场景
 组合不需要一个新的 `oec-delivery` Plugin。后者没有独立事实、权限或领域知识，只会增加 dependency
@@ -652,6 +668,10 @@ Product 与 E3 都需要验证同一份 PRD 产物，但不复制两套规则：
 时分别导入，再生成各自的自足 bundle。它不是 Claude 组件、公共 Skill references 或运行时 npm 包，
 Product 和 E3 运行时也不跨 Plugin 读取文件。这样既避免 artifact gate 漂移，也不让平台 Plugin
 反向依赖 Product 的安装路径。
+
+![根级 PRD artifact contract 在构建时分别进入 Product checker 与 E3 Server bundle](assets/oec-infra-next-optimization/16-shared-artifact-contract.svg)
+
+*图：共享的是构建期确定性实现，不是公共 Skill 资源或运行时跨 Plugin 文件依赖。*
 
 ### 6.2 当前分发方式
 
@@ -687,15 +707,9 @@ claude plugin install oec-pipeline@plainOEC-infra --scope user
 当前完整测试为 99/99。E3 的真实验收不是“工具能够注册”或“mock 返回成功”，而是完成了以下远端
 旅程：
 
-```text
-隔离 Plugin Data 完成 OAuth
-→ 从实时列表精确选择“OBU-AI提效组”，不使用首项 fallback
-→ 发布 PRD，status 返回 published 且需求/Story 均 verified
-→ 再次 prepare，需求和任务均精确复用
-→ 在同一需求下创建研发任务
-→ start → log → complete
-→ 最终研发 status 返回 synced，任务为 verified
-```
+![E3 从隔离认证、精确选择、PRD 发布复用到研发任务完成的真实非生产旅程](assets/oec-infra-next-optimization/17-e3-real-acceptance.svg)
+
+*图：真实旅程证明创建、复用、进度和 read-back 主链；图中同时标明不能由此推出的结论。*
 
 [脱敏验收记录](../evidence/e3-platform-3.0.0-real-acceptance.md)没有保存 token、远端内部 ID 或原始
 响应，也没有在真实环境人为制造 partial；partial resume 仍由自动测试证明。因此该记录证明的是上述
@@ -734,6 +748,10 @@ UTP 也不得借用 E3 证据宣称已验证。
 公司内部完整研发场景可在 onboarding 文档中给出三条原生安装命令，但不为“一条命令”重新制造一个
 无领域知识、只转发 dependency 的角色套件。
 
+![产品经理、研发和未来测试角色通过原生 Plugin 组合获得能力](assets/oec-infra-next-optimization/18-role-installation.svg)
+
+*图：PM 具有明确 Product→E3 dependency；研发和测试按场景组合平台能力。*
+
 ### 7.3 `oec-testing` 的形成方式
 
 第一版不预先承诺 Skill 或 Agent 数量。先审计每项旧能力：
@@ -770,6 +788,10 @@ UTP 也不得借用 E3 证据宣称已验证。
 这不是按模型“能不能调用”划分，而是按稳定用户目标、最小权限和可恢复性划分。例如 SAE 可以先评估
 应用状态、版本和有限日志，只有真实部署入口和非生产身份都可验证后才考虑写入；UTP 也必须先把测试
 方法、本地确定性工具与远端平台 API 分开审计。
+
+![平台能力从只读诊断到受控写入，并默认排除通用管理操作的渐进准入模型](assets/oec-infra-next-optimization/19-platform-admission.svg)
+
+*图：只有证据通过门禁才能升级能力范围；排除项不会因为旧 payload 已有脚本而自动恢复。*
 
 任何平台 Plugin 进入 Marketplace 前必须满足：
 
@@ -863,6 +885,10 @@ UTP 也不得借用 E3 证据宣称已验证。
 
 不把多个维度压成一个综合分数，直接报告原始证据：
 
+![分发维护、模型判断、确定性平台安全和证据等级四类领导可见指标](assets/oec-infra-next-optimization/20-success-metrics.svg)
+
+*图：指标必须报告原始数据和证据来源，不用综合分数或没有基线的百分比包装结果。*
+
 ### 9.1 分发与维护
 
 - user-scope Plugin 安装向业务仓库写入的配置文件数：目标为 0。
@@ -918,14 +944,9 @@ OEC-infra 后续不应继续做“更多 Prompt、更多角色路由、更多统
 
 最终组织模型应稳定为：
 
-```text
-项目事实留在项目
-领域知识进入 Skills/必要 Agent
-确定性逻辑进入工具
-外部系统进入 MCP
-同一生命周期能力组成 Plugin
-Marketplace 只负责版本化分发
-```
+![模型、确定性代码、平台执行和组织治理四类责任回到正确所有者](assets/oec-infra-next-optimization/21-final-operating-model.svg)
+
+*图：项目事实、领域知识、确定性不变量、平台执行和分发治理各自拥有清晰边界。*
 
 这套架构的收益不是“少写了多少字”，而是模型、代码、平台和组织 Owner 各自只承担自己能够可靠
 负责的部分；安装、升级、判断和外部执行都变得可观察、可验证和可回滚。

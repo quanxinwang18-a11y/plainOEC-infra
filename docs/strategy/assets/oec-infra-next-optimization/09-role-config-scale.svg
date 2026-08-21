@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">旧 PM、研发与测试配置的实际规模和角色错位</title>
+  <desc id="desc">对比 designer、dev 与没有独立角色的测试配置，展示文件数、Skills、Agents 和分发绑定关系。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .card-title { font-size: 28px; font-weight: 700; text-anchor: middle; }
+      .role { font-size: 18px; text-anchor: middle; }
+      .metric { font-size: 25px; font-weight: 700; text-anchor: middle; }
+      .detail { font-size: 19px; text-anchor: middle; }
+      .note { font-size: 19px; text-anchor: middle; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+    <filter id="rough" x="-4%" y="-5%" width="108%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="91" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="1.25"/></filter>
+  </defs>
+  <rect width="1600" height="900" fill="#fffaf0"/>
+  <text x="70" y="62" class="heading">旧角色配置：测试不是一等角色，三类资产却一起进入业务仓库</text>
+  <path d="M70 79 C430 68, 860 86, 1250 76" fill="none" stroke="#6b7280" stroke-width="2"/>
+  <g filter="url(#rough)">
+    <rect x="60" y="135" width="440" height="610" rx="30" fill="#dbeafe" class="outline"/>
+    <rect x="580" y="135" width="440" height="610" rx="30" fill="#d8f3dc" class="outline"/>
+    <rect x="1100" y="135" width="440" height="610" rx="30" fill="#fff0b3" class="outline"/>
+  </g>
+  <text x="280" y="190" class="card-title">产品经理</text>
+  <text x="280" y="225" class="role">role = designer</text>
+  <text x="280" y="300" class="metric">622 个业务仓库文件</text>
+  <text x="280" y="357" class="metric">25 个项目级 Skills</text>
+  <text x="280" y="414" class="metric">1 个 PM Agent</text>
+  <text x="280" y="454" class="detail">Agent 正文 803 行</text>
+  <path d="M110 500 C215 493, 350 508, 450 499" fill="none" stroke="#3b6f95" stroke-width="2"/>
+  <text x="280" y="555" class="detail">Plugin 安装后仍需项目初始化</text>
+  <text x="280" y="595" class="detail">Mega Skill 再索引内部文件</text>
+  <text x="280" y="680" class="note">角色、Skills 与运行时一起复制</text>
+
+  <text x="800" y="190" class="card-title">研发</text>
+  <text x="800" y="225" class="role">role = dev</text>
+  <text x="800" y="300" class="metric">1418 个业务仓库文件</text>
+  <text x="800" y="357" class="metric">12 个顶层 Skills</text>
+  <text x="800" y="414" class="metric">19 个测试 Agent 文件</text>
+  <text x="800" y="454" class="detail">约 28 MiB</text>
+  <path d="M630 500 C735 493, 870 508, 970 499" fill="none" stroke="#2f6b45" stroke-width="2"/>
+  <text x="800" y="555" class="detail">dev-flow、dev-task 重复编排</text>
+  <text x="800" y="595" class="detail">测试资产随 Dev preset 下发</text>
+  <text x="800" y="680" class="note">通用开发流程与平台操作混装</text>
+
+  <text x="1320" y="190" class="card-title">测试</text>
+  <text x="1320" y="225" class="role">没有独立 role</text>
+  <text x="1320" y="300" class="metric">71 个内部 Skills</text>
+  <text x="1320" y="357" class="metric">645 个 Dispatcher 文件</text>
+  <text x="1320" y="414" class="metric">约 21.15 MiB</text>
+  <text x="1320" y="454" class="detail">入口再读取 Agent 文件树</text>
+  <path d="M1150 500 C1255 493, 1390 508, 1490 499" fill="none" stroke="#9a6b00" stroke-width="2"/>
+  <text x="1320" y="555" class="detail">必须先安装 Dev 角色</text>
+  <text x="1320" y="595" class="detail">内部 Skills 不被宿主原生发现</text>
+  <text x="1320" y="680" class="note">使用场景、角色和组件没有对齐</text>
+
+  <path d="M180 795 C510 780, 1090 810, 1420 792" fill="none" stroke="#6b7280" stroke-width="2.4"/>
+  <text x="800" y="840" class="note">问题不只是文件多：安装生命周期、角色边界和模型发现边界同时错位</text>
+</svg>

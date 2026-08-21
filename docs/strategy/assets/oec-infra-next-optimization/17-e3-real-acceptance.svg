@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">E3 真实非生产验收旅程与证据边界</title>
+  <desc id="desc">展示隔离认证、精确选择、PRD 发布、精确复用、研发任务 start log complete 和最终状态回读，并明确真实 partial、Pipeline 和生产可用性未被证明。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .step { font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .body { font-size: 17px; text-anchor: middle; }
+      .status { font-size: 17px; font-weight: 700; text-anchor: middle; }
+      .note { font-size: 18px; text-anchor: middle; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linejoin: round; }
+      .arrow { fill: none; stroke: #273142; stroke-width: 3; marker-end: url(#arrow); }
+    </style>
+    <filter id="rough" x="-4%" y="-5%" width="108%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="171" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="1.15"/></filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#273142" stroke-width="2.4"/></marker>
+  </defs>
+  <rect width="1600" height="900" fill="#fffaf0"/>
+  <text x="70" y="62" class="heading">真实验收证明的是完整远端主链，不只是 Tool 能注册</text>
+  <path d="M70 79 C360 68, 690 84, 1010 76" fill="none" stroke="#6b7280" stroke-width="2"/>
+  <g filter="url(#rough)">
+    <rect x="50" y="175" width="205" height="190" rx="24" fill="#dbeafe" class="outline"/>
+    <rect x="310" y="175" width="205" height="190" rx="24" fill="#fff0b3" class="outline"/>
+    <rect x="570" y="175" width="205" height="190" rx="24" fill="#d8f3dc" class="outline"/>
+    <rect x="830" y="175" width="205" height="190" rx="24" fill="#e7d8ff" class="outline"/>
+    <rect x="1090" y="175" width="205" height="190" rx="24" fill="#ffd6cc" class="outline"/>
+    <rect x="1350" y="175" width="205" height="190" rx="24" fill="#d8f3dc" class="outline"/>
+    <path d="M255 270 C270 263, 285 263, 300 270" class="arrow"/>
+    <path d="M515 270 C530 263, 545 263, 560 270" class="arrow"/>
+    <path d="M775 270 C790 263, 805 263, 820 270" class="arrow"/>
+    <path d="M1035 270 C1050 263, 1065 263, 1080 270" class="arrow"/>
+    <path d="M1295 270 C1310 263, 1325 263, 1340 270" class="arrow"/>
+    <rect x="100" y="500" width="1400" height="230" rx="30" fill="#ffffff" class="outline"/>
+  </g>
+  <text x="152" y="220" class="step">隔离认证</text><text x="152" y="260" class="body">新 Plugin Data</text><text x="152" y="292" class="body">不复制旧 token</text><text x="152" y="330" class="status">OAuth 完成</text>
+  <text x="412" y="220" class="step">精确选择</text><text x="412" y="260" class="body">实时空间列表</text><text x="412" y="292" class="body">OBU-AI提效组</text><text x="412" y="330" class="status">无首项 fallback</text>
+  <text x="672" y="220" class="step">发布 PRD</text><text x="672" y="260" class="body">需求 + Story</text><text x="672" y="292" class="body">checkpoint</text><text x="672" y="330" class="status">published / verified</text>
+  <text x="932" y="220" class="step">再次 prepare</text><text x="932" y="260" class="body">创建数 = 0</text><text x="932" y="292" class="body">精确复用</text><text x="932" y="330" class="status">无重复对象</text>
+  <text x="1192" y="220" class="step">研发任务</text><text x="1192" y="260" class="body">复用父需求</text><text x="1192" y="292" class="body">start / log / complete</text><text x="1192" y="330" class="status">进度 100%</text>
+  <text x="1452" y="220" class="step">最终回读</text><text x="1452" y="260" class="body">status = synced</text><text x="1452" y="292" class="body">task = verified</text><text x="1452" y="330" class="status">工时 1.0h</text>
+
+  <text x="800" y="548" class="step">证据边界同样重要</text>
+  <text x="410" y="602" class="body">✓ 证明：非生产空间中的创建、复用、进度和 read-back</text>
+  <text x="410" y="650" class="body">✓ 自动测试覆盖：歧义、漂移、partial resume、未知 POST</text>
+  <text x="1180" y="602" class="body">✕ 未证明：真实 partial 故障、Pipeline 真实运行</text>
+  <text x="1180" y="650" class="body">✕ 未证明：完整 E3 SDK 或生产可用性</text>
+  <text x="800" y="700" class="note">验收记录不保存 token、远端内部 ID 或原始响应</text>
+  <text x="800" y="825" class="note">源码、自动测试、mock、非生产 E2E 和生产可用性必须分栏汇报</text>
+</svg>

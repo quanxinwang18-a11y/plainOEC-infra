@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Product 与 E3 的构建期共享 artifact contract</title>
+  <desc id="desc">根级 artifact contract 在构建时分别进入 Product checker bundle 与 E3 server bundle，运行时两侧自足且不跨 Plugin 读取文件。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .title { font-size: 24px; font-weight: 700; text-anchor: middle; }
+      .body { font-size: 18px; text-anchor: middle; }
+      .note { font-size: 18px; text-anchor: middle; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linejoin: round; }
+      .build { fill: none; stroke: #7b5ea7; stroke-width: 4; stroke-dasharray: 9 7; marker-end: url(#purple); }
+      .runtime { fill: none; stroke: #273142; stroke-width: 3; marker-end: url(#arrow); }
+      .blocked { stroke: #a14b3d; stroke-width: 4; }
+    </style>
+    <filter id="rough" x="-4%" y="-5%" width="108%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="161" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2"/></filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#273142" stroke-width="2.4"/></marker>
+    <marker id="purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#7b5ea7" stroke-width="2.4"/></marker>
+  </defs>
+  <rect width="1600" height="900" fill="#fffaf0"/>
+  <text x="70" y="62" class="heading">一份规则，两份自足 bundle：共享实现但不共享运行时</text>
+  <path d="M70 79 C350 68, 690 84, 1010 76" fill="none" stroke="#6b7280" stroke-width="2"/>
+  <g filter="url(#rough)">
+    <rect x="500" y="120" width="600" height="145" rx="28" fill="#fff0b3" class="outline"/>
+    <rect x="110" y="390" width="560" height="280" rx="30" fill="#dbeafe" class="outline"/>
+    <rect x="930" y="390" width="560" height="280" rx="30" fill="#d8f3dc" class="outline"/>
+    <rect x="180" y="505" width="420" height="105" rx="22" fill="#ffffff" class="outline"/>
+    <rect x="1000" y="505" width="420" height="105" rx="22" fill="#ffffff" class="outline"/>
+    <path d="M650 265 C560 310, 455 345, 390 380" class="build"/>
+    <path d="M950 265 C1040 310, 1145 345, 1210 380" class="build"/>
+    <path d="M390 610 C390 650, 390 685, 390 715" class="runtime"/>
+    <path d="M1210 610 C1210 650, 1210 685, 1210 715" class="runtime"/>
+    <path d="M690 530 L910 530" class="blocked" stroke-dasharray="8 7"/>
+    <path d="M760 495 L840 565 M840 495 L760 565" class="blocked"/>
+  </g>
+  <text x="800" y="165" class="title">packages/prd-artifact-contract</text>
+  <text x="800" y="205" class="body">路径、章节、HANDOFF、Story / acceptance、warning 的唯一确定性实现</text>
+  <text x="800" y="240" class="note">构建期模块，不是 Claude 组件或公共 references</text>
+
+  <text x="390" y="440" class="title">oec-product</text>
+  <text x="390" y="475" class="body">writing Skill 的 finalize checker</text>
+  <text x="390" y="545" class="title">bundled checker</text>
+  <text x="390" y="580" class="body">插件安装后无需 node_modules</text>
+  <text x="390" y="755" class="body">运行时独立检查本地 PRD 产物</text>
+
+  <text x="1210" y="440" class="title">oec-e3</text>
+  <text x="1210" y="475" class="body">publication prepare / execute gate</text>
+  <text x="1210" y="545" class="title">bundled MCP Server</text>
+  <text x="1210" y="580" class="body">插件安装后无需 node_modules</text>
+  <text x="1210" y="755" class="body">运行时独立阻断不合格发布</text>
+
+  <text x="800" y="610" class="note">运行时不跨 Plugin 读取源码或资源</text>
+  <text x="800" y="845" class="note">避免两套 artifact gate 漂移，也避免平台 Plugin 反向依赖 Product 安装路径</text>
+</svg>

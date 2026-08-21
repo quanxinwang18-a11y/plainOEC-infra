@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">平台 Plugin 的拆分粒度与场景组合</title>
+  <desc id="desc">主 Agent 根据用户场景组合 Engineering、E3、Pipeline 和未来 SAE，但各平台按事实、认证、状态、Owner 与验收周期独立为 Plugin，不增加 delivery 包装层。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .title { font-size: 23px; font-weight: 700; text-anchor: middle; }
+      .body { font-size: 18px; text-anchor: middle; }
+      .note { font-size: 18px; text-anchor: middle; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linejoin: round; }
+      .call { fill: none; stroke: #273142; stroke-width: 3; marker-end: url(#arrow); }
+      .optional { fill: none; stroke: #7b5ea7; stroke-width: 3; stroke-dasharray: 7 7; marker-end: url(#purple); }
+      .blocked { fill: none; stroke: #a14b3d; stroke-width: 3; }
+    </style>
+    <filter id="rough" x="-4%" y="-5%" width="108%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="141" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2"/></filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#273142" stroke-width="2.4"/></marker>
+    <marker id="purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#7b5ea7" stroke-width="2.4"/></marker>
+  </defs>
+  <rect width="1600" height="900" fill="#fffaf0"/>
+  <text x="70" y="62" class="heading">Tool 原子化，不等于所有平台装进一个 Plugin</text>
+  <path d="M70 79 C330 69, 640 84, 920 76" fill="none" stroke="#6b7280" stroke-width="2"/>
+  <g filter="url(#rough)">
+    <rect x="500" y="110" width="600" height="105" rx="25" fill="#ffffff" class="outline"/>
+    <rect x="610" y="275" width="380" height="115" rx="25" fill="#dbeafe" class="outline"/>
+    <rect x="55" y="500" width="330" height="170" rx="26" fill="#e9f4ff" class="outline"/>
+    <rect x="435" y="500" width="330" height="170" rx="26" fill="#d8f3dc" class="outline"/>
+    <rect x="815" y="500" width="330" height="170" rx="26" fill="#fff0b3" class="outline"/>
+    <rect x="1195" y="500" width="330" height="170" rx="26" fill="#ffd6cc" class="outline" stroke-dasharray="9 7"/>
+    <path d="M800 215 C800 235, 800 250, 800 265" class="call"/>
+    <path d="M680 390 C550 435, 330 470, 250 495" class="optional"/>
+    <path d="M750 390 C690 435, 630 470, 600 495" class="optional"/>
+    <path d="M850 390 C910 435, 980 470, 980 495" class="optional"/>
+    <path d="M920 390 C1050 435, 1280 470, 1360 495" class="optional"/>
+    <rect x="575" y="735" width="450" height="90" rx="22" fill="#f3f4f6" class="outline"/>
+    <path d="M600 760 L1000 805 M1000 760 L600 805" class="blocked"/>
+  </g>
+  <text x="800" y="153" class="title">用户场景：部署当前提交到测试环境</text>
+  <text x="800" y="187" class="body">一个目标可以需要多个能力，但不改变各自所有权</text>
+  <text x="800" y="318" class="title">主 Agent / 场景 Skill</text>
+  <text x="800" y="355" class="body">理解目标、选择顺序、向用户解释结果</text>
+
+  <text x="220" y="545" class="title">Engineering Skills</text>
+  <text x="220" y="582" class="body">工程判断、Specs、验证方法</text>
+  <text x="220" y="622" class="note">领域知识生命周期</text>
+  <text x="600" y="545" class="title">E3 Plugin</text>
+  <text x="600" y="582" class="body">需求、Story、研发任务</text>
+  <text x="600" y="622" class="note">E3 认证与 mapping</text>
+  <text x="980" y="545" class="title">Pipeline Plugin</text>
+  <text x="980" y="582" class="body">ref、commit、阶段与运行</text>
+  <text x="980" y="622" class="note">构建平台权限与状态</text>
+  <text x="1360" y="545" class="title">未来 SAE Plugin</text>
+  <text x="1360" y="582" class="body">应用、环境、实例与健康</text>
+  <text x="1360" y="622" class="note">准入后独立验收</text>
+
+  <text x="800" y="770" class="title">不创建 oec-delivery 包装层</text>
+  <text x="800" y="805" class="body">它没有独立事实、权限或领域知识，只会转发 dependency 并模糊 Owner</text>
+  <text x="800" y="865" class="note">Plugin 边界由事实源、认证、远端身份、状态、Owner 和发布周期共同决定</text>
+</svg>

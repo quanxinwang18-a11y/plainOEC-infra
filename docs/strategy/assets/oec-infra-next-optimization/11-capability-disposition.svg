@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">旧能力的处置决策路径</title>
+  <desc id="desc">从旧能力是否具有稳定用户目标和证据开始，按领域判断、本地确定性、外部平台、独立上下文与项目事实分流到 Skill、script、MCP、Agent、项目文档、删除或待证据。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .title { font-size: 23px; font-weight: 700; text-anchor: middle; }
+      .body { font-size: 18px; text-anchor: middle; }
+      .small { font-size: 17px; text-anchor: middle; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linejoin: round; }
+      .arrow { fill: none; stroke: #273142; stroke-width: 3; marker-end: url(#arrow); }
+      .branch { fill: none; stroke: #7b5ea7; stroke-width: 2.7; stroke-dasharray: 7 6; marker-end: url(#purple); }
+    </style>
+    <filter id="rough" x="-4%" y="-5%" width="108%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="111" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2"/></filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#273142" stroke-width="2.4"/></marker>
+    <marker id="purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#7b5ea7" stroke-width="2.4"/></marker>
+  </defs>
+  <rect width="1600" height="900" fill="#fffaf0"/>
+  <text x="70" y="62" class="heading">旧能力不按目录搬迁：先问价值，再决定组件</text>
+  <path d="M70 79 C330 70, 600 83, 890 76" fill="none" stroke="#6b7280" stroke-width="2"/>
+  <g filter="url(#rough)">
+    <rect x="60" y="310" width="210" height="120" rx="24" fill="#ffffff" class="outline"/>
+    <path d="M335 265 L500 370 L335 475 L170 370 Z" fill="#fff0b3" class="outline"/>
+    <rect x="275" y="575" width="245" height="125" rx="24" fill="#e5e7eb" class="outline"/>
+    <rect x="610" y="130" width="260" height="125" rx="24" fill="#dbeafe" class="outline"/>
+    <rect x="930" y="130" width="260" height="125" rx="24" fill="#d8f3dc" class="outline"/>
+    <rect x="1250" y="130" width="260" height="125" rx="24" fill="#ffd6cc" class="outline"/>
+    <rect x="610" y="535" width="260" height="125" rx="24" fill="#e7d8ff" class="outline"/>
+    <rect x="930" y="535" width="260" height="125" rx="24" fill="#eef2ff" class="outline"/>
+    <rect x="1250" y="535" width="260" height="125" rx="24" fill="#fff0b3" class="outline"/>
+    <path d="M270 370 C290 370, 305 370, 320 370" class="arrow"/>
+    <path d="M370 475 C380 515, 390 545, 395 565" class="arrow"/>
+    <path d="M500 340 C560 270, 600 220, 650 205" class="branch"/>
+    <path d="M500 355 C650 300, 880 255, 975 245" class="branch"/>
+    <path d="M500 370 C760 360, 1120 270, 1290 245" class="branch"/>
+    <path d="M500 390 C575 470, 625 520, 675 545" class="branch"/>
+    <path d="M500 405 C680 470, 870 520, 975 545" class="branch"/>
+    <path d="M500 420 C810 470, 1130 520, 1290 545" class="branch"/>
+  </g>
+  <text x="165" y="350" class="title">旧能力</text>
+  <text x="165" y="390" class="body">Skill / Agent / script</text>
+  <text x="335" y="344" class="title">稳定用户目标</text>
+  <text x="335" y="380" class="body">+ 使用证据 + Owner？</text>
+  <text x="335" y="417" class="small">不是看文件数量</text>
+  <text x="397" y="620" class="title">删除或待证据</text>
+  <text x="397" y="656" class="body">不默认迁移</text>
+
+  <text x="740" y="173" class="title">Skill</text><text x="740" y="210" class="body">领域知识与语义判断</text>
+  <text x="1060" y="173" class="title">script/runtime</text><text x="1060" y="210" class="body">本地确定性处理</text>
+  <text x="1380" y="173" class="title">MCP</text><text x="1380" y="210" class="body">外部认证、状态与副作用</text>
+  <text x="740" y="578" class="title">Agent 候选</text><text x="740" y="615" class="body">独立上下文、权限或并行</text>
+  <text x="1060" y="578" class="title">项目事实</text><text x="1060" y="615" class="body">CLAUDE.md / Specs / ADR</text>
+  <text x="1380" y="578" class="title">修改或合并</text><text x="1380" y="615" class="body">目标有价值但边界重叠</text>
+  <text x="800" y="785" class="body">同一用户目标可以组合 Skill + script + MCP；处置不是互斥评分，也不产生新的总控 Skill</text>
+</svg>

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">旧 Mega Skill 的拆分方式</title>
+  <desc id="desc">把旧 Mega Skill 中混合的身份、业务知识、通用工作流、确定性脚本、平台操作和项目事实拆到 Agent、Skill、主模型、script、MCP 与项目文档。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .title { font-size: 24px; font-weight: 700; text-anchor: middle; }
+      .body { font-size: 18px; text-anchor: middle; }
+      .note { font-size: 17px; text-anchor: middle; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linejoin: round; }
+      .arrow { fill: none; stroke: #273142; stroke-width: 3; marker-end: url(#arrow); }
+    </style>
+    <filter id="rough" x="-4%" y="-5%" width="108%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="121" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2"/></filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#273142" stroke-width="2.4"/></marker>
+  </defs>
+  <rect width="1600" height="900" fill="#fffaf0"/>
+  <text x="70" y="62" class="heading">拆分旧 Skill：不是缩短 Prompt，而是重新分配责任</text>
+  <path d="M70 79 C330 68, 650 84, 950 76" fill="none" stroke="#6b7280" stroke-width="2"/>
+  <g filter="url(#rough)">
+    <rect x="70" y="145" width="430" height="610" rx="30" fill="#ffd6cc" class="outline"/>
+    <path d="M590 260 L790 450 L590 640 L390 450 Z" fill="#fff0b3" class="outline"/>
+    <rect x="900" y="120" width="270" height="120" rx="23" fill="#dbeafe" class="outline"/>
+    <rect x="1250" y="120" width="270" height="120" rx="23" fill="#eef2ff" class="outline"/>
+    <rect x="900" y="310" width="270" height="120" rx="23" fill="#e5e7eb" class="outline"/>
+    <rect x="1250" y="310" width="270" height="120" rx="23" fill="#d8f3dc" class="outline"/>
+    <rect x="900" y="500" width="270" height="120" rx="23" fill="#e7d8ff" class="outline"/>
+    <rect x="1250" y="500" width="270" height="120" rx="23" fill="#fff0b3" class="outline"/>
+    <path d="M500 450 C525 450, 548 450, 570 450" class="arrow"/>
+    <path d="M790 400 C850 300, 880 225, 900 190" class="arrow"/>
+    <path d="M790 420 C970 260, 1160 190, 1240 185" class="arrow"/>
+    <path d="M790 445 C850 420, 875 395, 895 380" class="arrow"/>
+    <path d="M790 455 C970 450, 1160 390, 1240 375" class="arrow"/>
+    <path d="M790 480 C850 520, 875 545, 895 555" class="arrow"/>
+    <path d="M790 500 C980 585, 1160 570, 1240 560" class="arrow"/>
+  </g>
+  <text x="285" y="195" class="title">旧 Mega Skill / 大 Agent</text>
+  <text x="285" y="258" class="body">身份与角色边界</text>
+  <text x="285" y="318" class="body">业务规则与产物模板</text>
+  <text x="285" y="378" class="body">通用阶段状态机</text>
+  <text x="285" y="438" class="body">解析、校验和格式化脚本</text>
+  <text x="285" y="498" class="body">OAuth、HTTP、重试和 mapping</text>
+  <text x="285" y="558" class="body">项目架构、命令和历史事实</text>
+  <text x="285" y="650" class="note">一个入口同时承担六种不同责任</text>
+
+  <text x="590" y="410" class="title">按第一性原理拆分</text>
+  <text x="590" y="455" class="body">目标 · 确定性 · 副作用</text>
+  <text x="590" y="492" class="body">上下文 · 生命周期 · Owner</text>
+
+  <text x="1035" y="163" class="title">必要 Agent</text><text x="1035" y="202" class="body">身份 / 上下文 / 权限</text>
+  <text x="1385" y="163" class="title">聚焦 Skill</text><text x="1385" y="202" class="body">领域知识 / 产物契约</text>
+  <text x="1035" y="353" class="title">主模型</text><text x="1035" y="392" class="body">普通推理、编码与小修复</text>
+  <text x="1385" y="353" class="title">本地 script</text><text x="1385" y="392" class="body">解析、校验与 fingerprint</text>
+  <text x="1035" y="543" class="title">平台 MCP</text><text x="1035" y="582" class="body">认证、状态、幂等与恢复</text>
+  <text x="1385" y="543" class="title">项目事实</text><text x="1385" y="582" class="body">CLAUDE.md / Specs / ADR</text>
+
+  <text x="800" y="820" class="body">迁移结果不会与旧目录一一对应：可以删除、合并、拆分、工具化、平台化或等待证据</text>
+</svg>
