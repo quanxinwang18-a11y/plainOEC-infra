@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 const workspaceRoot = import.meta.dirname;
 const productRoot = resolve(workspaceRoot, 'oec-product');
 const engineeringRoot = resolve(workspaceRoot, 'oec-engineering');
+const e3Root = resolve(workspaceRoot, 'oec-e3');
 
 const common = {
   bundle: true,
@@ -23,9 +24,16 @@ const common = {
 await Promise.all([
   build({
     ...common,
-    absWorkingDir: productRoot,
+    absWorkingDir: e3Root,
     entryPoints: ['servers/e3/runtime.mjs'],
     outfile: 'dist/e3-server.mjs',
+  }),
+  build({
+    ...common,
+    absWorkingDir: e3Root,
+    entryPoints: ['servers/e3/runtime.mjs'],
+    // Transitional bundle retained until oec-product declares the oec-e3 dependency.
+    outfile: resolve(productRoot, 'dist/e3-server.mjs'),
   }),
   build({
     ...common,

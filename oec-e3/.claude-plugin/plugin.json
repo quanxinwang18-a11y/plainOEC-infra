@@ -1,0 +1,10 @@
+{
+  "name": "oec-e3",
+  "version": "1.0.0",
+  "description": "E3 platform integration with typed, guarded publication and development-task tools.",
+  "author": {
+    "name": "OEC"
+  },
+  "keywords": ["e3", "requirements", "development-tasks", "mcp"],
+  "license": "MIT"
+}

@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import test from 'node:test';
 import YAML from 'yaml';
 
-const pluginRoot = resolve(import.meta.dirname, '..', '..', '..');
+const pluginRoot = resolve(import.meta.dirname, '..');
 
 function frontmatter(relativePath) {
   const text = readFileSync(resolve(pluginRoot, relativePath), 'utf8');
@@ -54,7 +54,6 @@ test('model-facing capability text does not depend on the OEC label', () => {
     'skills/reviewing-prds/references/review-rubric.md',
     'skills/publishing-prds-to-e3/SKILL.md',
     'skills/publishing-prds-to-e3/references/publish-contract.md',
-    'servers/e3/server.mjs',
   ];
   for (const path of paths) {
     const content = readFileSync(resolve(pluginRoot, path), 'utf8');
