@@ -1,9 +1,9 @@
 # OEC PM 能力迁移分析
 
 > 本文基于旧仓库 `oec-ai-infra` 的 commit
-> `79356008b9961c3e8a70c57e2fe5c9cf0c7ce424` 和当前仓库 `plainOEC-infra` 的 commit
-> `a9ca1125b09afbcc63e56894be009894dbd76f17`。分析对象分别是旧 `oec-ai@0.2.2`
-> 和当前 `oec-product@2.2.1`。旧结构的数据来自实际构建产物以及一次隔离临时目录中的
+> `79356008b9961c3e8a70c57e2fe5c9cf0c7ce424` 和当前 Marketplace `3.0.0`。分析对象分别是旧
+> `oec-ai@0.2.2`，以及当前 `oec-product@3.0.0` 与其平台依赖 `oec-e3@1.0.0`。旧结构的数据来自
+> 实际构建产物以及一次隔离临时目录中的
 > `role=designer + tool=claude-code` 初始化，不把编辑源码目录误认为 PM 最终加载的配置。
 
 ## 1. 结论
@@ -26,7 +26,7 @@
 - Agent 只定义 PM 身份、决策范围和事实边界。
 - Skill 直接对应“写作、评审、发布”三个稳定用户目标。
 - Supporting files 只作为所属 Skill 的渐进披露资源。
-- MCP Server 确定性实现 E3 认证、接口、幂等、恢复和远端校验。
+- 独立 `oec-e3` MCP-only Plugin 确定性实现 E3 认证、接口、幂等、恢复和远端校验。
 - Plugin 安装、升级和卸载不再复制 `.claude` 配置到业务仓库。
 
 当前主链路是：
@@ -35,8 +35,9 @@
 PRD 编写或修订 → PRD 红队评审 → 显式确认发布 → E3 状态验证
 ```
 
-这条主链路已经完成迁移并强化，但当前实现不是旧工具箱的全集。通用产品需求 CRUD、通用系统需求
-编辑/删除、任务/工时/构建/缺陷管理以及 Codex 分发仍在当前边界之外。
+这条主链路已经完成迁移并强化。E3 研发任务创建、进度和状态也已作为平台原子能力实现，但通用产品
+需求 CRUD、系统需求编辑/删除、缺陷、提测、任意任务字段编辑以及 Codex 分发仍在当前边界之外；
+Pipeline 是独立平台 Plugin，不属于 PM 能力本身。
 
 ## 2. 旧实现的三层真实结构
 
@@ -443,41 +444,43 @@ publishing 不预加载，并设置为只能由用户显式调用。
 
 ## 6. 当前实现
 
-### 6.1 Plugin 直接持有 PM 组件
+### 6.1 领域 Plugin 与平台 Plugin 分层
 
-当前采用 Claude Code 原生层级：
+当前采用 Claude Code 原生层级，并进一步把产品知识与 E3 平台执行解耦：
 
 ```text
 Marketplace: plainOEC-infra
-└── Plugin: oec-product
-    ├── agents/oec-pm.md
-    ├── skills/writing-prds/
-    ├── skills/reviewing-prds/
-    ├── skills/publishing-prds-to-e3/
+├── Plugin: oec-product@3.0.0
+│   ├── agents/oec-pm.md
+│   ├── skills/writing-prds/
+│   ├── skills/reviewing-prds/
+│   ├── skills/publishing-prds-to-e3/
+│   └── dependency: oec-e3@~1.0.0
+└── Plugin: oec-e3@1.0.0
     ├── .mcp.json
     ├── servers/e3/
     └── dist/e3-server.mjs
 ```
 
-`oec-product@2.2.1` 的实际组件清单是：
+实际组件清单是：
 
-```text
-Skills:      3
-Agents:      1
-Hooks:       0
-MCP servers: 1
-Commands:    0
-```
+| Plugin | Skills | Agents | MCP servers | Commands | Hooks |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `oec-product@3.0.0` | 3 | 1 | 0 | 0 | 0 |
+| `oec-e3@1.0.0` | 0 | 0 | 1 | 0 | 0 |
 
-Plugin 通过 Marketplace 复制进 Claude Code plugin cache。安装过程不会在产品仓库创建 `.claude`、
-`.oec-ai` 或模板；只有用户真正执行 writing Skill 时，才按业务目标创建 PRD 产物。
+Product 通过 Marketplace 复制进 Claude Code plugin cache，Claude Code 自动解析 E3 dependency。安装
+过程不会在产品仓库创建 `.claude`、`.oec-ai` 或模板；只有用户真正执行 writing Skill 时，才按业务
+目标创建 PRD 产物。隔离 Git Marketplace 安装已验证 Product 与 E3 均可在无 `node_modules` 的
+Plugin cache 中运行。
 
 关键入口：
 
 - [Marketplace](.claude-plugin/marketplace.json)
-- [Plugin manifest](oec-product/.claude-plugin/plugin.json)
+- [Product manifest](oec-product/.claude-plugin/plugin.json)
 - [PM Agent](oec-product/agents/oec-pm.md)
-- [MCP 注册](oec-product/.mcp.json)
+- [E3 manifest](oec-e3/.claude-plugin/plugin.json)
+- [E3 MCP 注册](oec-e3/.mcp.json)
 
 ### 6.2 Supporting files 回到所属 Skill
 
@@ -489,9 +492,9 @@ Writing 的 artifact contract、versioning、product language、templates 和 ch
 Skill description 直接描述能力和触发边界，不再依赖无定义的品牌词帮助模型判断。Reference 只在
 执行相关能力时按需读取，避免把所有模板、平台规则和评审方法同时放进 Agent。
 
-### 6.3 E3 变成四个类型化工具
+### 6.3 E3 发布变成四个类型化工具
 
-当前 E3 MCP Server 保持四个公开工具：
+E3 MCP Server 保持四个 PRD 发布工具：
 
 | 工具 | 职责 | 是否写 E3 |
 |---|---|---|
@@ -512,7 +515,7 @@ prepare
 ```
 
 OAuth、固定 origin、HTTP payload、成功码、ID 归一化、未知 POST 结果恢复、mapping checkpoint 和
-脱敏全部由 MCP 实现。
+脱敏全部由 `oec-e3` 实现。Product Skill 只保留 HANDOFF、版本不可变、用户确认和发布结果表达。
 
 ### 6.4 发布一致性边界
 
@@ -534,11 +537,32 @@ POMP、研发负责人和测试负责人只在唯一候选或唯一默认值时�
 `${CLAUDE_PLUGIN_DATA}/e3/workspaces/<canonical-root-sha256>/config.json`。Selection 和 plan token 都
 绑定 canonical MCP root，一个产品仓库不能使用另一个仓库的选择或计划。
 
-### 6.5 Git 原生分发不要求项目安装依赖
+### 6.5 E3 研发任务是独立原子能力
 
-`dist/e3-server.mjs` 和 bundled artifact checker 随 Git 提交，包含 MCP SDK、Zod 和 YAML runtime。
+同一 E3 Server 还提供六个研发任务工具：
+
+```text
+prepare_development_tasks
+select_development_requirement
+execute_development_tasks
+prepare_task_progress
+execute_task_progress
+get_development_task_status
+```
+
+这些工具不是新的 Dev 工作流，也不依赖 `oec-engineering`。它们只确定性完成需求选择、任务创建或
+复用、开始、工时日志、完成和只读状态验证。任务由 `changeId + localId` 建立本地身份，mapping
+绑定 workspace、空间、父需求、标题和远端 ID；每项成功立即 checkpoint，失败返回 partial。
+
+### 6.6 Git 原生分发不要求项目安装依赖
+
+E3 bundle 和 Product bundled artifact checker 随 Git 提交，包含所需 runtime。
 Marketplace 根 package manifest 仅用于维护和重建，不位于 Plugin 根，因此干净安装后的 Plugin
 cache 不需要 `node_modules`、npm registry 登录、SessionStart 安装 Hook 或用户执行 `npm install`。
+
+确定性 PRD contract 的源码位于 [packages/prd-artifact-contract](packages/prd-artifact-contract)，只在
+构建期被 Product checker 和 E3 Server 分别导入并打包。它不是 Claude 组件、公共 Skill reference
+或 Plugin 之间的运行时文件依赖。
 
 ## 7. 能力迁移结果
 
@@ -555,6 +579,7 @@ cache 不需要 `node_modules`、npm registry 登录、SessionStart 安装 Hook 
 - E3 OAuth、空间和 POMP 配置。
 - E3 mapping、状态验证、幂等复用和 partial resume。
 - 已发布版本不可变及远端对象漂移阻断。
+- E3 研发任务需求选择、创建/复用、进度、工时和状态验证的受控工具链。
 
 ### 7.2 因模型能力提升和减少过度设计而删除
 
@@ -583,19 +608,22 @@ cache 不需要 `node_modules`、npm registry 登录、SessionStart 安装 Hook 
 这些能力与 PRD 编写、评审和受控发布没有稳定的同一生命周期。如果真实场景仍需要，应按用户目标
 评估为独立 Skill、Plugin 或宿主适配层，不为复刻旧 designer 安装包而扩大 PM Plugin。
 
-### 7.4 经场景验证后再扩展的平台能力
+### 7.4 独立平台能力与未来扩展
 
-以下属于 E3 或产品管理平台的候选能力，不是当前主链迁移承诺中的缺口：
+已经迁移但不属于 Product Plugin 的平台能力：
 
-- 云帆产品需求创建、查询、编辑、删除。
-- 通用系统需求查询、编辑和删除。
-- 通用任务创建、状态流转和字段编辑。
-- 工时、构建和缺陷管理。
-- 多负责人显式选择工具。
-- 远端已发布需求更新。
+- E3 研发任务创建、复用、进度、工时和状态验证，归属 `oec-e3`。
+- 既有 dev/test 流水线的受控执行，归属 `oec-pipeline`，不随 Product 自动安装。
 
-只有真实 PM 场景证明当前四个发布工具无法完成必要目标时，才增加边界清晰的 MCP 工具或独立
-Plugin。即使扩展，也不把 HTTP/API 细节写回 PM Agent。
+仍未准入或明确不恢复的平台能力：
+
+- 云帆产品需求和系统需求的通用 CRUD。
+- 缺陷、提测、任意任务字段编辑和依赖可视化。
+- 多负责人显式选择工具和远端已发布需求更新。
+- SAE、UTP、通用 Gitee 和流水线管理。
+
+只有真实场景证明受控主链不能完成必要目标，并且 API、权限、远端身份和非生产环境契约已经验证，
+才增加边界清晰的 MCP 工具或独立 Plugin。即使扩展，也不把 HTTP/API 细节写回 PM Agent。
 
 ```mermaid
 flowchart LR
@@ -612,15 +640,16 @@ flowchart LR
     REMOVE --> R3["文件索引式加载"]
     BUNDLED --> B1["原型 / 逆向 PRD"]
     BUNDLED --> B2["飞书 / Git / Codex 适配"]
-    PLATFORM --> P1["产品与系统需求 CRUD"]
-    PLATFORM --> P2["任务 / 工时 / 构建 / 缺陷"]
+    PLATFORM --> P1["E3 研发任务主链"]
+    PLATFORM --> P2["Pipeline 受控执行"]
+    PLATFORM --> P3["SAE / UTP 准入审计"]
 ```
 
 ## 8. 迁移效果与验证
 
 ### 8.1 结构与维护效果
 
-| 指标 | 旧 `oec-ai@0.2.2` | 当前 `oec-product@2.2.1` | 结果 |
+| 指标 | 旧 `oec-ai@0.2.2` | 当前 Product + E3 | 结果 |
 |---|---:|---:|---|
 | 启用 PM 所需的项目物化文件 | 622 个初始化文件 | 0 | 安装与业务产物生命周期分离 |
 | PM Agent 行数 | 803 | 19 | 身份与工作流解耦 |
@@ -628,10 +657,11 @@ flowchart LR
 | Plugin 原生 PM Skills | 0；仅 1 个 init Skill | 3 | 原生发现和 namespace |
 | 核心 Skill 正文 | 产品阶段 2412 行 + `oec-pm` 树 2064 行 | 3 个 Skill 共 105 行 | 从阶段粒度收敛到用户目标 |
 | Plugin 原生 PM Agents | 0 | 1 | Agent 与 Plugin 同生命周期 |
-| Plugin MCP Servers | 0 | 1 | E3 从 Prompt/Bash 迁到类型化工具 |
+| Product Plugin MCP Servers | 0 | 0 | 产品知识不再持有平台运行时 |
+| E3 Plugin MCP Servers | 0 | 1（10 tools） | E3 从 Prompt/Bash 迁到独立类型化平台工具 |
 | SessionStart Hook | 1 | 0 | 不再隐式同步项目配置 |
 | Agent Skill 关系 | 描述发现 + 文件 Read | frontmatter 原生预加载 writing/reviewing | 减少路由歧义 |
-| E3 执行 | 模型驱动 Python/HTTP | 四个类型化 MCP 工具 | 外部副作用可验证 |
+| E3 执行 | 模型驱动 Python/HTTP | 4 个发布 + 6 个研发任务 MCP 工具 | 外部副作用可验证 |
 
 行数和文件数不能直接等同于 token 成本。旧 Skills 并非全部同时加载，当前 MCP bundle 也包含大量
 确定性代码。真正的改善是模型判断面更单一：Agent 不重复 Skill 工作流，writing/reviewing 才被
@@ -639,14 +669,14 @@ flowchart LR
 
 ### 8.2 自动验证
 
-`oec-product@2.2.1` 当前验证结果：
+Marketplace `3.0.0` 当前自动验证结果：
 
 ```text
 npm run build
 npm test
 
-tests: 51
-pass:  51
+tests: 99
+pass:  99
 fail:  0
 ```
 
@@ -657,19 +687,25 @@ fail:  0
 - 模型判断面不依赖冗余品牌限定词。
 - YAML artifact contract、安全路径和 bundled checker。
 - OAuth PKCE、state、refresh、401 和脱敏。
-- MCP 四个工具、roots、selectionToken 和 workspace 隔离。
+- E3 十个工具、roots、selectionToken 和 workspace 隔离。
 - planToken 过期、workspace/config/fingerprint 变化。
 - mapping v1 兼容、v2 原子写入和 legacy adoption。
 - 创建、复用、歧义、远端漂移和 partial resume。
 - POMP 单候选、唯一默认值、多默认值、无默认值、零候选和 pending 恢复。
 - 缺失任一任务 ID 时禁止返回 `published`。
 - 无 `node_modules` 的 bundled checker 和 MCP stdio discovery。
+- E3 研发 mapping、父需求选择、创建/复用、partial、进度顺序和只读 status。
+- Pipeline workspace/remote/ref/commit 绑定、候选歧义、dev/test 限制和未知 POST 恢复。
+- 无 `node_modules` 的 Product + E3 dependency 干净安装与自动发现。
 
 Plugin 验证结果：
 
 ```text
 claude plugin validate .
 claude plugin validate ./oec-product
+claude plugin validate ./oec-engineering
+claude plugin validate ./oec-e3
+claude plugin validate ./oec-pipeline
 
 ✔ Validation passed
 ```
@@ -686,16 +722,16 @@ claude plugin validate ./oec-product
 6. 修改带既有 mapping 的 fixture 后，prepare 返回 `published-version-changed`，mapping 不变。
 7. 从干净 Git archive 安装后，Plugin cache 没有 `node_modules`，bundled MCP 注册四个工具。
 
-`2.2.1` 清理了 Agent、Skill、reference 标题和 MCP tool title 中影响模型判断的冗余限定词，并新增
-第 51 项回归测试；没有改变四个 MCP 工具名称、输入 schema 或 E3 发布逻辑，也没有重新执行真实
-E3 写操作。因此本文不会把 `2.2.0` 的真实 E2E 改写成 `2.2.1` 的真实验收。
+`2.2.1` 清理了模型判断面；`3.0.0` 再把 E3 Server 抽离为 dependency，并增加研发任务工具。既有
+2.2.0 真实发布证据可以证明被保留的 PRD API 契约，但不能自动证明新的 Plugin Data、研发任务链或
+Pipeline 已通过真实 E2E。
 
 真实验收仍有两项明确边界：
 
 - 真实流程没有进入 POMP 歧义分支，多候选选择由自动测试覆盖。
 - 未在真实 E3 人为制造 partial 写入故障，partial resume 仍是 mocked evidence。
 
-详见 [oec-product README](oec-product/README.md#220-真实-e3-验收)。
+详见 [oec-product README](oec-product/README.md) 和 [oec-e3 README](oec-e3/README.md)。
 
 ## 9. 当前边界和后续注意事项
 
@@ -707,12 +743,12 @@ E3 写操作。因此本文不会把 `2.2.0` 的真实 E2E 改写成 `2.2.1` 的
 如果目标是 Claude Code 原生产品插件，这是主动收缩；如果组织仍要求 Claude/Codex 双宿主，应另行
 设计 Codex 分发适配层，不破坏当前 Claude Plugin 的职责结构。
 
-### 9.2 当前 E3 MCP 是发布器，不是通用管理 SDK
+### 9.2 当前 E3 MCP 是受控主链接口，不是通用管理 SDK
 
-当前保证不可变 PRD 的发布、复用、恢复和验证，不提供通用 update/delete API，也不恢复旧
-`oec-manage-task` 的全部能力。
+当前保证不可变 PRD 的发布、复用、恢复和验证，并提供研发任务的创建、进度和状态主链；不提供通用
+update/delete API，也不恢复旧 `oec-manage-task` 的缺陷、提测、任意字段编辑和查询工具箱。
 
-产品说明应明确：当前完成的是“PRD 到 E3 的受控发布链路”，不是“所有 E3 操作能力的完整复刻”。
+产品说明应明确：当前完成的是“PRD 发布 + 研发任务主链”，不是“所有 E3 操作能力的完整复刻”。
 
 ### 9.3 License 需要组织确认
 
@@ -726,12 +762,12 @@ E3 写操作。因此本文不会把 `2.2.0` 的真实 E2E 改写成 `2.2.1` 的
 803 行项目 Agent、25 个项目 Skills、一个再次索引 6 份内部 `SKILL.md` 的 Mega Skill，以及由
 Prompt 驱动的 Bash/Python E3 链路。
 
-迁移后，PM 是一个可直接安装和卸载的原生产品域 Plugin：
+迁移后，PM 是一个可直接安装和卸载的原生产品域 Plugin，并通过原生 dependency 使用平台 Plugin：
 
 - Agent 定义工作身份。
 - 三个 Skills 对应稳定用户目标。
 - Supporting files 提供按需领域契约。
-- MCP Server 确定性执行外部副作用。
+- `oec-e3` MCP Server 确定性执行外部副作用。
 - Plugin cache 承载配置，业务仓库只承载用户确认后产生的产品文档和 mapping。
 
 如果评价“PRD 编写、评审、发布”主链，当前实现已经完成迁移并强化旧方案；如果评价旧
@@ -739,4 +775,5 @@ Prompt 驱动的 Bash/Python E3 链路。
 称为完整复刻。
 
 后续扩展应继续遵守相同原则：只有真实平台能力缺口才扩展 MCP 或增加独立 Plugin，不把认证、API、
-重试、状态机、项目同步器或通用 CRUD 重新写回 PM Agent。
+重试、状态机、项目同步器或通用 CRUD 重新写回 PM Agent。Pipeline、SAE、UTP 以各自平台证据和
+生命周期验收，不与 PM 主链合并计算完成度。

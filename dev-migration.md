@@ -22,7 +22,7 @@
 2. 永久删除 `oec-dev-task`，不建立替代总控 Skill，也不复制 Superpowers 工作流。
 3. 软件开发方法拆成少量、独立触发的 Skills。
 4. 团队长期工程事实沉淀为项目 Git 资产，通过路径作用域按需选择。
-5. 外部平台写操作后续迁入 MCP；测试能力按独立生命周期另行评估。
+5. 外部平台写操作由独立 MCP-only Plugin 承担；测试能力按独立生命周期另行评估。
 
 ## 2. 旧实现的真实分发结构
 
@@ -286,15 +286,15 @@ Codex 编译产物虽然满足 TOML 基本结构，但同一批 Markdown 源又�
 - 幂等查询、计划 token、重试、partial resume 和远端对象校验。
 - 部署、任务状态和远端仓库写入的 prepare/confirm/execute/status。
 
-## 5. 迁移后的目标结构
+## 5. 迁移后的当前结构
 
-当前 Marketplace 保留 `oec-product`，新增独立的 `oec-engineering`：
+Marketplace 将领域知识与平台执行分开：
 
 ```text
 Marketplace: plainOEC-infra
 ├── Plugin: oec-product
-│   └── PM Agent / PRD Skills / E3 publication MCP
-└── Plugin: oec-engineering
+│   └── PM Agent / PRD Skills / oec-e3 dependency
+├── Plugin: oec-engineering
     ├── managing-team-specs
     ├── planning-engineering-changes
     ├── test-driven-development
@@ -302,10 +302,15 @@ Marketplace: plainOEC-infra
     ├── reviewing-code-changes
     ├── closing-engineering-changes
     └── deterministic oec-spec runtime
+├── Plugin: oec-e3
+│   └── PRD publication + development task MCP
+└── Plugin: oec-pipeline
+    └── existing dev/test pipeline MCP
 ```
 
 `oec-engineering` 第一版没有 Agent、MCP、Commands、Hooks 或 settings。主 Coding Agent 就是研发执行者；
-新的 Skills 只在特定目标下改变它的判断。
+新的 Skills 只在特定目标下改变它的判断。它不依赖 E3 或 Pipeline，开发者只在需要外部平台能力时
+单独安装对应 Plugin。
 
 ## 6. OEC 团队 Spec 闭环
 
@@ -343,14 +348,14 @@ flowchart LR
 | 旧能力 | 处置 | 原因 |
 |---|---|---|
 | `oec-dev-task` | 删除 | 与现代 Coding Agent 和 Superpowers 类能力重叠 |
-| `oec-dev-flow` | 删除编排 | E3/部署部分等待平台工具迁移 |
+| `oec-dev-flow` | 删除编排 | E3 任务主链和既有流水线已迁入独立平台 MCP；SAE 尚未准入 |
 | `oec-architecture-design` | 迁移 | 当前事实进入 Specs，决策进入 ADR，变更方案进入 planning Skill |
 | `oec-detail-design` | 合并 | 成为 planning Skill 的条件产物 |
 | `code-view`、`oec-code-review` | 合并 | 单一只读代码评审 Skill |
 | `oec-release-closer` | 缩减 | 只收口真实 evidence、Spec 和 ADR，不生成固定文档全集 |
 | `oec-test-dispatcher`、测试 Agents | 暂缓 | 独立清点为 `oec-testing`，不迁移内部文件路由器 |
-| `oec-manage-task` | 平台化 | 状态写入应由 E3 MCP 实现 |
-| SAE | 平台化 | 部署应由 prepare/confirm/execute/status 工具实现 |
+| `oec-manage-task` | 部分平台化 | E3 任务创建、进度和状态已迁移；缺陷、提测和任意字段编辑不迁移 |
+| SAE | 准入审计 | 真实 API、权限和非生产环境未验证，不创建 Plugin |
 | Git DevOps | 拆分 | 本地 Git 用宿主能力，远端写入按需接工具 |
 | 飞书 API | 移出 | 办公集成不属于研发核心生命周期 |
 
@@ -393,8 +398,9 @@ flowchart LR
 - 前端小修复可以直接完成，不生成无意义任务包。
 - 现有 `oec-product` 全部测试继续通过。
 
-E3、SAE、UTP 和真实部署不属于 `oec-engineering@1.0.0` 验收范围。在这些平台的类型化接口和
-非生产 E2E 完成前，不以 Markdown、mock 或静态测试宣称旧平台能力已复现。
+E3、Pipeline、SAE、UTP 和真实部署不属于 `oec-engineering@1.0.0` 验收范围。E3 与 Pipeline 即使由
+同一 Marketplace 分发，也保持独立 Plugin 和独立证据；SAE/UTP 在类型化接口与非生产 E2E 完成前，
+不以 Markdown、mock 或静态测试宣称旧平台能力已复现。
 
 ## 10. 当前实现状态
 
@@ -406,4 +412,8 @@ E3、SAE、UTP 和真实部署不属于 `oec-engineering@1.0.0` 验收范围。�
 - Java/Spring 和前端路径 fixture、bundle 隔离执行及正负触发 cases。
 - `oec-product` 回归测试与工程插件测试在同一根测试命令中执行。
 
-本版本没有实施 E3、SAE、UTP 或真实部署写操作，也没有自动清理任何旧项目资产。
+工程 Plugin 本身没有实施外部写操作，也没有自动清理任何旧项目资产。Marketplace 另有：
+
+- `oec-e3@1.0.0`：四个 PRD 发布工具和六个研发任务工具；研发任务真实 E3 验收单独记录。
+- `oec-pipeline@1.0.0`：四个既有 dev/test 流水线工具；当前只有 mock/integration 证据。
+- SAE、UTP：仅形成准入审计，不存在 Plugin 组件或 Marketplace entry。

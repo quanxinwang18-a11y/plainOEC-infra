@@ -121,4 +121,5 @@ claude --plugin-dir ./oec-engineering plugin details oec-engineering
 ## 设计与评审文档
 
 - [PM 实现迁移 Review](docs/reviews/pm-implementation-review.md)：对比旧真实分发结构与当前原生实现。
-- [平台 Plugin 层级与 MCP 迁移设计](docs/architecture/platform-plugin-hierarchy.md)：定义领域 Plugin、平台 Plugin 和 MCP 原子能力的目标边界。
+- [平台 Plugin 层级与 MCP 迁移设计](docs/architecture/platform-plugin-hierarchy.md)：记录已实现的领域/平台分层、分发关系与验收边界。
+- [SAE 与 UTP 平台能力准入审计](docs/audits/sae-utp-admission-audit.md)：定义尚未进入 Marketplace 的平台能力分类和证据门槛。

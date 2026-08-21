@@ -1,8 +1,9 @@
 # PM 实现迁移 Review
 
 > 事实基线：旧实现取自 `oec-ai-infra` commit
-> `79356008b9961c3e8a70c57e2fe5c9cf0c7ce424`，当前实现取自 `plainOEC-infra`
-> commit `fe81153`。旧分发结构的完整还原见 [PM 迁移分析](../../migration.md)。
+> `79356008b9961c3e8a70c57e2fe5c9cf0c7ce424`。当前实现为 Marketplace `3.0.0`、
+> `oec-product@3.0.0` 与 `oec-e3@1.0.0`；旧分发结构的完整还原见
+> [PM 迁移分析](../../migration.md)。
 
 ## 1. 结论
 
@@ -48,7 +49,7 @@ flowchart LR
 
 ### 2.2 当前实现
 
-当前 `oec-product@2.2.1` 是一个原生 Claude Code Plugin：
+当前 PM 能力由领域 Plugin 和平台 Plugin 组成：
 
 ```text
 oec-product
@@ -57,14 +58,17 @@ oec-product
 │   ├── writing-prds
 │   ├── reviewing-prds
 │   └── publishing-prds-to-e3             三个正文合计 105 行
-└── MCP Server: e3                        四个公开工具
+└── dependency: oec-e3@~1.0.0
+
+oec-e3
+└── MCP Server: e3
+    ├── PRD publication                    四个工具
+    └── development tasks                 六个工具
 ```
 
-当前安装直接发现 1 Agent、3 Skills 和 1 MCP Server，不再生成项目级 `.claude/agents`、
-`.claude/skills` 或同步运行时。2026-08-21 的自动回归基线为 65/65。
-
-目标 3.0 架构会进一步把 E3 Server 从产品域 Plugin 抽离为 `oec-e3` MCP-only Plugin；
-`oec-product` 通过原生 Plugin dependency 使用它。目标结构不应被描述为当前已完成状态。
+安装 Product 时 Claude Code 直接发现 1 Agent、3 Skills，并解析 `oec-e3` dependency；Product 自身
+不再持有 MCP，E3 Plugin 提供 1 个 Server 和 10 个类型化工具。安装过程不生成项目级
+`.claude/agents`、`.claude/skills` 或同步运行时。2026-08-21 的自动回归基线为 99/99。
 
 ## 3. 模型判断面的变化
 
@@ -90,7 +94,7 @@ flowchart TD
     A["显式 oec-pm Agent"] --> W["原生预加载 writing-prds"]
     A --> R["原生预加载 reviewing-prds"]
     U["用户显式发布"] --> P["publishing-prds-to-e3"]
-    P --> M["类型化 E3 MCP"]
+    P --> M["oec-e3 类型化 MCP"]
 ```
 
 Publishing Skill 的 `disable-model-invocation: true` 阻止模型自动触发发布；该字段属于 Skill，
@@ -115,7 +119,7 @@ schema、服务端校验、不可变计划、workspace 绑定、远端身份验�
 | --- | --- | --- |
 | PRD 编写、修订、拆分 | 合并为 `writing-prds` | 同一稳定产物目标 |
 | PRD 红队评审 | `reviewing-prds` | 只读且判断边界独立 |
-| PRD 发布 E3 | Skill + MCP | 产品语义与平台执行分离 |
+| PRD 发布 E3 | Product Skill + E3 MCP | 产品语义与平台执行分离 |
 | 原型设计 | 未迁移 | 不是当前 PRD 主链必需能力 |
 | 通用产品/系统需求 CRUD | 未迁移 | 会扩大为平台管理 SDK |
 | 文件写入策略 | 删除 | 主 Agent 已具备文件工具 |
@@ -127,9 +131,14 @@ schema、服务端校验、不可变计划、workspace 绑定、远端身份验�
 ## 6. 验证边界
 
 - `oec-product@2.2.0` 已在授权的非生产 E3 空间完成一次真实 PRD 发布、状态验证和版本变更阻断。
-- `2.2.1` 只做模型判断面文案清理和自动回归，没有重新执行真实 E3 写入。
-- 当前四个 E3 工具是受控 PRD 发布器，不是完整 E3 管理 SDK。
-- 目标 `oec-e3`、E3 研发任务和 Pipeline Plugin 在实现及验收前都属于计划，不应写成已交付能力。
+- `oec-product@3.0.0` 已完成无 `node_modules` 的隔离 Marketplace 安装；Claude Code 自动安装
+  `oec-e3` dependency，并正确发现 Product 0 MCP、E3 1 MCP。
+- PRD 发布回归、六个研发任务工具与四个 Pipeline 工具均已进入 99/99 自动测试；自动测试不能替代
+  真实远端验收。
+- 研发任务的真实创建、进度和状态验收在本次发布收口阶段执行；完成前不声称这条新主链已在真实
+  E3 验证。
+- Pipeline 当前只有 mock/integration 证据；没有明确目标仓库、流水线和授权前，不运行真实流水线。
+- 当前 E3 是“PRD 发布 + 研发任务主链”的受控平台接口，不是完整 E3 管理 SDK。
 
 ## 7. 最终评价
 

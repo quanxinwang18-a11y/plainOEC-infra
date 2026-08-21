@@ -1,7 +1,8 @@
 # 平台 Plugin 层级与 MCP 迁移设计
 
-> 当前基线：Marketplace `2.3.0`、`oec-product@2.2.1`、`oec-engineering@1.0.0`，commit
-> `fe81153`。本文后续章节描述目标架构；除明确标注当前能力外，不能视为已实现或已验收。
+> 当前实现：Marketplace `3.0.0`、`oec-product@3.0.0`、`oec-engineering@1.0.0`、
+> `oec-e3@1.0.0`、`oec-pipeline@1.0.0`。本文区分“代码和自动验证已完成”与“真实外部平台已验收”；
+> SAE、UTP 和 `oec-testing` 仍未进入 Marketplace。
 
 ## 1. 设计结论
 
@@ -65,7 +66,7 @@ flowchart TB
     E -.用户按需安装.-> PL
 ```
 
-## 3. 目标组件
+## 3. 当前组件
 
 | Plugin | Agent | Skills | MCP | 责任 |
 | --- | ---: | ---: | ---: | --- |
@@ -76,7 +77,7 @@ flowchart TB
 
 SAE、UTP 和 `oec-testing` 不创建空目录，也不进入 Marketplace，直到各自准入条件满足。
 
-目标仓库保持根级 Plugin 目录，避免为了视觉分类移动已发布的 Product 和 Engineering 路径：
+仓库保持根级 Plugin 目录，避免为了视觉分类移动已发布的 Product 和 Engineering 路径：
 
 ```text
 plainOEC-infra/
@@ -137,7 +138,7 @@ claude plugin install oec-pipeline@plainOEC-infra
 
 ## 5. E3 平台边界
 
-### 当前已验证能力
+### PRD 发布主链
 
 四个 PRD 发布工具名称保持不变：
 
@@ -148,10 +149,11 @@ execute_prd_publish
 get_prd_publish_status
 ```
 
-现有 roots、artifact gate、workspace/space/fingerprint 绑定、精确查询、partial checkpoint、远端漂移
-阻断和 status 只读语义在迁移时必须完整保留。
+roots、artifact gate、workspace/space/fingerprint 绑定、精确查询、partial checkpoint、远端漂移阻断
+和 status 只读语义已经迁入 `oec-e3`。共享 artifact contract 在构建时分别进入 Product checker 与
+E3 bundle，不形成运行时跨 Plugin 文件依赖。
 
-### 目标研发任务主链
+### 研发任务主链
 
 ```text
 prepare_development_tasks
@@ -163,7 +165,8 @@ get_development_task_status
 ```
 
 模型负责基于 PRD、设计和代码提出任务，MCP 负责需求选择、字段校验、远端创建/复用、工时/状态和
-恢复。远端标题使用 `[localId] 标题`；mapped ID 优先验证；0 条创建、1 条复用、多条阻断。
+恢复。远端标题使用 `[localId] 标题`；mapped ID 优先验证；0 条创建、1 条复用、多条阻断。实现与
+mock journey 已完成，真实 E3 验收必须单独记录。
 
 首版明确不恢复：
 
@@ -175,7 +178,7 @@ get_development_task_status
 
 ## 6. Pipeline 平台边界
 
-首版只有四个工具：
+首版已经实现四个工具：
 
 ```text
 prepare_pipeline_run
@@ -188,7 +191,8 @@ get_pipeline_run_status
 fingerprint。只允许 dev/test，阻断 prod 和 unknown；候选不唯一时由用户选择；POST 结果未知时先按
 远端运行标识查询，不盲目重试。
 
-首版不迁移创建、复制、编辑、删除、取消、节点管理、Gitee 仓库管理或任意 `run-api` JSON。
+首版不迁移创建、复制、编辑、删除、取消、节点管理、Gitee 仓库管理或任意 `run-api` JSON。当前仅有
+mock/integration 证据；在目标仓库、流水线和非生产授权明确前不宣称真实可用。
 
 ## 7. SAE 与 Pipeline
 
@@ -269,15 +273,16 @@ Plugin dependency 需要 Claude Code `2.1.110` 或更新版本；制定本文时
 PM 用户仍只安装 `oec-product`，Claude Code 自动解析 `oec-e3`。旧 Product 直接暴露的 MCP
 plugin-scoped 身份会变化，因此 Product 使用主版本升级。
 
-## 10. 迁移顺序
+## 10. 迁移状态
 
-1. 共享 PRD artifact contract，不改变行为。
-2. 建立未注册的 `oec-e3`，迁移四个发布工具并完成回归。
-3. 增加六个研发任务工具。
-4. 建立只执行既有流水线的 `oec-pipeline`。
-5. Product 声明 E3 dependency，并一次性移除内嵌 Server。
-6. 完成干净安装、真实 E3 和 mock Pipeline 验收后统一发布。
-7. SAE、UTP 在单独审计通过后再制定实现计划。
+| 阶段 | 状态 | 证据边界 |
+| --- | --- | --- |
+| 共享 PRD artifact contract | 已完成 | Product checker 与 E3 gate 同源并分别 bundle |
+| 四个 PRD 发布工具迁入 `oec-e3` | 已完成 | 既有回归保留；真实 PRD 证据继承自 2.2.0 |
+| 六个研发任务工具 | 已实现 | 自动测试和 mock journey 已完成；真实 E3 验收待发布收口 |
+| 四个 Pipeline 工具 | 已实现 | 自动测试和 mock/integration 已完成；未执行真实 Pipeline |
+| Product dependency cutover | 已完成 | Product 0 MCP；隔离安装自动解析 E3 dependency |
+| SAE、UTP 准入 | 审计中 | 不创建空 Plugin，不进入 Marketplace |
 
-迁移期间新 E3 Plugin 不进入 Marketplace，直到 Product cutover 完成，避免用户同时发现两套同名
-E3 工具。
+Product cutover 一次性移除了内嵌 E3 Server，因此仓库和安装结果中都只有一套 E3 工具，不存在同名
+Server 并存期。
