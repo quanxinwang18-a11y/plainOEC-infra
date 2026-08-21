@@ -6,12 +6,12 @@
 
 - Agent：`@oec-product:oec-pm`，只在用户显式选择时提供 PM 工作身份。
 - Skills：`writing-prds`、`reviewing-prds`、`publishing-prds-to-e3`。
-- MCP Server：`e3`，提供 prepare、空间选择、execute 和 status 四个发布工具。
+- Platform dependency：`oec-e3@~1.0.0`，提供 E3 MCP 原子工具；Product 自身没有 MCP Server。
 
 Agent 只预加载 PRD 写作与评审能力。完整 PM 会话通过显式 Agent 启动：
 
 ```bash
-claude --agent oec-pm
+claude --agent oec-product:oec-pm
 ```
 
 E3 发布必须由用户显式调用：
@@ -34,9 +34,10 @@ POMP 和系统需求元数据只在存在唯一候选或唯一默认值时自动
 
 ## 分发
 
-插件目录包含自足的 E3 MCP 和 artifact checker bundles。Claude Code 从 Git Marketplace 安装
-后不需要 npm registry、`node_modules` 或运行时依赖安装。源码依赖和构建工具位于 Marketplace
-根，仅供维护者运行测试和重新生成 bundle。
+插件目录只包含自足的 artifact checker bundle。Claude Code 2.1.110 或更高版本会自动解析并
+安装同一 Marketplace 中的 `oec-e3` 依赖。Product 与 E3 分别拥有 Plugin Data；升级到 3.0 后
+首次发布需要重新 OAuth 和选择空间，项目仓库中的 mapping 保持兼容。安装不需要 npm registry、
+`node_modules` 或运行时依赖安装。
 
 ## 本地验证
 

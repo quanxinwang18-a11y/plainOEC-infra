@@ -1,10 +1,12 @@
 # plainOEC-infra
 
-`plainOEC-infra` 是面向 Claude Code 的 OEC 组织级 Marketplace，按独立生命周期分发产品管理和
-软件工程能力：
+`plainOEC-infra` 是面向 Claude Code 的 OEC 组织级 Marketplace，按领域能力和平台原子能力的
+独立生命周期分发：
 
-- `oec-product`：PRD 编写、只读评审和经确认的 E3 发布。
+- `oec-product`：PRD 编写、只读评审和经确认的 E3 发布；原生依赖 `oec-e3`。
 - `oec-engineering`：团队工程 Specs、技术规划、显式 TDD、困难故障诊断、只读代码评审和工程收口。
+- `oec-e3`：PRD 发布与研发任务创建、进度和状态验证的 10 个类型化工具。
+- `oec-pipeline`：现有 dev/test 流水线的受控发现、执行和状态验证。
 
 ## 原生层级
 
@@ -13,17 +15,21 @@ Marketplace: plainOEC-infra
 ├── Plugin: oec-product
 │   ├── Agent: oec-pm
 │   ├── Skills: writing / reviewing / publishing PRDs
-│   └── MCP Server: e3
-└── Plugin: oec-engineering
-    ├── Skills: team Specs / planning / TDD / diagnosis / review / closing
-    └── Runtime: oec-spec
+│   └── dependency: oec-e3@~1.0.0
+├── Plugin: oec-engineering
+│   ├── Skills: team Specs / planning / TDD / diagnosis / review / closing
+│   └── Runtime: oec-spec
+├── Plugin: oec-e3
+│   └── MCP Server: e3 (10 tools)
+└── Plugin: oec-pipeline
+    └── MCP Server: pipeline (4 tools)
 ```
 
 - Marketplace 只负责组织级发现和分发。
 - Plugin 是可独立安装、升级和卸载的产品域能力包。
 - Agent 只用于确有独立身份或上下文边界的任务；工程插件不创建通用 Dev Agent。
 - Skills 承载可发现、可组合的领域能力及其渐进披露资源。
-- MCP Server 确定性实现 E3 认证、类型化工具、幂等、映射和恢复。
+- MCP Server 确定性实现平台认证、类型化工具、计划门禁、幂等、映射和恢复。
 - `oec-spec` 确定性选择和校验项目团队 Specs，并只读审计旧 Dev 安装。
 
 仓库不使用 legacy Commands、Hooks、默认 Agent settings，也不建立插件根公共
@@ -31,19 +37,22 @@ Marketplace: plainOEC-infra
 
 ## 安装
 
-前提是 PATH 中存在 Node.js 20 或更高版本，并且当前 Git 环境有权读取 Marketplace 仓库。
+前提是 Claude Code 2.1.110 或更高版本、PATH 中存在 Node.js 20 或更高版本，并且当前 Git 环境
+有权读取 Marketplace 仓库。
 使用 user scope 安装时，产品仓库不需要创建 `.claude/`：
 
 ```bash
 claude plugin marketplace add quanxinwang18-a11y/plainOEC-infra --scope user
 claude plugin install oec-product@plainOEC-infra --scope user
 claude plugin install oec-engineering@plainOEC-infra --scope user
+claude plugin install oec-pipeline@plainOEC-infra --scope user
 ```
 
 插件从 Git 仓库分发，运行时依赖已经打入 bundle。安装不需要 `npm login`、`npm install`、
 GitHub Packages 或 SessionStart 安装 Hook。
 
-只需要其中一个领域时，可以只安装对应 Plugin。团队需要在仓库中共享插件声明时，将相关命令改为
+安装 Product 时 Claude Code 会自动解析同一 Marketplace 中的 `oec-e3@~1.0.0`。工程用户也可以
+按需单独安装 `oec-e3`；Pipeline 不会被 Product 或 Engineering 自动安装。团队需要在仓库中共享插件声明时，将相关命令改为
 `--scope project`。Claude Code 会自动生成只
 包含 Marketplace 和插件启用状态的 `.claude/settings.json`，不需要手工编写。完整能力和 E3
 边界见 [oec-product/README.md](oec-product/README.md)，工程能力见
@@ -61,7 +70,7 @@ GitHub Packages 或 SessionStart 安装 Hook。
 完整 PM 会话使用：
 
 ```bash
-claude --agent oec-pm
+claude --agent oec-product:oec-pm
 ```
 
 `oec-pm` 不会默认接管普通 Claude 主线程，也不会预加载具有外部副作用的 E3 发布 Skill。
@@ -93,6 +102,8 @@ npm test
 claude plugin validate .
 claude plugin validate ./oec-product
 claude plugin validate ./oec-engineering
+claude plugin validate ./oec-e3
+claude plugin validate ./oec-pipeline
 claude --plugin-dir ./oec-product plugin details oec-product
 claude --plugin-dir ./oec-engineering plugin details oec-engineering
 ```
@@ -102,7 +113,9 @@ claude --plugin-dir ./oec-engineering plugin details oec-engineering
 
 贡献规则见 [CLAUDE.md](CLAUDE.md)。版本变化记录见
 [oec-product/CHANGELOG.md](oec-product/CHANGELOG.md) 和
-[oec-engineering/CHANGELOG.md](oec-engineering/CHANGELOG.md)。旧 PM 与 Dev 的迁移证据分别见
+[oec-engineering/CHANGELOG.md](oec-engineering/CHANGELOG.md)、
+[oec-e3/CHANGELOG.md](oec-e3/CHANGELOG.md) 和
+[oec-pipeline/CHANGELOG.md](oec-pipeline/CHANGELOG.md)。旧 PM 与 Dev 的迁移证据分别见
 [migration.md](migration.md) 和 [dev-migration.md](dev-migration.md)。
 
 ## 设计与评审文档

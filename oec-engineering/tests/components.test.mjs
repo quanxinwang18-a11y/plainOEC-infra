@@ -43,9 +43,14 @@ test('engineering plugin exposes six native Skills and no orchestration componen
 
   const marketplace = JSON.parse(readFileSync(resolve(pluginRoot, '..', '.claude-plugin', 'marketplace.json'), 'utf8'));
   const packageManifest = JSON.parse(readFileSync(resolve(pluginRoot, '..', 'package.json'), 'utf8'));
-  assert.equal(marketplace.version, '2.3.0');
+  assert.equal(marketplace.version, '3.0.0');
   assert.equal(packageManifest.version, marketplace.version);
-  assert.deepEqual(marketplace.plugins.map((plugin) => plugin.name), ['oec-product', 'oec-engineering']);
+  assert.deepEqual(marketplace.plugins.map((plugin) => plugin.name), [
+    'oec-product',
+    'oec-engineering',
+    'oec-e3',
+    'oec-pipeline',
+  ]);
   const engineeringEntry = marketplace.plugins.find((plugin) => plugin.name === manifest.name);
   assert.equal(engineeringEntry.version, manifest.version);
   assert.equal(engineeringEntry.source, './oec-engineering');

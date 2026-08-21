@@ -1,10 +1,13 @@
 {
   "name": "oec-product",
-  "version": "2.2.1",
-  "description": "OEC 产品管理插件，提供显式 PM Agent、PRD Skills 与 E3 MCP 集成。",
+  "version": "3.0.0",
+  "description": "OEC 产品管理插件，提供显式 PM Agent 与三个 PRD Skills。",
   "author": {
     "name": "OEC"
   },
   "keywords": ["product-management", "prd", "requirements", "e3"],
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": [
+    { "name": "oec-e3", "version": "~1.0.0" }
+  ]
 }

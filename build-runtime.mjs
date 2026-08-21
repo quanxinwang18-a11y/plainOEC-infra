@@ -31,13 +31,6 @@ await Promise.all([
   }),
   build({
     ...common,
-    absWorkingDir: e3Root,
-    entryPoints: ['servers/e3/runtime.mjs'],
-    // Transitional bundle retained until oec-product declares the oec-e3 dependency.
-    outfile: resolve(productRoot, 'dist/e3-server.mjs'),
-  }),
-  build({
-    ...common,
     absWorkingDir: pipelineRoot,
     entryPoints: ['servers/pipeline/runtime.mjs'],
     outfile: 'dist/pipeline-server.mjs',

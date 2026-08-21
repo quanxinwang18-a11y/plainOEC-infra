@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.0.0
+
+- Move the E3 MCP Server into the independent `oec-e3@1.x` platform Plugin.
+- Declare `oec-e3@~1.0.0` as a native Plugin dependency while retaining the three PRD Skills and
+  explicit PM Agent.
+- Keep the product-owned artifact checker bundle; Product installation no longer owns E3 tokens,
+  workspace selection, plans, or runtime state.
+
 ## 2.2.1
 
 - Agent、Skills、supporting references 和 E3 MCP tool titles 直接描述能力与触发边界，不再使用
