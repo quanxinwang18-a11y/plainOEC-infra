@@ -5,7 +5,7 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { ListRootsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { createE3McpServer } from '../server.mjs';
 
-test('MCP protocol exposes four tools and forwards client roots to guarded operations', async () => {
+test('MCP protocol exposes publication and development-planning tools with guarded roots', async () => {
   const observed = [];
   const service = {
     async prepare(input, roots) {
@@ -25,7 +25,21 @@ test('MCP protocol exposes four tools and forwards client roots to guarded opera
       return { status: 'published' };
     },
   };
-  const server = createE3McpServer({ service });
+  const developmentService = {
+    async prepare(input, roots) {
+      observed.push({ operation: 'prepare-development', input, roots });
+      return { status: 'ready', planToken: 'd'.repeat(43) };
+    },
+    async selectRequirement(input, roots) {
+      observed.push({ operation: 'select-requirement', input, roots });
+      return { status: 'ready', planToken: 'd'.repeat(43) };
+    },
+    async execute(input, roots) {
+      observed.push({ operation: 'execute-development', input, roots });
+      return { status: 'synced' };
+    },
+  };
+  const server = createE3McpServer({ service, developmentService });
   const client = new Client(
     { name: 'oec-mcp-protocol-test', version: '1.0.0' },
     { capabilities: { roots: { listChanged: false } } },
@@ -43,10 +57,16 @@ test('MCP protocol exposes four tools and forwards client roots to guarded opera
       'select_product_space',
       'execute_prd_publish',
       'get_prd_publish_status',
+      'prepare_development_tasks',
+      'select_development_requirement',
+      'execute_development_tasks',
     ]);
     const execute = tools.tools.find((tool) => tool.name === 'execute_prd_publish');
     assert.equal(execute.annotations.destructiveHint, true);
     assert.equal(execute._meta['anthropic/requiresUserInteraction'], true);
+    const developmentExecute = tools.tools.find((tool) => tool.name === 'execute_development_tasks');
+    assert.equal(developmentExecute.annotations.destructiveHint, true);
+    assert.equal(developmentExecute._meta['anthropic/requiresUserInteraction'], true);
 
     const prepared = await client.callTool({
       name: 'prepare_prd_publish',
@@ -62,7 +82,21 @@ test('MCP protocol exposes four tools and forwards client roots to guarded opera
       name: 'get_prd_publish_status',
       arguments: { workspaceUri: 'file:///authorized/workspace', version: 'v1.2.3' },
     });
-    assert.equal(observed.length, 4);
+    await client.callTool({
+      name: 'prepare_development_tasks',
+      arguments: {
+        workspaceUri: 'file:///authorized/workspace',
+        changeId: 'v1.2.3-alpha',
+        source: { requirementId: 'req-1' },
+        tasks: [{ localId: 'DEV-001', title: 'Implement', description: 'Implement safely.' }],
+      },
+    });
+    await client.callTool({
+      name: 'select_development_requirement',
+      arguments: { selectionToken: 's'.repeat(43), requirementId: 'req-1' },
+    });
+    await client.callTool({ name: 'execute_development_tasks', arguments: { planToken: 'd'.repeat(43) } });
+    assert.equal(observed.length, 7);
     for (const entry of observed.filter((item) => item.roots)) {
       assert.deepEqual(entry.roots, [{ uri: 'file:///authorized/workspace', name: 'fixture' }]);
     }

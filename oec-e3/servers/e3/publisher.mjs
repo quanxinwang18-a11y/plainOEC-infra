@@ -47,16 +47,16 @@ async function loadValidatedPublishArtifacts(workspace, requestedVersion) {
   return { ...artifacts, warnings: normalizeWarnings(gate.warnings, artifacts.warnings) };
 }
 
-function pluginDataRoot(value = process.env.OEC_PLUGIN_DATA) {
+export function pluginDataRoot(value = process.env.OEC_PLUGIN_DATA) {
   if (!value) throw new Error('OEC_PLUGIN_DATA is not available');
   return resolve(value, 'e3');
 }
 
-function workspaceKey(workspace) {
+export function workspaceKey(workspace) {
   return createHash('sha256').update(workspace).digest('hex');
 }
 
-function configPath(workspace, dataDirectory) {
+export function configPath(workspace, dataDirectory) {
   return join(pluginDataRoot(dataDirectory), 'workspaces', workspaceKey(workspace), 'config.json');
 }
 
@@ -70,14 +70,14 @@ function planPath(token, dataDirectory) {
   return join(pluginDataRoot(dataDirectory), 'plans', `${token}.json`);
 }
 
-async function atomicJson(path, value) {
+export async function atomicJson(path, value) {
   await mkdir(dirname(path), { recursive: true, mode: 0o700 });
   const temporary = `${path}.${process.pid}.${randomBytes(8).toString('hex')}.tmp`;
   await writeFile(temporary, `${JSON.stringify(value, null, 2)}\n`, { mode: 0o600 });
   await rename(temporary, path);
 }
 
-async function readJson(path) {
+export async function readJson(path) {
   try {
     return JSON.parse(await readFile(path, 'utf8'));
   } catch (error) {
@@ -250,7 +250,7 @@ export async function loadPublishArtifacts(workspace, requestedVersion) {
   return { version, handoffPath, artifacts, warnings, fingerprint: artifactFingerprint(files) };
 }
 
-async function loadConfig(workspace, dataDirectory) {
+export async function loadConfig(workspace, dataDirectory) {
   return readJson(configPath(workspace, dataDirectory));
 }
 
@@ -259,11 +259,11 @@ function sameConfig(left, right) {
     && left?.pompProject?.code === right?.pompProject?.code;
 }
 
-function requirementUrl(spaceId, requirementId) {
+export function requirementUrl(spaceId, requirementId) {
   return `${E3_ORIGIN}/cloud-work/cyxt/panshi/storyManageNew/detail/${requirementId}?productId=${spaceId}&flowType=2`;
 }
 
-function taskUrl(spaceId, taskId) {
+export function taskUrl(spaceId, taskId) {
   return `${E3_ORIGIN}/cloud-work/cyxt/panshi/staticdata/statictask/${taskId}?productId=${spaceId}`;
 }
 
@@ -378,7 +378,7 @@ async function storePlan(plan, dataDirectory) {
   return token;
 }
 
-async function storeSelection(selection, dataDirectory, token = randomBytes(32).toString('base64url')) {
+export async function storeSelection(selection, dataDirectory, token = randomBytes(32).toString('base64url')) {
   await atomicJson(selectionPath(token, dataDirectory), selection);
   return token;
 }

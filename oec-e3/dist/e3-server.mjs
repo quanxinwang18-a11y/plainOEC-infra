@@ -28750,6 +28750,13 @@ var E3Client = class {
     });
     return listFromPage(data).map((item) => normalizeRequirement(item)).filter((item) => item?.title === title);
   }
+  async listRequirements(spaceId) {
+    const { data } = await this.request("POST", "/api/dm/story/v1/page", {
+      query: { productId: spaceId },
+      body: { productId: spaceId, curPage: 1, pageSize: 1e3 }
+    });
+    return listFromPage(data).map((item) => normalizeRequirement(item)).filter(Boolean);
+  }
   async getRequirement(spaceId, workItemId, requirementId) {
     try {
       const { data } = await this.request("GET", `/api/dm/story/v1/${requirementId}/info`, {
@@ -28809,6 +28816,7 @@ var E3Client = class {
   }
   async createTask(spaceId, requirementId, config2, story, account) {
     const date3 = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+    const estimatedHours = story.estimatedHours ?? 4;
     const path = `/api/panshi/v2/product/${spaceId}/task`;
     const { payload } = await this.request("POST", path, {
       query: { productId: spaceId },
@@ -28816,8 +28824,8 @@ var E3Client = class {
         name: story.remoteTitle,
         description: story.descriptionHtml,
         taskType: 3,
-        planWorkload: 4,
-        etplanWorkload: 4,
+        planWorkload: estimatedHours,
+        etplanWorkload: estimatedHours,
         inChargeBy: account,
         planStartTime: date3,
         planEndTime: date3,
@@ -28829,9 +28837,13 @@ var E3Client = class {
     });
     const id = extractCreatedId(payload, path);
     if (!id) throw new Error("E3 task creation succeeded without a verifiable ID");
-    return { id: String(id), title: story.remoteTitle };
+    return { id: String(id), title: story.remoteTitle, requirementId: String(requirementId) };
   }
 };
+
+// servers/e3/development.mjs
+import { createHash as createHash3, randomBytes as randomBytes5 } from "node:crypto";
+import { join as join6 } from "node:path";
 
 // servers/e3/publisher.mjs
 var import_yaml3 = __toESM(require_dist2(), 1);
@@ -29816,6 +29828,455 @@ var PublisherService = class {
   }
 };
 
+// servers/e3/development-mapping.mjs
+var import_yaml4 = __toESM(require_dist2(), 1);
+import { randomBytes as randomBytes4 } from "node:crypto";
+import { mkdir as mkdir4, readFile as readFile4, rename as rename4, writeFile as writeFile4 } from "node:fs/promises";
+import { dirname as dirname4, join as join5 } from "node:path";
+function developmentMappingRelativePath(changeId) {
+  return `ai-docs/integrations/e3/development/${changeId}.yaml`;
+}
+async function readDevelopmentMapping(workspace, changeId) {
+  const path = developmentMappingRelativePath(changeId);
+  try {
+    const value = import_yaml4.default.parse(await readFile4(join5(workspace, path), "utf8"));
+    return { path, mapping: value && typeof value === "object" ? value : null };
+  } catch (error2) {
+    if (error2.code === "ENOENT") return { path, mapping: null };
+    throw new Error(`Unable to read E3 development mapping: ${error2.message}`);
+  }
+}
+async function writeDevelopmentMapping(workspace, changeId, mapping) {
+  const path = developmentMappingRelativePath(changeId);
+  const absolute = join5(workspace, path);
+  await mkdir4(dirname4(absolute), { recursive: true });
+  const temporary = `${absolute}.${process.pid}.${randomBytes4(8).toString("hex")}.tmp`;
+  const value = { ...mapping, schema_version: 1, updated_at: (/* @__PURE__ */ new Date()).toISOString() };
+  await writeFile4(temporary, import_yaml4.default.stringify(value), { mode: 384 });
+  await rename4(temporary, absolute);
+  return { path, mapping: value };
+}
+function newDevelopmentMapping({ changeId, config: config2, requirement }) {
+  const timestamp = (/* @__PURE__ */ new Date()).toISOString();
+  return {
+    schema_version: 1,
+    change_id: changeId,
+    sync_state: "partial",
+    created_at: timestamp,
+    updated_at: timestamp,
+    product_space: {
+      id: String(config2.productSpace.id),
+      name: config2.productSpace.name,
+      pomp_project: config2.pompProject
+    },
+    requirement: {
+      id: String(requirement.id),
+      title: requirement.title,
+      url: requirement.url
+    },
+    tasks: []
+  };
+}
+function developmentMappingComplete(mapping) {
+  return Boolean(mapping?.tasks?.length) && mapping.tasks.every((task) => task.e3_task?.id);
+}
+
+// servers/e3/development.mjs
+var TOKEN_PATTERN2 = /^[A-Za-z0-9_-]{32,}$/;
+var CHANGE_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{1,127}$/;
+var LOCAL_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+var PLAN_TTL_MS2 = 15 * 60 * 1e3;
+function selectionPath2(token, dataDirectory) {
+  if (!TOKEN_PATTERN2.test(token)) throw new Error("Invalid development selection token");
+  return join6(pluginDataRoot(dataDirectory), "development", "selections", `${token}.json`);
+}
+function planPath2(token, dataDirectory) {
+  if (!TOKEN_PATTERN2.test(token)) throw new Error("Invalid development plan token");
+  return join6(pluginDataRoot(dataDirectory), "development", "plans", `${token}.json`);
+}
+async function storeDevelopmentSelection(value, dataDirectory) {
+  const token = randomBytes5(32).toString("base64url");
+  await atomicJson(selectionPath2(token, dataDirectory), value);
+  return token;
+}
+async function storeDevelopmentPlan(value, dataDirectory) {
+  const token = randomBytes5(32).toString("base64url");
+  await atomicJson(planPath2(token, dataDirectory), value);
+  return token;
+}
+async function loadDevelopmentSelection(token, dataDirectory, now) {
+  const value = await readJson(selectionPath2(token, dataDirectory));
+  if (!value) throw new Error("Development requirement selection does not exist");
+  if (value.expiresAt <= now) throw new Error("Development requirement selection expired; prepare again");
+  if (value.usedAt) throw new Error("Development requirement selection has already been used");
+  return value;
+}
+async function loadDevelopmentPlan(token, dataDirectory, now) {
+  const value = await readJson(planPath2(token, dataDirectory));
+  if (!value) throw new Error("Development task plan does not exist");
+  if (value.expiresAt <= now) throw new Error("Development task plan expired; prepare again");
+  return value;
+}
+function normalizeTasks(tasks) {
+  if (!Array.isArray(tasks) || tasks.length === 0) throw new Error("tasks must contain at least one item");
+  const seen = /* @__PURE__ */ new Set();
+  return tasks.map((task) => {
+    const localId = String(task?.localId ?? "").trim();
+    const title = String(task?.title ?? "").trim();
+    const description = String(task?.description ?? "").trim();
+    if (!LOCAL_ID_PATTERN.test(localId)) throw new Error(`Invalid task localId: ${localId || "<missing>"}`);
+    if (seen.has(localId)) throw new Error(`Duplicate task localId: ${localId}`);
+    if (!title) throw new Error(`${localId} requires a title`);
+    if (!description) throw new Error(`${localId} requires a description`);
+    seen.add(localId);
+    const priority = task.priority ?? "P2";
+    if (!["P0", "P1", "P2", "P3"].includes(priority)) throw new Error(`${localId} has invalid priority`);
+    const estimatedHours = task.estimatedHours === void 0 ? 4 : Number(task.estimatedHours);
+    if (!Number.isFinite(estimatedHours) || estimatedHours <= 0 || estimatedHours > 999) {
+      throw new Error(`${localId} estimatedHours must be greater than 0 and no more than 999`);
+    }
+    return {
+      localId,
+      title,
+      description,
+      priority,
+      estimatedHours,
+      remoteTitle: `[${localId}] ${title}`,
+      descriptionHtml: `<p>${escapeHtml(description).replaceAll("\n", "<br>")}</p>`
+    };
+  });
+}
+function normalizeSource(source = {}) {
+  const requirementId = source.requirementId === void 0 ? void 0 : String(source.requirementId).trim();
+  const prdVersion = source.prdVersion;
+  const featureName = source.featureName;
+  if (requirementId && (prdVersion || featureName)) {
+    throw new Error("source must identify a requirement directly or through a PRD mapping, not both");
+  }
+  if (Boolean(prdVersion) !== Boolean(featureName)) {
+    throw new Error("source.prdVersion and source.featureName must be provided together");
+  }
+  return { ...requirementId ? { requirementId } : {}, ...prdVersion ? { prdVersion, featureName } : {} };
+}
+function taskFingerprint(changeId, requirementId, tasks) {
+  return `sha256:${createHash3("sha256").update(JSON.stringify({ changeId, requirementId, tasks })).digest("hex")}`;
+}
+function assertMappingIdentity(mapping, config2, requirement) {
+  if (!mapping) return;
+  if (mapping.change_id !== void 0 && mapping.change_id !== requirement.changeId) {
+    throw new Error("development-mapping-change-mismatch");
+  }
+  if (String(mapping.product_space?.id) !== String(config2.productSpace.id)) {
+    throw new Error("development-mapping-space-mismatch");
+  }
+  if (String(mapping.requirement?.id) !== String(requirement.id)) {
+    throw new Error("development-mapping-requirement-mismatch");
+  }
+}
+function taskParentMatches(task, requirementId) {
+  return !task.requirementId || String(task.requirementId) === String(requirementId);
+}
+async function resolveExistingTask(client, spaceId, requirementId, task, mapped) {
+  if (mapped?.e3_task?.id) {
+    const remote = await client.getTask(spaceId, mapped.e3_task.id);
+    if (!remote) throw new Error(`remote-object-drift: mapped task ${mapped.e3_task.id} is missing`);
+    if (remote.title !== task.remoteTitle || !taskParentMatches(remote, requirementId)) {
+      throw new Error(`remote-object-drift: mapped task ${mapped.e3_task.id} identity changed`);
+    }
+    if (!remote.requirementId) {
+      const parentTasks = await client.listTasks(spaceId, requirementId);
+      const linked = parentTasks.find((item) => String(item.id) === String(remote.id));
+      if (!linked || linked.title !== task.remoteTitle) {
+        throw new Error(`remote-object-drift: mapped task ${mapped.e3_task.id} is not linked to its requirement`);
+      }
+    }
+    return { ...remote, action: "mapping" };
+  }
+  const matches = await client.findTasksByExactTitle(spaceId, requirementId, task.remoteTitle);
+  if (matches.length > 1) throw new Error(`Ambiguous E3 tasks for exact title: ${task.remoteTitle}`);
+  if (matches[0] && !taskParentMatches(matches[0], requirementId)) {
+    throw new Error(`remote-object-drift: task ${matches[0].id} has a different parent requirement`);
+  }
+  return matches[0] ? { ...matches[0], action: "query" } : null;
+}
+async function configuredOrSelection(client, workspace, dataDirectory, now) {
+  const config2 = await loadConfig(workspace, dataDirectory);
+  if (!config2?.productSpace) {
+    const candidates = await client.listSpaces();
+    if (candidates.length === 0) return { result: { status: "blocked", errors: ["E3 returned no product spaces"] } };
+    const expiresAt = now + PLAN_TTL_MS2;
+    const selectionToken = await storeSelection({
+      workspace,
+      phase: "space",
+      candidates,
+      createdAt: now,
+      expiresAt
+    }, dataDirectory);
+    return {
+      result: {
+        status: "needs_space_selection",
+        selectionToken,
+        expiresAt: new Date(expiresAt).toISOString(),
+        candidates
+      }
+    };
+  }
+  if (!config2.pompProject) {
+    const candidates = await client.listPompProjects(config2.productSpace.id);
+    if (candidates.length === 0) return { result: { status: "blocked", errors: ["no-pomp-projects"] } };
+    const expiresAt = now + PLAN_TTL_MS2;
+    const selectionToken = await storeSelection({
+      workspace,
+      phase: "pomp",
+      selectedSpace: config2.productSpace,
+      candidates,
+      createdAt: now,
+      expiresAt
+    }, dataDirectory);
+    return {
+      result: {
+        status: "needs_pomp_selection",
+        selectionToken,
+        expiresAt: new Date(expiresAt).toISOString(),
+        spaceId: String(config2.productSpace.id),
+        productSpace: config2.productSpace.name,
+        candidates
+      }
+    };
+  }
+  return { config: config2 };
+}
+async function requirementFromSource(client, workspace, config2, source = {}) {
+  const metadata = await client.requirementMetadata(config2.productSpace.id);
+  let requirementId = source.requirementId;
+  let expectedTitle;
+  if (!requirementId && source.prdVersion && source.featureName) {
+    const { mapping } = await readMapping(workspace, source.prdVersion);
+    if (mapping?.product_space?.id && String(mapping.product_space.id) !== String(config2.productSpace.id)) {
+      throw new Error("PRD mapping belongs to a different E3 product space");
+    }
+    const mapped = mapping?.requirements?.find((item) => item.featureName === source.featureName);
+    requirementId = mapped?.e3_requirement?.id;
+    expectedTitle = mapped?.e3_requirement?.title;
+    if (!requirementId) throw new Error("PRD mapping has no requirement for the requested featureName");
+  }
+  if (!requirementId) return { metadata, requirement: null };
+  const requirement = await client.getRequirement(config2.productSpace.id, metadata.workItemId, requirementId);
+  if (!requirement) throw new Error(`Selected E3 requirement ${requirementId} is missing`);
+  if (expectedTitle && requirement.title !== expectedTitle) throw new Error("remote-object-drift: mapped requirement title changed");
+  return { metadata, requirement };
+}
+async function inspectTasks(client, workspace, changeId, config2, requirement, tasks) {
+  const { path, mapping } = await readDevelopmentMapping(workspace, changeId);
+  assertMappingIdentity(mapping, config2, { ...requirement, changeId });
+  const planned = [];
+  let create = 0;
+  let reuse = 0;
+  for (const task of tasks) {
+    const mapped = mapping?.tasks?.find((item) => item.local_id === task.localId);
+    if (mapped && mapped.title !== task.title) throw new Error(`development-task-changed: ${task.localId} title is immutable after mapping`);
+    const remote = await resolveExistingTask(client, config2.productSpace.id, requirement.id, task, mapped);
+    if (remote) reuse += 1;
+    else create += 1;
+    planned.push({ localId: task.localId, title: task.remoteTitle, action: remote ? "reuse" : "create", id: remote?.id });
+  }
+  return { path, mapping, planned, counts: { createTasks: create, reuseTasks: reuse } };
+}
+var DevelopmentTaskService = class {
+  constructor({ client, dataDirectory, now = () => Date.now() }) {
+    this.client = client;
+    this.dataDirectory = dataDirectory;
+    this.now = now;
+  }
+  async readyPlan({ workspaceUri, workspace, changeId, config: config2, requirement, tasks }) {
+    const inspected = await inspectTasks(this.client, workspace, changeId, config2, requirement, tasks);
+    const createdAt = this.now();
+    const plan = {
+      workspaceUri,
+      workspace,
+      changeId,
+      config: config2,
+      requirement,
+      tasks,
+      fingerprint: taskFingerprint(changeId, requirement.id, tasks),
+      createdAt,
+      expiresAt: createdAt + PLAN_TTL_MS2
+    };
+    const planToken = await storeDevelopmentPlan(plan, this.dataDirectory);
+    return {
+      status: "ready",
+      changeId,
+      productSpace: config2.productSpace.name,
+      requirement: { id: requirement.id, title: requirement.title },
+      tasks: inspected.planned,
+      counts: inspected.counts,
+      planToken,
+      expiresAt: new Date(plan.expiresAt).toISOString(),
+      mappingPath: inspected.path
+    };
+  }
+  async prepare({ workspaceUri, changeId, source, tasks }, roots) {
+    if (!CHANGE_ID_PATTERN.test(changeId ?? "")) return { status: "blocked", errors: ["Invalid changeId"] };
+    const workspace = await resolveAuthorizedWorkspace(workspaceUri, roots);
+    let normalized;
+    let normalizedSource;
+    try {
+      normalized = normalizeTasks(tasks);
+      normalizedSource = normalizeSource(source);
+    } catch (error2) {
+      return { status: "blocked", errors: [error2.message] };
+    }
+    const configured = await configuredOrSelection(this.client, workspace, this.dataDirectory, this.now());
+    if (configured.result) return { ...configured.result, changeId };
+    try {
+      const resolved = await requirementFromSource(this.client, workspace, configured.config, normalizedSource);
+      if (resolved.requirement) {
+        return await this.readyPlan({
+          workspaceUri,
+          workspace,
+          changeId,
+          config: configured.config,
+          requirement: resolved.requirement,
+          tasks: normalized
+        });
+      }
+      const candidates = await this.client.listRequirements(configured.config.productSpace.id);
+      if (candidates.length === 0) return { status: "blocked", changeId, errors: ["E3 returned no system requirements"] };
+      if (candidates.length === 1) {
+        return await this.readyPlan({
+          workspaceUri,
+          workspace,
+          changeId,
+          config: configured.config,
+          requirement: candidates[0],
+          tasks: normalized
+        });
+      }
+      const expiresAt = this.now() + PLAN_TTL_MS2;
+      const selectionToken = await storeDevelopmentSelection({
+        workspaceUri,
+        workspace,
+        changeId,
+        config: configured.config,
+        tasks: normalized,
+        candidateIds: candidates.map((item) => String(item.id)),
+        createdAt: this.now(),
+        expiresAt
+      }, this.dataDirectory);
+      return {
+        status: "needs_requirement_selection",
+        changeId,
+        selectionToken,
+        expiresAt: new Date(expiresAt).toISOString(),
+        candidates: candidates.map((item) => ({ id: item.id, title: item.title }))
+      };
+    } catch (error2) {
+      return { status: "blocked", changeId, errors: [error2.message] };
+    }
+  }
+  async selectRequirement({ selectionToken, requirementId }, roots) {
+    const selection = await loadDevelopmentSelection(selectionToken, this.dataDirectory, this.now());
+    const workspace = await resolveAuthorizedWorkspace(selection.workspaceUri, roots);
+    if (workspace !== selection.workspace) throw new Error("Development selection workspace changed");
+    if (!selection.candidateIds.includes(String(requirementId))) throw new Error("requirementId was not returned for this selection");
+    const config2 = await loadConfig(workspace, this.dataDirectory);
+    if (!config2 || String(config2.productSpace.id) !== String(selection.config.productSpace.id) || String(config2.pompProject.code) !== String(selection.config.pompProject.code)) {
+      throw new Error("E3 workspace configuration changed after requirement selection began");
+    }
+    const metadata = await this.client.requirementMetadata(config2.productSpace.id);
+    const requirement = await this.client.getRequirement(config2.productSpace.id, metadata.workItemId, requirementId);
+    if (!requirement) throw new Error("Selected E3 requirement is no longer available");
+    const current = await this.client.listRequirements(config2.productSpace.id);
+    if (!current.some((item) => String(item.id) === String(requirementId))) {
+      throw new Error("Selected E3 requirement is no longer a current candidate");
+    }
+    await atomicJson(selectionPath2(selectionToken, this.dataDirectory), { ...selection, usedAt: this.now() });
+    return this.readyPlan({
+      workspaceUri: selection.workspaceUri,
+      workspace,
+      changeId: selection.changeId,
+      config: config2,
+      requirement,
+      tasks: selection.tasks
+    });
+  }
+  async execute({ planToken }, roots) {
+    const plan = await loadDevelopmentPlan(planToken, this.dataDirectory, this.now());
+    const workspace = await resolveAuthorizedWorkspace(plan.workspaceUri, roots);
+    if (workspace !== plan.workspace) throw new Error("Development task workspace changed after prepare");
+    const config2 = await loadConfig(workspace, this.dataDirectory);
+    if (!config2 || String(config2.productSpace.id) !== String(plan.config.productSpace.id) || String(config2.pompProject.code) !== String(plan.config.pompProject.code)) {
+      throw new Error("E3 workspace configuration changed after development task prepare");
+    }
+    if (taskFingerprint(plan.changeId, plan.requirement.id, plan.tasks) !== plan.fingerprint) {
+      throw new Error("Development task plan fingerprint is invalid");
+    }
+    const metadata = await this.client.requirementMetadata(config2.productSpace.id);
+    const requirement = await this.client.getRequirement(config2.productSpace.id, metadata.workItemId, plan.requirement.id);
+    if (!requirement || requirement.title !== plan.requirement.title) {
+      throw new Error("remote-object-drift: selected requirement identity changed after prepare");
+    }
+    const existing = await readDevelopmentMapping(workspace, plan.changeId);
+    assertMappingIdentity(existing.mapping, config2, { ...requirement, changeId: plan.changeId });
+    let mapping = existing.mapping ?? newDevelopmentMapping({
+      changeId: plan.changeId,
+      config: config2,
+      requirement: {
+        ...requirement,
+        url: requirementUrl(config2.productSpace.id, requirement.id)
+      }
+    });
+    mapping.sync_state = "partial";
+    let checkpoint = await writeDevelopmentMapping(workspace, plan.changeId, mapping);
+    mapping = checkpoint.mapping;
+    const changes = [];
+    const account = await this.client.currentAccount();
+    try {
+      for (const task of plan.tasks) {
+        let item = mapping.tasks.find((candidate) => candidate.local_id === task.localId);
+        if (!item) {
+          item = { local_id: task.localId, title: task.title, e3_task: null };
+          mapping.tasks.push(item);
+        }
+        if (item.title !== task.title) throw new Error(`development-task-changed: ${task.localId} title is immutable after mapping`);
+        let remote = await resolveExistingTask(this.client, config2.productSpace.id, requirement.id, task, item);
+        let action = remote ? "reused" : "created";
+        if (!remote) {
+          try {
+            remote = await this.client.createTask(config2.productSpace.id, requirement.id, config2, task, account);
+          } catch (error2) {
+            const matches = await this.client.findTasksByExactTitle(config2.productSpace.id, requirement.id, task.remoteTitle);
+            if (matches.length === 1) {
+              [remote] = matches;
+              action = "reused-after-unknown-result";
+            } else if (matches.length > 1) {
+              throw new Error(`Task create result is ambiguous: ${task.remoteTitle}`);
+            } else throw error2;
+          }
+        }
+        item.e3_task = {
+          id: String(remote.id),
+          title: task.remoteTitle,
+          url: taskUrl(config2.productSpace.id, remote.id),
+          action
+        };
+        changes.push({ localId: task.localId, id: String(remote.id), action });
+        checkpoint = await writeDevelopmentMapping(workspace, plan.changeId, mapping);
+        mapping = checkpoint.mapping;
+      }
+      mapping.sync_state = developmentMappingComplete(mapping) ? "synced" : "partial";
+      checkpoint = await writeDevelopmentMapping(workspace, plan.changeId, mapping);
+      return { status: checkpoint.mapping.sync_state, changeId: plan.changeId, mappingPath: checkpoint.path, changes };
+    } catch (error2) {
+      mapping.sync_state = "partial";
+      mapping.last_error = error2.message;
+      checkpoint = await writeDevelopmentMapping(workspace, plan.changeId, mapping);
+      const status = /remote-object-drift|Ambiguous|changed|mismatch/i.test(error2.message) ? "blocked" : "partial";
+      return { status, changeId: plan.changeId, mappingPath: checkpoint.path, changes, errors: [error2.message] };
+    }
+  }
+};
+
 // servers/e3/server.mjs
 function result(value, isError = false) {
   return {
@@ -29831,11 +30292,13 @@ async function rootsFor(mcpServer) {
     return [];
   }
 }
-function createE3McpServer({ service } = {}) {
+function createE3McpServer({ service, developmentService } = {}) {
   const mcpServer = new McpServer({ name: "oec-e3", version: "1.0.0" });
+  const client = new E3Client({ auth: new AuthManager() });
   const publisher = service ?? new PublisherService({
-    client: new E3Client({ auth: new AuthManager() })
+    client
   });
+  const development = developmentService ?? new DevelopmentTaskService({ client });
   const guarded = (handler) => async (input) => {
     try {
       return result(await handler(input));
@@ -29878,6 +30341,43 @@ function createE3McpServer({ service } = {}) {
     },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
   }, guarded(async (input) => publisher.status(input, await rootsFor(mcpServer))));
+  mcpServer.registerTool("prepare_development_tasks", {
+    title: "Prepare E3 development tasks",
+    description: "Resolve a parent requirement and prepare an immutable plan to create or reuse bounded E3 development tasks.",
+    inputSchema: {
+      workspaceUri: string2().url().describe("A file URI returned by MCP roots/list"),
+      changeId: string2().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{1,127}$/),
+      source: object({
+        prdVersion: string2().regex(/^v\d+\.\d+\.\d+$/).optional(),
+        featureName: string2().regex(/^[a-z][A-Za-z0-9]*$/).optional(),
+        requirementId: string2().min(1).optional()
+      }).optional(),
+      tasks: array(object({
+        localId: string2().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/),
+        title: string2().trim().min(1),
+        description: string2().trim().min(1),
+        priority: _enum(["P0", "P1", "P2", "P3"]).optional(),
+        estimatedHours: number2().positive().max(999).optional()
+      })).min(1)
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  }, guarded(async (input) => development.prepare(input, await rootsFor(mcpServer))));
+  mcpServer.registerTool("select_development_requirement", {
+    title: "Select E3 development requirement",
+    description: "Select one current parent requirement from a workspace-bound development-task candidate set.",
+    inputSchema: {
+      selectionToken: string2().min(32),
+      requirementId: string2().min(1)
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true }
+  }, guarded(async (input) => development.selectRequirement(input, await rootsFor(mcpServer))));
+  mcpServer.registerTool("execute_development_tasks", {
+    title: "Execute E3 development task plan",
+    description: "Execute a previously prepared immutable plan and checkpoint each created or reused E3 task.",
+    inputSchema: { planToken: string2().min(32) },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
+    _meta: { "anthropic/requiresUserInteraction": true }
+  }, guarded(async (input) => development.execute(input, await rootsFor(mcpServer))));
   return mcpServer;
 }
 

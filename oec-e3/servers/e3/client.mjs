@@ -251,6 +251,14 @@ export class E3Client {
     return listFromPage(data).map((item) => normalizeRequirement(item)).filter((item) => item?.title === title);
   }
 
+  async listRequirements(spaceId) {
+    const { data } = await this.request('POST', '/api/dm/story/v1/page', {
+      query: { productId: spaceId },
+      body: { productId: spaceId, curPage: 1, pageSize: 1000 },
+    });
+    return listFromPage(data).map((item) => normalizeRequirement(item)).filter(Boolean);
+  }
+
   async getRequirement(spaceId, workItemId, requirementId) {
     try {
       const { data } = await this.request('GET', `/api/dm/story/v1/${requirementId}/info`, {
@@ -316,6 +324,7 @@ export class E3Client {
 
   async createTask(spaceId, requirementId, config, story, account) {
     const date = new Date().toISOString().slice(0, 10);
+    const estimatedHours = story.estimatedHours ?? 4;
     const path = `/api/panshi/v2/product/${spaceId}/task`;
     const { payload } = await this.request('POST', path, {
       query: { productId: spaceId },
@@ -323,8 +332,8 @@ export class E3Client {
         name: story.remoteTitle,
         description: story.descriptionHtml,
         taskType: 3,
-        planWorkload: 4,
-        etplanWorkload: 4,
+        planWorkload: estimatedHours,
+        etplanWorkload: estimatedHours,
         inChargeBy: account,
         planStartTime: date,
         planEndTime: date,
@@ -336,6 +345,6 @@ export class E3Client {
     });
     const id = extractCreatedId(payload, path);
     if (!id) throw new Error('E3 task creation succeeded without a verifiable ID');
-    return { id: String(id), title: story.remoteTitle };
+    return { id: String(id), title: story.remoteTitle, requirementId: String(requirementId) };
   }
 }

@@ -35,9 +35,14 @@ test('bundled E3 server completes MCP stdio discovery without node_modules', asy
       'select_product_space',
       'execute_prd_publish',
       'get_prd_publish_status',
+      'prepare_development_tasks',
+      'select_development_requirement',
+      'execute_development_tasks',
     ]);
     const execute = tools.tools.find((tool) => tool.name === 'execute_prd_publish');
     assert.equal(execute._meta['anthropic/requiresUserInteraction'], true);
+    const developmentExecute = tools.tools.find((tool) => tool.name === 'execute_development_tasks');
+    assert.equal(developmentExecute._meta['anthropic/requiresUserInteraction'], true);
   } finally {
     await client.close();
   }

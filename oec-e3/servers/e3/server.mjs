@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import * as z from 'zod/v4';
 import { AuthManager, redactSecrets } from './auth.mjs';
 import { E3Client } from './client.mjs';
+import { DevelopmentTaskService } from './development.mjs';
 import { PublisherService } from './publisher.mjs';
 
 function result(value, isError = false) {
@@ -20,11 +21,13 @@ async function rootsFor(mcpServer) {
   }
 }
 
-export function createE3McpServer({ service } = {}) {
+export function createE3McpServer({ service, developmentService } = {}) {
   const mcpServer = new McpServer({ name: 'oec-e3', version: '1.0.0' });
+  const client = new E3Client({ auth: new AuthManager() });
   const publisher = service ?? new PublisherService({
-    client: new E3Client({ auth: new AuthManager() }),
+    client,
   });
+  const development = developmentService ?? new DevelopmentTaskService({ client });
 
   const guarded = (handler) => async (input) => {
     try {
@@ -72,6 +75,46 @@ export function createE3McpServer({ service } = {}) {
     },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
   }, guarded(async (input) => publisher.status(input, await rootsFor(mcpServer))));
+
+  mcpServer.registerTool('prepare_development_tasks', {
+    title: 'Prepare E3 development tasks',
+    description: 'Resolve a parent requirement and prepare an immutable plan to create or reuse bounded E3 development tasks.',
+    inputSchema: {
+      workspaceUri: z.string().url().describe('A file URI returned by MCP roots/list'),
+      changeId: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{1,127}$/),
+      source: z.object({
+        prdVersion: z.string().regex(/^v\d+\.\d+\.\d+$/).optional(),
+        featureName: z.string().regex(/^[a-z][A-Za-z0-9]*$/).optional(),
+        requirementId: z.string().min(1).optional(),
+      }).optional(),
+      tasks: z.array(z.object({
+        localId: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/),
+        title: z.string().trim().min(1),
+        description: z.string().trim().min(1),
+        priority: z.enum(['P0', 'P1', 'P2', 'P3']).optional(),
+        estimatedHours: z.number().positive().max(999).optional(),
+      })).min(1),
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+  }, guarded(async (input) => development.prepare(input, await rootsFor(mcpServer))));
+
+  mcpServer.registerTool('select_development_requirement', {
+    title: 'Select E3 development requirement',
+    description: 'Select one current parent requirement from a workspace-bound development-task candidate set.',
+    inputSchema: {
+      selectionToken: z.string().min(32),
+      requirementId: z.string().min(1),
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+  }, guarded(async (input) => development.selectRequirement(input, await rootsFor(mcpServer))));
+
+  mcpServer.registerTool('execute_development_tasks', {
+    title: 'Execute E3 development task plan',
+    description: 'Execute a previously prepared immutable plan and checkpoint each created or reused E3 task.',
+    inputSchema: { planToken: z.string().min(32) },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
+    _meta: { 'anthropic/requiresUserInteraction': true },
+  }, guarded(async (input) => development.execute(input, await rootsFor(mcpServer))));
 
   return mcpServer;
 }
