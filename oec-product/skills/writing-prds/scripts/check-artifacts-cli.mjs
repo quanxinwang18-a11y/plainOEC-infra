@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { checkArtifacts } from './check-artifacts.mjs';
+import { checkArtifacts } from '../../../../packages/prd-artifact-contract/check-artifacts.mjs';
 
 const VERSION_PATTERN = /^v\d+\.\d+\.\d+$/;
 const STAGES = new Set(['finalize', 'pre-publish']);

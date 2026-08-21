@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { checkArtifacts, parseModules } from '../scripts/check-artifacts.mjs';
+import { checkArtifacts, parseModules } from '../../../../packages/prd-artifact-contract/check-artifacts.mjs';
 
 function write(root, path, content) {
   const target = join(root, path);

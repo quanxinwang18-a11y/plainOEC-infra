@@ -3,7 +3,7 @@ import { mkdir, readFile, readdir, realpath, rename, stat, writeFile } from 'nod
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import YAML from 'yaml';
-import { checkArtifacts } from '../../skills/writing-prds/scripts/check-artifacts.mjs';
+import { checkArtifacts } from '../../../packages/prd-artifact-contract/check-artifacts.mjs';
 import { E3_ORIGIN } from './auth.mjs';
 import {
   adoptMappingCheckpoints,
