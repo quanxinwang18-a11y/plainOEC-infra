@@ -3,6 +3,7 @@
 > 面向对象：技术与管理混合决策者  
 > 旧实现基线：`oec-ai-infra@7935600`（`oec-ai@0.2.2`）  
 > 当前实现基线：`plainOEC-infra@9f70ae8`（Marketplace `3.0.0`）  
+> 当前验证宿主：Claude Code `2.1.237`
 > 文档日期：2026-08-21
 
 ## 0. 阅读口径
@@ -13,6 +14,12 @@
 - **判断**：基于事实对职责、模型判断面和维护成本的分析。
 - **已实现**：当前仓库已经存在并通过自动验证的能力。
 - **下一步规划**：尚未完成，不以目录、Prompt、mock 或静态检查宣称可用。
+
+为便于复核，正文中的关键章节还标注证据性质：
+
+- **源代码事实**：固定 commit 中可以直接定位的 manifest、目录、Prompt、脚本或测试。
+- **机制推论**：由这些结构能够推出的风险，不等价于已经采集到的线上故障统计。
+- **治理建议**：需要组织决策、Owner 和后续数据验证的方案。
 
 外部系统能力再单独区分：
 
@@ -36,8 +43,9 @@
    “Skill”，模型需要再次解释它们之间的关系。
 3. **分发边界错位**：Marketplace 安装的是 bootstrap Plugin，真正配置还要复制进每个业务仓库，
    Plugin cache 和项目副本成为两个真相源。
-4. **执行边界错位**：OAuth、HTTP payload、候选选择、重试、ID 提取、幂等和恢复依赖模型阅读文档
-   后驱动 Bash/Python，而不是平台提供的类型化工具。
+4. **执行边界错位**：旧脚本已经处理了部分 OAuth、401 重授权和响应规范化，但候选选择、调用参数、
+   写操作恢复和跨步骤状态并未形成统一的宿主工具边界；模型仍需阅读文档后选择 Bash/Python 入口并
+   解释多个脚本的结果。
 
 这些错位会直接影响模型判断：同一请求同时命中多个路由、阶段和固定流程，模型可能扩大本应很小的
 任务，重复确认，生成不需要的文件，或在外部系统执行中作出未经授权的猜测。
@@ -76,6 +84,9 @@
 
 ## 2. 旧 OEC-infra 的真实使用流程
 
+> 证据性质：**源代码事实**。本章基于旧仓库固定 commit 的 registry、构建脚本、Plugin payload 和
+> 实际临时初始化结果；复核命令见附录 C。
+
 ### 2.1 需要区分的三种结构
 
 旧实现不能只看 `oec-infra/` 编辑源码。真实运行经过三次形态变化：
@@ -98,7 +109,7 @@ flowchart LR
 
 1. 添加 Marketplace 并安装 `oec-ai` Plugin。
 2. 在每个业务仓库运行 `oec-project-init`。
-3. 选择 `role=designer`、`role=dev` 或 `role=all`，再选择 Claude Code/Codex。
+3. 选择运行时支持的 `role=designer`、`role=dev` 或 `role=all`，再选择 Claude Code/Codex。
 4. 初始化器把 payload 复制到项目 `.claude` 或 `.codex`。
 5. 项目保存 `.oec-ai/installation.json` 和同步运行时。
 6. 后续 SessionStart 仅对已经初始化的项目执行版本同步。
@@ -115,8 +126,11 @@ flowchart LR
 | 研发 | `dev` | 12 个顶层 Skills + 测试 Agent 树 | 1418 个文件，约 28 MiB |
 | 测试 | 无独立 role | 作为 Dev preset 的 Dispatcher 与 Agents 下发 | 71 个内部 Skills 不被原生发现 |
 
-旧 registry 实际只有 `dev`、`designer`、`all`。因此“测试角色”是使用场景，不是分发模型中的一等
-角色；测试资产的版本、安装和卸载生命周期被绑定到研发工具包。
+这里需要区分源码与构建产物：`registry/presets.yaml` 只定义 `dev`、`designer` 两项；
+`script/build-plugin-marketplace.mjs` 在构建时把两者合并生成 `roles.all`，最终
+`plugins/oec-ai/payload/manifest.json` 才包含 `dev`、`designer`、`all` 三项。因此“测试角色”是
+使用场景，不是 registry 或运行时 manifest 中的一等角色；测试资产的版本、安装和卸载生命周期被
+绑定到研发工具包。
 
 ### 2.3 产品经理完整流程
 
@@ -226,7 +240,7 @@ Dispatcher 明确要求调用方读取 `skills/<name>/SKILL.md`；Agent 总览�
 迁移不应把旧方案描述成“完全错误”。它解决了当时的现实问题：
 
 - 用 registry 和 preset 同时管理 Claude Code/Codex 资产。
-- 按 designer/dev/all 下发不同集合，避免永远安装全集。
+- 按 designer/dev 下发不同集合，并在构建产物中提供两者合并的 all，避免永远安装全集。
 - 同步器使用 staging、backup 和 rollback，避免半安装。
 - 拒绝路径逃逸、payload symlink 和目标 symlink traversal。
 - 通过 `installation.json` 记录 managed 和 retired files。
@@ -235,6 +249,9 @@ Dispatcher 明确要求调用方读取 `skills/<name>/SKILL.md`；Agent 总览�
 新架构应保留这些安全思想，但不再以“复制组织配置到每个项目”作为默认运行模型。
 
 ## 3. 旧配置的结构性问题
+
+> 证据性质：**源代码事实 + 机制推论**。文件数量、路径和明确指令来自旧 commit；对模型误路由、
+> 任务扩张和维护成本的描述是机制风险，仍需在固定任务集和真实运行 trace 中量化。
 
 ### 3.1 嵌套文件索引冒充 Skill 加载
 
@@ -348,17 +365,26 @@ payload。安装 Plugin 后，Claude Code 不会直接显示这些 namespaced �
 
 ### 3.5 平台不变量由 Prompt 和脚本调用者承担
 
-旧 E3、SAE、UTP 等能力通常采用：
+旧 E3、SAE、UTP 等能力并非完全没有确定性代码。`oec-manage-task/scripts/client.py` 已封装 token
+获取、401 后重新授权一次和成功响应判断；`oec-git-devops/devops/scripts/client.ts` 已封装 OAuth、
+401 处理和响应解包；测试侧 `platform-gateway` 也已经实现认证、环境选择和部分重试。真实链路更准确
+地表示为：
 
 ```text
 Skill/Agent 文档
 → Read API reference
-→ 模型选择 Bash/Python 脚本
-→ 模型拼参数或 JSON
-→ requests/HTTP
-→ 模型解释成功码与 ID
-→ 模型决定重试或写 mapping
+→ 模型选择 Bash/Python/Node 入口和调用参数
+→ 脚本处理局部确定性职责（OAuth、401、部分响应规范化）
+→ HTTP API
+→ 模型或上层文档继续负责候选、跨步骤状态、写后恢复和最终完成判断
 ```
+
+| 旧实现已经代码化的部分 | 仍然留给模型/调用者的缺口 |
+| --- | --- |
+| OAuth/PKCE、token 缓存和部分 401 重授权 | 选择哪个子文档、脚本和参数组合 |
+| 部分 HTTP 超时、错误包装和响应解包 | 多候选业务身份的精确选择及确认 |
+| 个别 UTP 操作的归一化与幂等测试 | 跨脚本 plan、checkpoint、mapping 和 status read-back |
+| Pipeline Client 的请求包装 | `run_pipeline` 等写操作失败后的通用重试缺少“结果未知先精确查询”的语义 |
 
 已发现的风险包括：
 
@@ -368,8 +394,10 @@ Skill/Agent 文档
 - 缺失远端 ID 可能只降级为 warning，完成状态不严格。
 - 模型可以构造超出稳定用户目标的通用 CRUD 参数。
 
-这些行为不应通过增加更多“必须”“不要忘记”来修复。正确做法是 MCP input schema、服务端验证、
-workspace 绑定、精确选择、不可变 plan、原子 checkpoint 和独立 status read-back。
+因此问题不是“旧实现没有脚本”，而是确定性职责分散在多个 Skill payload 中，且没有成为宿主可发现、
+可授权、可审计的统一类型化边界。这些缺口不应通过增加更多“必须”“不要忘记”来修复。正确做法是
+MCP input schema、服务端验证、workspace 绑定、精确选择、不可变 plan、原子 checkpoint 和独立
+status read-back。
 
 ### 3.6 问题归因总结
 
@@ -389,6 +417,9 @@ flowchart TB
 ```
 
 ## 4. Skill 研发与评审框架
+
+> 证据性质：**治理建议**。评审维度来自 Claude Code 组件机制、参考文章和当前迁移实践；是否保留
+> 某项旧能力，仍需使用率、Owner、固定任务 eval 和真实反馈支撑。
 
 ### 4.1 第一性原则
 
@@ -456,6 +487,9 @@ Skill 的价值不是替模型复述常识，而是在正确触发时提供模�
 
 ## 5. Agent、Skill、MCP、Plugin 的职责
 
+> 证据性质：**官方组件边界 + 架构判断**。组件的原生位置和发现机制以 Claude Code 官方文档为准；
+> OEC 如何拆分 Plugin 是基于生命周期、权限和 Owner 的设计决定。
+
 Claude Code 官方将这些能力放在不同扩展位置：[扩展模型](https://code.claude.com/docs/en/features-overview)、
 [Plugin 规范](https://code.claude.com/docs/en/plugins-reference)、
 [Subagent 规范](https://code.claude.com/docs/en/sub-agents)、[MCP 规范](https://code.claude.com/docs/en/mcp)。
@@ -499,6 +533,9 @@ flowchart LR
 - Plugin 是分发层，不等于一个角色必须拥有 Agent、Skill、MCP 全部类型。
 
 ## 6. 当前 3.0 已实现架构
+
+> 证据性质：**当前源代码事实 + 自动测试 + 脱敏真实验收记录**。自动测试只能证明其覆盖的确定性
+> contract；外部平台结论严格以验收记录为边界。
 
 ### 6.1 组件层级
 
@@ -566,11 +603,16 @@ claude plugin install oec-pipeline@plainOEC-infra --scope user
 | Pipeline | 已完成 | mock/integration 与 bundle | 未执行真实非生产流水线 |
 | Testing/UTP/SAE | 未准入 | 仅审计或规划 | 无 |
 
-当前完整测试为 99/99。真实 E3 证据见
-[验收记录](../evidence/e3-platform-3.0.0-real-acceptance.md)；Pipeline、SAE、UTP 不得借用 E3 证据
-宣称已验证。
+当前完整测试为 99/99。根据仓库内的
+[脱敏验收记录](../evidence/e3-platform-3.0.0-real-acceptance.md)，E3 已在授权非生产空间完成所列
+PRD 与研发任务旅程；记录为避免泄密明确不保存远端内部 ID、token 和原始响应，因此它证明的是已列
+步骤和 read-back 结果，不是未经脱敏的完整审计日志。Pipeline、SAE、UTP 不得借用 E3 证据宣称
+已验证。
 
 ## 7. 下一阶段目标架构与角色分发
+
+> 证据性质：**治理建议**。已实现组件使用实线，尚未建设或尚未准入的能力使用虚线；目标图不代表
+> 对未来 Plugin 数量的预先承诺。
 
 ### 7.1 目标层级
 
@@ -667,6 +709,9 @@ flowchart TB
 
 ## 8. 下一步实施路线
 
+> 证据性质：**治理建议**。每一阶段先补证据再进入下一阶段；当前 99 项自动测试不是测试资产迁移
+> 收益或模型判断质量的替代指标。
+
 ### 阶段一：测试资产盘点与基线
 
 目标：把 71 个内部 Skills、19 个 Agents 和 supporting runtime 变成可决策清单，而不是直接搬目录。
@@ -732,6 +777,8 @@ flowchart TB
 - 每次发布同时给出组件清单、自动测试、mock 和真实 E2E 状态。
 
 ## 9. 成功标准与领导可见指标
+
+> 证据性质：**治理建议**。以下是需要建立数据源的原始指标，不是当前已经达到的百分比承诺。
 
 不把多个维度压成一个综合分数，直接报告原始证据：
 
@@ -827,3 +874,40 @@ Marketplace 只负责版本化分发
 | Pipeline | `1.0.0`，本地 tag `oec-pipeline--v1.0.0` |
 | 当前自动测试 | 99/99 |
 | 远端发布 | 本文基线的 3.0 tags 尚未在本次报告工作中执行 push |
+
+## 附录 C：可复核证据索引
+
+以下索引用于把正文中的关键事实落到固定 commit 或当前仓库文件。旧仓库命令均在
+`/Users/qxwang6/project/oec-ai-infra` 执行，不依赖当前工作树内容。
+
+| 事实 | 可复核证据 | 证据能证明什么 |
+| --- | --- | --- |
+| 旧源码 preset 只有 dev/designer | `git show 7935600:registry/presets.yaml` | registry 的原始角色定义 |
+| all 是构建时合并项 | `git show 7935600:script/build-plugin-marketplace.mjs`，查看 `buildPayloadManifest` | `roles.all` 由 dev/designer 合并生成 |
+| 旧运行时有三个可选 role | `git show 7935600:plugins/oec-ai/payload/manifest.json` | 分发 payload 的 dev/designer/all 清单 |
+| 旧 Plugin 是 bootstrap | `plugins/oec-ai/.claude-plugin/plugin.json`、`plugins/oec-ai/skills/oec-project-init/`、`plugins/oec-ai/hooks/hooks.json` | 原生入口是初始化 Skill 与 SessionStart Hook；角色资产位于 payload |
+| 旧平台并非没有代码封装 | `oec-infra/skills/tools/oec-manage-task/scripts/client.py`、`oec-infra/skills/tools/oec-git-devops/devops/scripts/client.ts`、`oec-infra/skills/test/skills/platform-gateway/scripts/gateway_client.py` | OAuth、401、响应处理和部分重试已有确定性实现 |
+| 旧平台边界仍不完整 | `oec-infra/skills/tools/oec-manage-task/SKILL.md` 与上述 clients | 模型仍负责文件路由、入口/参数组合和跨步骤流程；Pipeline Client 对写操作使用通用失败重试 |
+| 当前组件层级与 dependency | [Marketplace manifest](../../.claude-plugin/marketplace.json)、[Product manifest](../../oec-product/.claude-plugin/plugin.json)、[Engineering manifest](../../oec-engineering/.claude-plugin/plugin.json)、[E3 manifest](../../oec-e3/.claude-plugin/plugin.json)、[Pipeline manifest](../../oec-pipeline/.claude-plugin/plugin.json) | 当前版本、分发单元和 Product→E3 依赖 |
+| Product/Engineering 的结构与 fixture | [Product 组件测试](../../oec-product/tests/components.test.mjs)、[Engineering 组件测试](../../oec-engineering/tests/components.test.mjs)、[Engineering 分发测试](../../oec-engineering/tests/distribution.test.mjs) | 原生组件、负向触发文本、Spec 工具和无依赖 bundle 等确定性契约 |
+| E3/Pipeline 的 mock 与 bundle | [E3 mock journey](../../oec-e3/servers/e3/tests/journey.test.mjs)、[E3 bundle 测试](../../oec-e3/servers/e3/tests/distribution.test.mjs)、[Pipeline planner 测试](../../oec-pipeline/servers/pipeline/tests/planner.test.mjs)、[Pipeline bundle 测试](../../oec-pipeline/servers/pipeline/tests/distribution.test.mjs) | 测试替身下的计划/恢复分支和 MCP stdio 分发，不证明真实远端运行 |
+| E3 真实非生产旅程 | [脱敏验收记录](../evidence/e3-platform-3.0.0-real-acceptance.md) | 授权空间、唯一标识、execute/status/read-back 和明确未覆盖边界 |
+| 当前宿主版本 | 2026-08-21 执行 `claude --version` 返回 `2.1.237 (Claude Code)` | 本报告验证时使用的 Claude Code 版本，不代表未来版本行为 |
+
+旧 PM/Dev/Test 的文件数、行数和物化结构还可以分别通过 [migration.md](../../migration.md) 与
+[dev-migration.md](../../dev-migration.md) 中记录的固定基线和临时初始化方法复算。本文引用这些结果，
+不把文档二次转述当成新的独立证据。
+
+## 附录 D：术语表
+
+| 术语 | 本文含义 |
+| --- | --- |
+| E3 | OEC 使用的需求、Story 和研发任务协作平台；当前通过 `oec-e3` MCP 接入 |
+| UTP | 旧测试资产连接的测试管理/执行平台；尚未通过新架构准入 |
+| SAE | 旧配置包含的应用与环境管理平台能力；尚未通过新架构准入 |
+| POMP | E3 产品空间下用于关联需求/任务的项目元数据 |
+| HANDOFF | PRD 版本向子 PRD 和 Story 映射的结构化交接文件，当前 contract 为 schema v4 |
+| Plugin Data | Claude Code 为单个 Plugin 提供的本地数据目录，用于 token、workspace config、selection 和 plan 等非 Git 状态 |
+| mapping | Git 仓库内记录本地产物与 E3 远端对象身份及同步状态的 YAML 文件 |
+| selection token | 把候选集合、workspace 和选择阶段绑定起来的短期不透明凭据 |
+| plan token | 把已确认计划、workspace、fingerprint 和目标平台状态绑定起来的短期不透明凭据 |
