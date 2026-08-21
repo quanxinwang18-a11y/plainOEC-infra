@@ -536,6 +536,28 @@ MCP Tool，并按平台生命周期独立分发。
 
 #### 5.3.2 为什么外部交互脚本要进入 MCP
 
+![旧 Skill 脚本调用链迁移为宿主可见的 MCP Server 运行链](assets/oec-infra-next-optimization/22-script-to-mcp-runtime.svg)
+
+*图：当前实现不是注册一个通用 `run_script`，而是把平台执行责任迁入具名 Tool 和 Server 硬门禁。*
+
+当前 MCP 不会启动旧 Python/TypeScript 脚本。迁移保留了已经验证的认证、API 和字段转换知识，但将
+它们重写为 MCP Server 内部模块，并重新划分调用入口、运行状态和完成判断：
+
+| 旧实现 | 当前落点 |
+| --- | --- |
+| Skill 意图路由、reference 和 API 索引 | `registerTool` 的名称、description 和 input schema |
+| `client.py` 与 TypeScript Client | MCP 内部 `auth.mjs` 与 `client.mjs` |
+| 一个个 CLI 入口脚本 | Publisher、Development 与 Pipeline Service |
+| 全局或 Skill 目录下的 `preferences.json` | 与 canonical workspace 绑定的 Plugin Data |
+| stdout、退出码和模型解释 | MCP `structuredContent` 与明确的 blocked/partial/verified 状态 |
+| Prompt 中的确认、重试和完成判断 | selection/plan token、宿主确认、checkpoint 与独立 status |
+
+迁移同时保留三条边界：
+
+1. 这不是给旧脚本增加 MCP 壳；新 Server 不再依靠模型选择脚本路径、参数或任意 payload。
+2. 不是所有脚本都进入 MCP；`check-artifacts`、`oec-spec` 等本地确定性校验仍属于 Skill runtime。
+3. 不是旧平台能力全部恢复；缺陷、提测、通用 CRUD、流水线编辑和 Gitee 管理被有意排除。
+
 判断标准不是“它是不是脚本”，而是它是否跨越本地模型会话与外部系统的信任边界。外部平台执行从
 Skill script 抽出时，主要解决以下问题：
 

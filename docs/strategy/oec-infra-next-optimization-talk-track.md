@@ -137,6 +137,9 @@ Skill。**
 
 一句话结论：**分界不是实现语言或代码复杂度，而是是否跨越外部系统信任边界。**
 
+关键补充：**当前不是把旧 Python/TypeScript 脚本注册成 `run_script`；新 MCP Server 不再启动旧脚本，
+而是把经过验证的 API 契约迁入 Auth、Client 和 Service，并增加 prepare、plan、checkpoint 与 status。**
+
 Skill supporting script 适合：
 
 - 处理本地受控文件。

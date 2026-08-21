@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">旧脚本调用链迁移为 MCP Server 运行链</title>
+  <desc id="desc">左侧展示模型读取文档、拼接命令并执行 Python 或 TypeScript 脚本，右侧展示宿主通过具名 MCP Tool、结构化校验、计划确认、执行检查点和状态回读访问外部平台。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .section { font-size: 28px; font-weight: 700; text-anchor: middle; }
+      .node { font-size: 20px; font-weight: 700; text-anchor: middle; }
+      .small { font-size: 17px; text-anchor: middle; }
+      .note { font-size: 19px; font-weight: 700; text-anchor: middle; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linejoin: round; }
+      .arrow { fill: none; stroke: #273142; stroke-width: 3; marker-end: url(#arrow); }
+      .dashed { fill: none; stroke: #6b7280; stroke-width: 3; stroke-dasharray: 11 9; marker-end: url(#arrowMuted); }
+    </style>
+    <filter id="rough" x="-4%" y="-5%" width="108%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="227" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.25"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1 1 L10 6 L1 11" fill="none" stroke="#273142" stroke-width="2.4"/>
+    </marker>
+    <marker id="arrowMuted" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1 1 L10 6 L1 11" fill="none" stroke="#6b7280" stroke-width="2.4"/>
+    </marker>
+  </defs>
+
+  <rect width="1600" height="900" fill="#fffaf0"/>
+  <text x="70" y="60" class="heading">不是给旧脚本套壳：执行责任迁入 MCP Server</text>
+  <path d="M70 78 C390 68, 760 86, 1125 75" fill="none" stroke="#6b7280" stroke-width="2"/>
+
+  <g filter="url(#rough)">
+    <rect x="55" y="115" width="665" height="665" rx="32" fill="#ffe5dd" class="outline"/>
+    <rect x="880" y="115" width="665" height="665" rx="32" fill="#dff3e4" class="outline"/>
+
+    <rect x="135" y="185" width="505" height="66" rx="18" fill="#ffffff" class="outline"/>
+    <rect x="135" y="285" width="505" height="66" rx="18" fill="#fff0b3" class="outline"/>
+    <rect x="135" y="385" width="505" height="66" rx="18" fill="#fff0b3" class="outline"/>
+    <rect x="135" y="485" width="505" height="66" rx="18" fill="#e7d8ff" class="outline"/>
+    <rect x="135" y="585" width="505" height="66" rx="18" fill="#ffd6cc" class="outline"/>
+    <rect x="135" y="685" width="505" height="55" rx="18" fill="#ffffff" class="outline"/>
+
+    <path d="M388 253 C382 266, 391 270, 388 281" class="arrow"/>
+    <path d="M388 353 C382 366, 391 370, 388 381" class="arrow"/>
+    <path d="M388 453 C382 466, 391 470, 388 481" class="arrow"/>
+    <path d="M388 553 C382 566, 391 570, 388 581" class="arrow"/>
+    <path d="M388 653 C382 666, 391 670, 388 681" class="arrow"/>
+
+    <rect x="960" y="185" width="505" height="66" rx="18" fill="#ffffff" class="outline"/>
+    <rect x="960" y="285" width="505" height="66" rx="18" fill="#e9f4ff" class="outline"/>
+    <rect x="960" y="385" width="505" height="66" rx="18" fill="#fff0b3" class="outline"/>
+    <rect x="960" y="485" width="505" height="66" rx="18" fill="#ffd6cc" class="outline"/>
+    <rect x="960" y="585" width="505" height="66" rx="18" fill="#e7d8ff" class="outline"/>
+    <rect x="960" y="685" width="505" height="55" rx="18" fill="#ffffff" class="outline"/>
+
+    <path d="M1213 253 C1207 266, 1216 270, 1213 281" class="arrow"/>
+    <path d="M1213 353 C1207 366, 1216 370, 1213 381" class="arrow"/>
+    <path d="M1213 453 C1207 466, 1216 470, 1213 481" class="arrow"/>
+    <path d="M1213 553 C1207 566, 1216 570, 1213 581" class="arrow"/>
+    <path d="M1213 653 C1207 666, 1216 670, 1213 681" class="arrow"/>
+
+    <path d="M740 430 C785 412, 820 412, 860 430" class="dashed"/>
+    <rect x="742" y="350" width="116" height="45" rx="15" fill="#fffaf0" class="outline"/>
+  </g>
+
+  <text x="388" y="157" class="section">旧：模型编排脚本</text>
+  <text x="388" y="226" class="node">Skill / Agent 文档</text>
+  <text x="388" y="326" class="node">Read reference 与 API 说明</text>
+  <text x="388" y="426" class="node">模型拼 Bash、路径、argv、JSON</text>
+  <text x="388" y="526" class="node">Python / TypeScript CLI</text>
+  <text x="388" y="626" class="node">局部 Auth / Client → HTTP API</text>
+  <text x="388" y="719" class="small">stdout 回到模型：继续解释结果与完成状态</text>
+
+  <text x="1213" y="157" class="section">新：宿主调用业务 Tool</text>
+  <text x="1213" y="226" class="node">具名 MCP Tool Call</text>
+  <text x="1213" y="326" class="node">description + schema + MCP roots</text>
+  <text x="1213" y="426" class="node">prepare / select + 不可变 plan</text>
+  <text x="1213" y="526" class="node">用户确认 + execute 服务端复核</text>
+  <text x="1213" y="626" class="node">内部 Auth / Client → 外部平台</text>
+  <text x="1213" y="719" class="small">checkpoint + structured result + 独立 status</text>
+
+  <text x="800" y="381" class="small">责任迁移</text>
+  <text x="800" y="449" class="note">不是</text>
+  <text x="800" y="475" class="small">run_script</text>
+
+  <rect x="165" y="815" width="1270" height="52" rx="18" fill="#e9f4ff" class="outline" filter="url(#rough)"/>
+  <text x="800" y="849" class="note">保留已验证的 API 知识；删除模型拼路径；新增可授权、可恢复、可回读的执行边界</text>
+</svg>
