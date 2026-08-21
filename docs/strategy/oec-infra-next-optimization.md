@@ -60,6 +60,11 @@
 - Pipeline：独立 MCP-only Plugin，提供四个既有流水线工具。
 - 分发：Git Marketplace + 自足 bundle，不再通过 SessionStart 向业务仓库同步配置。
 
+这里的迁移不是把旧 Skill 文案缩短后重新命名，而是先把一个旧 Skill 中混在一起的**用户目标、领域
+知识、通用工作流、确定性代码、外部平台操作和项目事实**拆开，再分别交给 Skill、主模型、script、
+MCP 和项目文档。对于原来“Skill 读取说明后执行 Python/TypeScript 调平台”的能力，业务语义仍留在
+Skill，认证、远端选择、写入、幂等和状态验证则进入 MCP；完整拆分方法见第 5.3 节。
+
 当前自动测试为 99/99。E3 的 PRD 发布与研发任务主链已在授权非生产空间完成真实验收；Pipeline
 当前只有 mock/integration 证据；Testing、UTP、SAE 尚未进入 Marketplace。
 
@@ -491,6 +496,82 @@ Claude Code 官方将这些能力放在不同扩展位置：[扩展模型](https
 - Agent 可以通过 `skills:` 原生预加载 Skill，但不写“Read 某路径即加载 Skill”。
 - MCP description 可以帮助模型发现工具，但不定义 PM 或测试角色工作流。
 - Plugin 是分发层，不等于一个角色必须拥有 Agent、Skill、MCP 全部类型。
+
+### 5.3 旧 Skill 如何拆成原生组件
+
+旧 Skill 不能按目录一对一搬迁。一个目录中可能同时存在用户入口、领域规则、阶段状态机、脚本、平台
+凭证和项目模板；如果只是把它改短，职责冲突仍然存在。实际拆分按以下顺序进行：
+
+1. **先识别稳定用户结果**：用户究竟要完成 PRD、评审代码、同步研发任务，还是运行既有流水线；不把
+   “阶段一/阶段二”或旧目录名当成能力。
+2. **从目标中剥离通用模型能力**：探索代码、普通计划、实现、小修复和常规验证交还主 Coding Agent；
+   不再为这些能力建设第二套总控状态机。
+3. **保留模型不知道的稳定知识**：产品语言、artifact contract、团队 Spec 规则、评审方法等进入聚焦
+   Skill 及其 supporting files。
+4. **把可确定验证的本地工作代码化**：YAML 解析、路径检查、fingerprint、Spec glob 选择等保留为
+   Skill supporting script 或自足 runtime；它们不需要 MCP。
+5. **把外部平台不变量收进 MCP**：对于需要接入公司内部平台的能力，只要涉及认证、远端状态、外部
+   副作用、跨步骤恢复或持久化运行状态，就由类型化工具承担执行边界。
+6. **最后决定是否需要 Agent**：只有身份、上下文、权限或并行隔离确有价值时才创建；不会因为存在
+   一组 Skills 就自动创建一个角色 Agent。
+
+| 旧能力集合 | 拆分判断 | 当前或目标落点 |
+| --- | --- | --- |
+| PM Agent + `oec-pm` Mega Skill + PRD 阶段 Skills | PM 身份、写作、评审和发布是不同职责；内部 `SKILL.md` 路由没有独立价值 | `oec-pm` Agent；writing/reviewing/publishing 三个 Skills；模板和契约归属各自 Skill |
+| `oec-dev-task` + `oec-dev-flow` | 大部分是现代 Coding Agent 已具备的通用研发流程；团队长期事实仍有独立价值 | 删除总控流程；保留六个聚焦 Engineering Skills 和项目侧团队 Specs |
+| `oec-manage-task` 及 E3 scripts | “何时同步哪些任务”需要业务语义；认证、候选、远端写入和恢复必须确定执行 | 研发规划留在主 Agent/Engineering Skills；平台动作进入 `oec-e3` 六个研发任务工具 |
+| PRD 发布说明 + E3 scripts | 子 PRD、Story 和发布确认属于产品语义；HTTP、mapping 和幂等属于平台执行 | publishing Skill 编排 `oec-e3` 四个 PRD 发布工具 |
+| `oec-dev-flow` 中的流水线步骤及平台 Client | 普通开发流程不应强制绑定流水线；运行既有流水线是独立高副作用能力 | 删除固定开发阶段；`oec-pipeline` 提供四个受控运行工具 |
+| `oec-test-dispatcher` + 71 内部 Skills + Agent 文件树 | 不能把嵌套路由器整体搬入新 Plugin | 先逐项审计，再决定 Skill、script、UTP MCP、Agent 候选或删除 |
+
+这意味着迁移结果不会与旧目录数量对齐：有的旧 Skill 被删除，有的拆成多个原生组件，有的多个旧
+Skill 合并为一个稳定用户目标，还有的平台能力在真实契约不足时保持“待证据”，而不是用 Prompt
+代偿。
+
+#### 5.3.1 为什么外部交互脚本要进入 MCP
+
+判断标准不是“它是不是脚本”，而是它是否跨越本地模型会话与外部系统的信任边界：
+
+| 执行问题 | 放在 Skill + Bash/Python 中的局限 | MCP 提供的硬边界 |
+| --- | --- | --- |
+| 输入 | 模型从 Markdown 组合命令、路径和 JSON，允许范围依赖其正确理解 | tool schema 只接收被允许的字段、枚举和标识 |
+| 认证 | token 路径、刷新策略和 header 容易暴露给 Prompt、日志或子进程 | Server 独立持有凭证、固定 origin、统一刷新与脱敏 |
+| 远端身份 | 模型可能取第一项、模糊匹配或在歧义时继续 | 精确匹配；0/1/多候选分别创建、复用或阻断 |
+| 用户授权 | “请先确认”只是 Prompt 约定，后续步骤仍可能绕过 | prepare 生成不可变 plan，execute 具有宿主交互元数据并校验 token |
+| 幂等与恢复 | POST 超时后直接重跑可能产生重复对象 | 结果未知先按精确身份查询；每项成功立即 checkpoint，支持 partial resume |
+| 状态隔离 | 项目、空间、选择和计划容易共享全局文件 | workspace、selection、plan 和 Plugin Data 有明确绑定与过期规则 |
+| 完成判断 | 脚本返回成功不一定证明远端对象和父子关系正确 | 独立 status 重新读取并验证 ID、标题、关联和漂移 |
+| 复用与测试 | 每个 Skill 各自复制 API 文档、重试和错误解释 | Agent/Skill 共享同一组工具；协议、失败分支和 bundle 可独立测试 |
+
+MCP 因此不是把一段 Python 改写成 Node 的技术重构，而是把原来散落在 Prompt、脚本和模型判断中的
+平台契约提升为宿主可发现、可授权、可验证的执行接口。模型仍决定用户意图和业务取舍，但不能自定义
+任意平台 payload、跳过 plan 或把 warning 解释成发布成功。
+
+#### 5.3.2 Skill 与 MCP 如何协作，而不是互相替代
+
+以 PRD 发布为例，新的调用链是：
+
+```text
+用户显式调用 publishing Skill
+→ Skill 判断这是哪个版本、解释业务发布契约
+→ prepare_prd_publish 验证本地产物、workspace、认证和远端身份
+→ 如有歧义，select_product_space 只接受本轮候选
+→ Skill 向用户展示空间、创建/复用数量和 warnings
+→ 用户确认
+→ execute_prd_publish 重验 plan、fingerprint 和配置后执行并 checkpoint
+→ get_prd_publish_status 重新读取远端对象
+→ 只有 status 为 published，Skill 才向用户报告“已发布”
+```
+
+其中 Skill 保留“一个子 PRD 对应一个系统需求”“何时应该发布”“如何向用户解释 warning”等领域
+语义；MCP 保证 OAuth、空间绑定、POMP 选择、mapping、远端身份、幂等和恢复。研发任务同步采用同样
+原则，但不额外创建“Dev 总控 Skill”：技术规划仍由主 Agent 和 Engineering Skills 完成，E3 只提供
+受限的任务创建、进度和状态原子工具。Pipeline 也只负责把一个已经明确的 dev/test 运行计划安全
+执行，不规定研发必须经过哪些阶段。
+
+反过来，`check-artifacts` 和 `oec-spec` 只读取本地受控文件、输出可确定结果，不需要远端认证或持久
+会话状态，因此继续作为自足本地 runtime，而不是为了形式统一包装成 MCP。这个边界避免把“外部执行
+需要平台化”误解为“所有脚本都要 MCP 化”。
 
 ## 6. 当前 3.0 已实现架构
 
