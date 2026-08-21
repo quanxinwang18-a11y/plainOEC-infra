@@ -104,3 +104,8 @@ claude --plugin-dir ./oec-engineering plugin details oec-engineering
 [oec-product/CHANGELOG.md](oec-product/CHANGELOG.md) 和
 [oec-engineering/CHANGELOG.md](oec-engineering/CHANGELOG.md)。旧 PM 与 Dev 的迁移证据分别见
 [migration.md](migration.md) 和 [dev-migration.md](dev-migration.md)。
+
+## 设计与评审文档
+
+- [PM 实现迁移 Review](docs/reviews/pm-implementation-review.md)：对比旧真实分发结构与当前原生实现。
+- [平台 Plugin 层级与 MCP 迁移设计](docs/architecture/platform-plugin-hierarchy.md)：定义领域 Plugin、平台 Plugin 和 MCP 原子能力的目标边界。

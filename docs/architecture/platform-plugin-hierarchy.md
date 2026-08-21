@@ -1,0 +1,283 @@
+# 平台 Plugin 层级与 MCP 迁移设计
+
+> 当前基线：Marketplace `2.3.0`、`oec-product@2.2.1`、`oec-engineering@1.0.0`，commit
+> `fe81153`。本文后续章节描述目标架构；除明确标注当前能力外，不能视为已实现或已验收。
+
+## 1. 设计结论
+
+删除 `oec-delivery` 这一场景包装层，按两条边界组织能力：
+
+- 领域 Plugin 表达模型需要理解的产品和工程知识。
+- 平台 Plugin 通过 MCP 表达外部系统的确定性原子能力。
+
+```text
+Marketplace 负责分发
+→ 领域 Plugin 负责模型知识
+→ 平台 Plugin 负责系统接入
+→ MCP Server 负责认证和状态
+→ MCP Tool 负责原子操作
+→ 外部平台保存最终事实
+```
+
+平台 Plugin 不依赖领域 Plugin，避免平台执行能力反向绑定某一种 PM 或研发流程。
+
+## 2. 完整逻辑层级
+
+```mermaid
+flowchart TB
+    M["Marketplace<br/>plainOEC-infra"]
+
+    subgraph D["领域能力 Plugins"]
+        P["oec-product<br/>PM Agent + Product Skills"]
+        E["oec-engineering<br/>Engineering Skills"]
+        T["oec-testing<br/>未来评估"]
+    end
+
+    subgraph I["平台集成 Plugins"]
+        E3["oec-e3<br/>E3 MCP Server"]
+        PL["oec-pipeline<br/>Pipeline MCP Server"]
+        SAE["oec-sae<br/>通过准入后"]
+        UTP["oec-utp<br/>审计后决定"]
+    end
+
+    subgraph R["外部平台"]
+        E3R["E3"]
+        PLR["流水线平台"]
+        SAER["SAE"]
+        UTPR["UTP"]
+    end
+
+    M --> P
+    M --> E
+    M -.后续.-> T
+    M --> E3
+    M --> PL
+    M -.验证后.-> SAE
+    M -.审计后.-> UTP
+
+    P -->|"Plugin dependency"| E3
+    E3 --> E3R
+    PL --> PLR
+    SAE --> SAER
+    UTP --> UTPR
+
+    E -.用户按需安装.-> E3
+    E -.用户按需安装.-> PL
+```
+
+## 3. 目标组件
+
+| Plugin | Agent | Skills | MCP | 责任 |
+| --- | ---: | ---: | ---: | --- |
+| `oec-product@3.0.0` | 1 | 3 | 0 | PRD 领域知识和发布语义 |
+| `oec-engineering@1.0.0` | 0 | 6 | 0 | 团队 Specs 和聚焦工程方法 |
+| `oec-e3@1.0.0` | 0 | 0 | 1 | E3 PRD 发布与研发任务执行 |
+| `oec-pipeline@1.0.0` | 0 | 0 | 1 | 既有 dev/test 流水线受控执行 |
+
+SAE、UTP 和 `oec-testing` 不创建空目录，也不进入 Marketplace，直到各自准入条件满足。
+
+目标仓库保持根级 Plugin 目录，避免为了视觉分类移动已发布的 Product 和 Engineering 路径：
+
+```text
+plainOEC-infra/
+├── .claude-plugin/marketplace.json
+├── packages/prd-artifact-contract/       # 构建期共享确定性契约
+├── oec-product/
+│   ├── agents/oec-pm.md
+│   └── skills/{writing,reviewing,publishing}-prds*/
+├── oec-engineering/
+│   ├── skills/
+│   ├── bin/oec-spec
+│   └── dist/oec-spec.mjs
+├── oec-e3/
+│   ├── .mcp.json
+│   ├── servers/e3/
+│   │   ├── publication/
+│   │   └── development/
+│   └── dist/e3-server.mjs
+└── oec-pipeline/
+    ├── .mcp.json
+    ├── servers/pipeline/
+    └── dist/pipeline-server.mjs
+```
+
+共享 artifact contract 不是 Claude 组件、公共 references 层或运行时 npm 包。Product checker 和
+E3 Server 在构建时导入同一实现，再分别生成无外部依赖的 bundle，避免重复门禁逻辑或平台 Plugin
+反向导入 Product Plugin。
+
+## 4. 产品与工程边界
+
+### Product
+
+```text
+oec-pm Agent
+├── 预加载 writing-prds
+├── 预加载 reviewing-prds
+└── 不预加载 publishing-prds-to-e3
+
+publishing-prds-to-e3
+└── 显式调用 oec-e3 MCP
+```
+
+Publishing Skill 保留 HANDOFF、子 PRD、版本不可变和结果表达等产品语义。OAuth、API、mapping、
+plan、幂等和远端校验全部属于 `oec-e3`。
+
+### Engineering
+
+`oec-engineering` 不创建 Dev Agent，也不依赖 E3 或 Pipeline。普通编码继续由 Claude Code 主 Agent
+完成，六个 Skills 只补充团队 Specs、规划、显式 TDD、困难诊断、只读评审和收口方法。
+
+开发者按需组合：
+
+```bash
+claude plugin install oec-engineering@plainOEC-infra
+claude plugin install oec-e3@plainOEC-infra
+claude plugin install oec-pipeline@plainOEC-infra
+```
+
+## 5. E3 平台边界
+
+### 当前已验证能力
+
+四个 PRD 发布工具名称保持不变：
+
+```text
+prepare_prd_publish
+select_product_space
+execute_prd_publish
+get_prd_publish_status
+```
+
+现有 roots、artifact gate、workspace/space/fingerprint 绑定、精确查询、partial checkpoint、远端漂移
+阻断和 status 只读语义在迁移时必须完整保留。
+
+### 目标研发任务主链
+
+```text
+prepare_development_tasks
+select_development_requirement
+execute_development_tasks
+prepare_task_progress
+execute_task_progress
+get_development_task_status
+```
+
+模型负责基于 PRD、设计和代码提出任务，MCP 负责需求选择、字段校验、远端创建/复用、工时/状态和
+恢复。远端标题使用 `[localId] 标题`；mapped ID 优先验证；0 条创建、1 条复用、多条阻断。
+
+首版明确不恢复：
+
+- 缺陷生命周期。
+- 提测版本管理。
+- 任意任务字段编辑。
+- 任务依赖可视化。
+- 通用 E3 CRUD。
+
+## 6. Pipeline 平台边界
+
+首版只有四个工具：
+
+```text
+prepare_pipeline_run
+select_pipeline_target
+execute_pipeline_run
+get_pipeline_run_status
+```
+
+计划绑定 canonical workspace、Git remote、repository、pipeline、ref、commit、环境、阶段和配置
+fingerprint。只允许 dev/test，阻断 prod 和 unknown；候选不唯一时由用户选择；POST 结果未知时先按
+远端运行标识查询，不盲目重试。
+
+首版不迁移创建、复制、编辑、删除、取消、节点管理、Gitee 仓库管理或任意 `run-api` JSON。
+
+## 7. SAE 与 Pipeline
+
+两者不能混成一个“部署工具”：
+
+| 平台 | 所有权 |
+| --- | --- |
+| Pipeline | 构建、制品、流水线节点和运行状态 |
+| SAE | 应用、环境、实例和运行健康 |
+| Engineering Skill | 如何实现和验证代码变更 |
+| 主 Agent | 根据用户目标组合工具 |
+
+```mermaid
+sequenceDiagram
+    actor U as 用户
+    participant C as Claude
+    participant P as Pipeline MCP
+    participant S as SAE MCP
+
+    U->>C: 部署当前提交到测试环境
+    C->>P: prepare_pipeline_run
+    P-->>C: commit、pipeline、环境和计划
+    C-->>U: 展示计划并请求确认
+    U->>C: 确认
+    C->>P: execute_pipeline_run
+    C->>P: get_pipeline_run_status
+    P-->>C: pipeline succeeded
+    C->>S: get_application_status
+    S-->>C: 运行态验证结果
+    C-->>U: 报告流水线与运行态证据
+```
+
+SAE 只有在真实 API、权限和非生产环境完成验证后才进入 Marketplace。任意 kubectl/helm、成员、
+配额和 namespace CRUD 默认不迁移。
+
+## 8. 状态归属
+
+Plugin Data 保存用户私有运行时状态：
+
+```text
+${CLAUDE_PLUGIN_DATA}/
+├── tokens/
+├── workspaces/<canonical-root-sha256>/config.json
+├── selections/
+├── plans/
+└── runtime/
+```
+
+业务仓库只保存需要团队审计和恢复的资产：
+
+```text
+ai-docs/
+├── product/
+├── engineering/
+└── integrations/e3/
+    ├── vX.Y.Z.yaml
+    └── development/<changeId>.yaml
+```
+
+Token、空间选择、plan 和 Pipeline 运行时状态不得进入 Git。旧 Product Plugin Data 中的凭证不自动
+跨 Plugin 复制；升级后重新授权，已有项目 mapping 继续用于远端身份验证和幂等恢复。
+
+## 9. 分发和版本
+
+`oec-product@3.0.0` 声明同 Marketplace 依赖：
+
+```json
+{
+  "name": "oec-product",
+  "version": "3.0.0",
+  "dependencies": [
+    { "name": "oec-e3", "version": "~1.0.0" }
+  ]
+}
+```
+
+Plugin dependency 需要 Claude Code `2.1.110` 或更新版本；制定本文时本机已验证为 `2.1.237`。
+PM 用户仍只安装 `oec-product`，Claude Code 自动解析 `oec-e3`。旧 Product 直接暴露的 MCP
+plugin-scoped 身份会变化，因此 Product 使用主版本升级。
+
+## 10. 迁移顺序
+
+1. 共享 PRD artifact contract，不改变行为。
+2. 建立未注册的 `oec-e3`，迁移四个发布工具并完成回归。
+3. 增加六个研发任务工具。
+4. 建立只执行既有流水线的 `oec-pipeline`。
+5. Product 声明 E3 dependency，并一次性移除内嵌 Server。
+6. 完成干净安装、真实 E3 和 mock Pipeline 验收后统一发布。
+7. SAE、UTP 在单独审计通过后再制定实现计划。
+
+迁移期间新 E3 Plugin 不进入 Marketplace，直到 Product cutover 完成，避免用户同时发现两套同名
+E3 工具。
