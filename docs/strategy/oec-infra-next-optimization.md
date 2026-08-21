@@ -518,6 +518,9 @@ Claude Code 官方将这些能力放在不同扩展位置：[扩展模型](https
 | 旧能力集合 | 拆分判断 | 当前或目标落点 |
 | --- | --- | --- |
 | PM Agent + `oec-pm` Mega Skill + PRD 阶段 Skills | PM 身份、写作、评审和发布是不同职责；内部 `SKILL.md` 路由没有独立价值 | `oec-pm` Agent；writing/reviewing/publishing 三个 Skills；模板和契约归属各自 Skill |
+| 原型设计 | 不属于当前 PRD 写作、评审和发布主链，缺少独立触发与维护证据 | 不随 Product 核心能力迁移；有稳定需求和 Owner 后单独评估 |
+| 通用产品/系统需求 CRUD | 会把受控发布扩张为平台管理 SDK，权限与失败面明显增大 | 不迁移；只保留 PRD 发布所需的受限 E3 原子操作 |
+| 文件写入策略 | Claude Code 已有原生文件工具，旧 Prompt 规则不提供额外领域价值 | 交还主 Agent；Skill 只保留产物契约和精确提交边界 |
 | `oec-dev-task` + `oec-dev-flow` | 大部分是现代 Coding Agent 已具备的通用研发流程；团队长期事实仍有独立价值 | 删除总控流程；保留六个聚焦 Engineering Skills 和项目侧团队 Specs |
 | `oec-manage-task` 及 E3 scripts | “何时同步哪些任务”需要业务语义；认证、候选、远端写入和恢复必须确定执行 | 研发规划留在主 Agent/Engineering Skills；平台动作进入 `oec-e3` 六个研发任务工具 |
 | PRD 发布说明 + E3 scripts | 子 PRD、Story 和发布确认属于产品语义；HTTP、mapping 和幂等属于平台执行 | publishing Skill 编排 `oec-e3` 四个 PRD 发布工具 |
@@ -604,6 +607,25 @@ Tool。
 保证本地确定性处理；MCP 承担外部认证、状态和副作用。既不能把平台写操作藏回 Bash，也不应为了
 形式统一把本地检查器包装成 MCP。
 
+### 5.4 为什么平台能力不合并为统一 delivery Plugin
+
+MCP Tool 应当原子化，不代表所有平台工具应该装进同一个 Plugin。Tool 的粒度由一次可验证操作决定，
+Plugin 的粒度则由生命周期决定：当外部事实来源、认证权限、远端身份、状态恢复、平台 Owner 或发布
+验收周期不同，就应分开安装和升级。
+
+| 能力所有者 | 管理的事实与状态 | 组合边界 |
+| --- | --- | --- |
+| E3 Plugin | 需求、Story、研发任务、空间与 E3 mapping | 只负责 E3 认证、远端身份和任务/发布状态 |
+| Pipeline Plugin | Git remote、ref、commit、流水线、阶段与运行状态 | 只运行既有 dev/test 流水线，不管理应用运行态 |
+| 未来 SAE Plugin | 应用、环境、实例、版本和运行健康 | 通过准入后独立建设，不借用 Pipeline 的权限或验收结果 |
+| Engineering Skills | 工程判断、团队 Specs、计划、诊断和评审方法 | 不持有任何平台 token、selection、plan 或远端状态 |
+| 主 Agent / 场景 Skill | 根据用户目标决定何时组合领域知识和平台工具 | 不复制各平台认证、payload、幂等或恢复实现 |
+
+因此，“部署当前提交到测试环境”可以在会话中依次组合 Pipeline 运行和未来 SAE 状态验证，但这种场景
+组合不需要一个新的 `oec-delivery` Plugin。后者没有独立事实、权限或领域知识，只会增加 dependency
+转发层并重新模糊 Owner。详细平台边界保留在
+[平台 Plugin 层级与 MCP 迁移设计](../architecture/platform-plugin-hierarchy.md)中。
+
 ## 6. 当前 3.0 已实现架构
 
 > 证据性质：**当前源代码事实 + 自动测试 + 脱敏真实验收记录**。自动测试只能证明其覆盖的确定性
@@ -624,6 +646,12 @@ Tool。
 
 Product 明确向用户承诺 E3 发布，所以声明 `oec-e3@~1.0.0` dependency。Engineering 的六个 Skills
 不以 E3 或 Pipeline 为完成前提，因此与平台 Plugin 是按场景组合关系，不作强依赖。
+
+Product 与 E3 都需要验证同一份 PRD 产物，但不复制两套规则：根级构建模块
+`packages/prd-artifact-contract` 维护唯一确定性实现，Product checker 与 E3 publication gate 在构建
+时分别导入，再生成各自的自足 bundle。它不是 Claude 组件、公共 Skill references 或运行时 npm 包，
+Product 和 E3 运行时也不跨 Plugin 读取文件。这样既避免 artifact gate 漂移，也不让平台 Plugin
+反向依赖 Product 的安装路径。
 
 ### 6.2 当前分发方式
 
@@ -656,11 +684,23 @@ claude plugin install oec-pipeline@plainOEC-infra --scope user
 | Pipeline | 已完成 | mock/integration 与 bundle | 未执行真实非生产流水线 |
 | Testing/UTP/SAE | 未准入 | 仅审计或规划 | 无 |
 
-当前完整测试为 99/99。根据仓库内的
-[脱敏验收记录](../evidence/e3-platform-3.0.0-real-acceptance.md)，E3 已在授权非生产空间完成所列
-PRD 与研发任务旅程；记录为避免泄密明确不保存远端内部 ID、token 和原始响应，因此它证明的是已列
-步骤和 read-back 结果，不是未经脱敏的完整审计日志。Pipeline、SAE、UTP 不得借用 E3 证据宣称
-已验证。
+当前完整测试为 99/99。E3 的真实验收不是“工具能够注册”或“mock 返回成功”，而是完成了以下远端
+旅程：
+
+```text
+隔离 Plugin Data 完成 OAuth
+→ 从实时列表精确选择“OBU-AI提效组”，不使用首项 fallback
+→ 发布 PRD，status 返回 published 且需求/Story 均 verified
+→ 再次 prepare，需求和任务均精确复用
+→ 在同一需求下创建研发任务
+→ start → log → complete
+→ 最终研发 status 返回 synced，任务为 verified
+```
+
+[脱敏验收记录](../evidence/e3-platform-3.0.0-real-acceptance.md)没有保存 token、远端内部 ID 或原始
+响应，也没有在真实环境人为制造 partial；partial resume 仍由自动测试证明。因此该记录证明的是上述
+授权空间中的创建、复用、进度和 read-back 主链，不是完整 E3 管理能力或生产可用性。Pipeline、SAE、
+UTP 也不得借用 E3 证据宣称已验证。
 
 ## 7. 下一阶段目标架构与角色分发
 
@@ -718,6 +758,18 @@ PRD 与研发任务旅程；记录为避免泄密明确不保存远端内部 ID�
 - 只有独立上下文、并行或权限隔离通过 eval 证明收益时才创建 Agent。
 
 ### 7.4 UTP 与 SAE 准入门槛
+
+平台迁移采用渐进准入，不因旧 payload 已有脚本就一次性恢复全部操作：
+
+| 准入层级 | 处理原则 |
+| --- | --- |
+| 只读诊断 | 优先验证状态、版本、受限时间窗日志和稳定远端身份；仍需真实 API、权限和结果归一化证据 |
+| 受控写入 | API、非生产身份、影响范围和状态回读成立后，再采用 prepare、用户确认、execute、status |
+| 默认排除 | 任意 payload、kubectl/helm、成员/角色/配额/namespace 和通用平台管理 CRUD |
+
+这不是按模型“能不能调用”划分，而是按稳定用户目标、最小权限和可恢复性划分。例如 SAE 可以先评估
+应用状态、版本和有限日志，只有真实部署入口和非生产身份都可验证后才考虑写入；UTP 也必须先把测试
+方法、本地确定性工具与远端平台 API 分开审计。
 
 任何平台 Plugin 进入 Marketplace 前必须满足：
 
