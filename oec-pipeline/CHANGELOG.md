@@ -1,0 +1,7 @@
+# Changelog
+
+## 1.0.0
+
+- Add guarded discovery, selection, execution, and status verification for existing pipelines.
+- Bind runs to canonical Git workspace, exact remote/ref/HEAD, dev/test origin, stages, and remote configuration.
+- Block pipeline management, arbitrary parameters, production targets, and blind POST retries.

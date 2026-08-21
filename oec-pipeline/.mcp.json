@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "pipeline": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/dist/pipeline-server.mjs"],
+      "env": {
+        "OEC_PLUGIN_DATA": "${CLAUDE_PLUGIN_DATA}"
+      }
+    }
+  }
+}

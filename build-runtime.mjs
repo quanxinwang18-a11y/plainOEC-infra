@@ -5,6 +5,7 @@ const workspaceRoot = import.meta.dirname;
 const productRoot = resolve(workspaceRoot, 'oec-product');
 const engineeringRoot = resolve(workspaceRoot, 'oec-engineering');
 const e3Root = resolve(workspaceRoot, 'oec-e3');
+const pipelineRoot = resolve(workspaceRoot, 'oec-pipeline');
 
 const common = {
   bundle: true,
@@ -34,6 +35,12 @@ await Promise.all([
     entryPoints: ['servers/e3/runtime.mjs'],
     // Transitional bundle retained until oec-product declares the oec-e3 dependency.
     outfile: resolve(productRoot, 'dist/e3-server.mjs'),
+  }),
+  build({
+    ...common,
+    absWorkingDir: pipelineRoot,
+    entryPoints: ['servers/pipeline/runtime.mjs'],
+    outfile: 'dist/pipeline-server.mjs',
   }),
   build({
     ...common,

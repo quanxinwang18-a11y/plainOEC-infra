@@ -1,0 +1,10 @@
+{
+  "name": "oec-pipeline",
+  "version": "1.0.0",
+  "description": "Controlled execution and verification of existing non-production pipelines.",
+  "author": {
+    "name": "OEC"
+  },
+  "keywords": ["pipeline", "ci", "build", "mcp"],
+  "license": "MIT"
+}
