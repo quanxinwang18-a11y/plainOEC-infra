@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 820" role="img" aria-labelledby="title desc">
+  <title id="title">领导决策视图：已完成、证据缺口与待确认事项</title>
+  <desc id="desc">从当前已经完成且有证据的迁移成果，经过仍需补齐的测试和平台证据，落到需要领导确认的分层原则、优先级、能力负责人和准入制度。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .column-title { font-size: 26px; font-weight: 700; text-anchor: middle; }
+      .column-subtitle { font-size: 18px; text-anchor: middle; }
+      .item { font-size: 20px; }
+      .item-strong { font-size: 20px; font-weight: 700; }
+      .note { font-size: 18px; text-anchor: middle; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .arrow { fill: none; stroke: #273142; stroke-width: 4; stroke-linecap: round; marker-end: url(#arrow); }
+      .decision-arrow { fill: none; stroke: #7b5ea7; stroke-width: 5; stroke-linecap: round; marker-end: url(#arrow-purple); }
+    </style>
+    <filter id="rough" x="-4%" y="-5%" width="108%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="73" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.25"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1 1 L10 6 L1 11" fill="none" stroke="#273142" stroke-width="2.5" stroke-linecap="round"/>
+    </marker>
+    <marker id="arrow-purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1 1 L10 6 L1 11" fill="none" stroke="#7b5ea7" stroke-width="2.5" stroke-linecap="round"/>
+    </marker>
+  </defs>
+
+  <rect width="1600" height="820" fill="#fffaf0"/>
+  <text x="70" y="62" class="heading">现在需要决定的不是“是否继续重构”，而是“如何用证据推进”</text>
+  <path d="M70 79 C410 70, 730 84, 1110 76" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round"/>
+
+  <g filter="url(#rough)">
+    <rect x="60" y="130" width="430" height="545" rx="28" fill="#d8f3dc" class="outline"/>
+    <rect x="585" y="130" width="430" height="545" rx="28" fill="#fff0b3" class="outline"/>
+    <rect x="1110" y="130" width="430" height="545" rx="28" fill="#e7d8ff" class="outline"/>
+    <path d="M495 400 C525 388, 548 388, 575 400" class="arrow"/>
+    <path d="M1020 400 C1050 388, 1070 388, 1100 400" class="decision-arrow"/>
+  </g>
+
+  <text x="275" y="184" class="column-title">① 已完成且有证据</text>
+  <text x="275" y="216" class="column-subtitle">可以作为下一步工作的可靠基线</text>
+  <path d="M105 244 C210 239, 330 248, 445 242" fill="none" stroke="#2f6b45" stroke-width="2" stroke-linecap="round"/>
+  <text x="112" y="294" class="item-strong">✓ 原生 Git Marketplace 分发</text>
+  <text x="112" y="349" class="item-strong">✓ Product / Engineering 分层</text>
+  <text x="112" y="404" class="item-strong">✓ E3 已完成非生产真实验收</text>
+  <text x="112" y="459" class="item-strong">✓ 99 / 99 自动测试通过</text>
+  <text x="112" y="514" class="item-strong">✓ 领域知识与平台执行分离</text>
+  <text x="275" y="616" class="note">结论：迁移方向已有工程事实支撑</text>
+
+  <text x="800" y="184" class="column-title">② 仍需补齐的证据</text>
+  <text x="800" y="216" class="column-subtitle">不能用目录、Prompt 或 mock 替代</text>
+  <path d="M630 244 C735 239, 855 248, 970 242" fill="none" stroke="#9a6b00" stroke-width="2" stroke-linecap="round"/>
+  <text x="637" y="294" class="item-strong">? 71 个测试 Skills 尚未逐项审计</text>
+  <text x="637" y="349" class="item-strong">? 19 个测试 Agents 尚未证明收益</text>
+  <text x="637" y="404" class="item-strong">? Pipeline 目前仅 mock / integration</text>
+  <text x="637" y="459" class="item-strong">? UTP / SAE 尚未通过平台准入</text>
+  <text x="637" y="514" class="item-strong">? 模型触发质量尚需固定任务集验证</text>
+  <text x="800" y="616" class="note">原则：前一级证据不能自动证明后一级</text>
+
+  <text x="1325" y="184" class="column-title">③ 需要领导确认</text>
+  <text x="1325" y="216" class="column-subtitle">把工程方向转化为组织约束</text>
+  <path d="M1155 244 C1260 239, 1380 248, 1495 242" fill="none" stroke="#7b5ea7" stroke-width="2" stroke-linecap="round"/>
+  <text x="1162" y="294" class="item-strong">→ 领域 / 平台 Plugin 长期分层</text>
+  <text x="1162" y="349" class="item-strong">→ Testing 与 Skill 治理优先级</text>
+  <text x="1162" y="404" class="item-strong">→ 各能力 Owner 与维护责任</text>
+  <text x="1162" y="459" class="item-strong">→ 平台写能力真实验收门槛</text>
+  <text x="1162" y="514" class="item-strong">→ 原生 Plugin 组合分发原则</text>
+  <text x="1325" y="616" class="note">结果：形成可执行的准入与退出边界</text>
+
+  <text x="538" y="365" class="note">基于现状</text>
+  <text x="1062" y="365" class="note" fill="#7b5ea7">缺口驱动决策</text>
+  <path d="M180 729 C500 716, 1090 742, 1420 726" fill="none" stroke="#6b7280" stroke-width="2.3" stroke-linecap="round"/>
+  <text x="800" y="774" class="note">不继续堆叠大 Agent 或通用 CRUD；先用治理与真实验收补齐判断依据</text>
+</svg>

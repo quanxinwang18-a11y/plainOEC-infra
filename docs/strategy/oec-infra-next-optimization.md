@@ -82,6 +82,10 @@
 - 确认未经真实非生产验收的平台写能力不得进入 Marketplace。
 - 确认角色安装采用原生 Plugin 组合清单，不恢复角色套件、项目同步 preset 或统一 delivery 包装层。
 
+![从已完成迁移、待补证据到领导决策事项的三栏决策视图](assets/oec-infra-next-optimization/07-leadership-decisions.svg)
+
+*图：已有工程事实证明迁移方向；下一步应以证据缺口驱动治理、Owner 和准入决策。*
+
 ## 2. 旧 OEC-infra 的真实使用流程
 
 > 证据性质：**源代码事实**。本章基于旧仓库固定 commit 的 registry、构建脚本、Plugin payload 和
@@ -620,6 +624,10 @@ PRD 与研发任务旅程；记录为避免泄密明确不保存远端内部 ID�
 
 > 证据性质：**治理建议**。每一阶段先补证据再进入下一阶段；当前 99 项自动测试不是测试资产迁移
 > 收益或模型判断质量的替代指标。
+
+![测试资产盘点、统一治理、聚焦 Testing、平台验收和运营闭环组成的五阶段证据门禁路线](assets/oec-infra-next-optimization/08-evidence-gated-roadmap.svg)
+
+*图：阶段之间由退出证据放行，不按排期自动前进，也不以目录或 mock 代替真实能力证明。*
 
 ### 阶段一：测试资产盘点与基线
 

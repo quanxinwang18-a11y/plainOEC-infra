@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">五阶段证据门禁路线图</title>
+  <desc id="desc">下一步从测试资产盘点、统一 Skill 治理、建设聚焦 Testing、平台真实验收到分发运营依次推进；每个阶段必须以明确证据通过门禁，不按时间自动进入下一阶段。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .stage-number { font-size: 18px; font-weight: 700; text-anchor: middle; }
+      .stage-title { font-size: 23px; font-weight: 700; text-anchor: middle; }
+      .section-label { font-size: 18px; font-weight: 700; }
+      .body { font-size: 17px; }
+      .gate-label { font-size: 17px; font-weight: 700; text-anchor: middle; }
+      .note { font-size: 18px; text-anchor: middle; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .flow { fill: none; stroke: #273142; stroke-width: 3.6; stroke-linecap: round; marker-end: url(#arrow); }
+    </style>
+    <filter id="rough" x="-4%" y="-5%" width="108%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="83" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.15"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1 1 L10 6 L1 11" fill="none" stroke="#273142" stroke-width="2.3" stroke-linecap="round"/>
+    </marker>
+  </defs>
+
+  <rect width="1600" height="900" fill="#fffaf0"/>
+  <text x="70" y="62" class="heading">五阶段路线：不是按时间推进，而是由退出证据放行</text>
+  <path d="M70 79 C360 70, 720 84, 1065 76" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round"/>
+
+  <g filter="url(#rough)">
+    <rect x="45" y="150" width="270" height="585" rx="26" fill="#e9f4ff" class="outline"/>
+    <rect x="355" y="150" width="270" height="585" rx="26" fill="#d8f3dc" class="outline"/>
+    <rect x="665" y="150" width="270" height="585" rx="26" fill="#fff0b3" class="outline"/>
+    <rect x="975" y="150" width="270" height="585" rx="26" fill="#ffd6cc" class="outline"/>
+    <rect x="1285" y="150" width="270" height="585" rx="26" fill="#e7d8ff" class="outline"/>
+
+    <path d="M317 285 C327 278, 338 278, 349 285" class="flow"/>
+    <path d="M627 285 C637 278, 648 278, 659 285" class="flow"/>
+    <path d="M937 285 C947 278, 958 278, 969 285" class="flow"/>
+    <path d="M1247 285 C1257 278, 1268 278, 1279 285" class="flow"/>
+  </g>
+
+  <text x="180" y="188" class="stage-number">阶段一</text>
+  <text x="180" y="226" class="stage-title">盘点测试资产</text>
+  <text x="70" y="282" class="section-label">目标</text>
+  <text x="70" y="313" class="body">把旧能力变成可决策清单</text>
+  <text x="70" y="374" class="section-label">核心交付物</text>
+  <text x="70" y="405" class="body">71 Skills、19 Agents 的</text>
+  <text x="70" y="433" class="body">能力与证据矩阵</text>
+  <path d="M70 478 C130 472, 230 483, 290 476" fill="none" stroke="#3b6f95" stroke-width="2"/>
+  <text x="70" y="519" class="section-label">退出门槛</text>
+  <text x="70" y="550" class="body">每项都有处置与 Owner</text>
+  <text x="70" y="578" class="body">没有默认迁移项</text>
+
+  <text x="490" y="188" class="stage-number">阶段二</text>
+  <text x="490" y="226" class="stage-title">统一 Skill 治理</text>
+  <text x="380" y="282" class="section-label">目标</text>
+  <text x="380" y="313" class="body">先建立规则，再建设能力</text>
+  <text x="380" y="374" class="section-label">核心交付物</text>
+  <text x="380" y="405" class="body">Review / eval 模板</text>
+  <text x="380" y="433" class="body">组件归属与准入规则</text>
+  <path d="M380 478 C440 472, 540 483, 600 476" fill="none" stroke="#2f6b45" stroke-width="2"/>
+  <text x="380" y="519" class="section-label">退出门槛</text>
+  <text x="380" y="550" class="body">三领域使用同一口径</text>
+  <text x="380" y="578" class="body">禁止 Read 模拟加载</text>
+
+  <text x="800" y="188" class="stage-number">阶段三</text>
+  <text x="800" y="226" class="stage-title">建设聚焦 Testing</text>
+  <text x="690" y="282" class="section-label">目标</text>
+  <text x="690" y="313" class="body">只迁移经证据证明的目标</text>
+  <text x="690" y="374" class="section-label">核心交付物</text>
+  <text x="690" y="405" class="body">原生发现的 oec-testing</text>
+  <text x="690" y="433" class="body">及确定性测试工具</text>
+  <path d="M690 478 C750 472, 850 483, 910 476" fill="none" stroke="#9a6b00" stroke-width="2"/>
+  <text x="690" y="519" class="section-label">退出门槛</text>
+  <text x="690" y="550" class="body">判断成本较旧方案降低</text>
+  <text x="690" y="578" class="body">关键测试不变量仍保留</text>
+
+  <text x="1110" y="188" class="stage-number">阶段四</text>
+  <text x="1110" y="226" class="stage-title">平台真实验收</text>
+  <text x="1000" y="282" class="section-label">目标</text>
+  <text x="1000" y="313" class="body">只让成熟平台能力准入</text>
+  <text x="1000" y="374" class="section-label">核心交付物</text>
+  <text x="1000" y="405" class="body">Pipeline / UTP / SAE 的</text>
+  <text x="1000" y="433" class="body">mock 与非生产证据</text>
+  <path d="M1000 478 C1060 472, 1160 483, 1220 476" fill="none" stroke="#a14b3d" stroke-width="2"/>
+  <text x="1000" y="519" class="section-label">退出门槛</text>
+  <text x="1000" y="550" class="body">API、权限、身份、幂等</text>
+  <text x="1000" y="578" class="body">和状态回读可验证</text>
+
+  <text x="1420" y="188" class="stage-number">阶段五</text>
+  <text x="1420" y="226" class="stage-title">分发与运营闭环</text>
+  <text x="1310" y="282" class="section-label">目标</text>
+  <text x="1310" y="313" class="body">用真实旅程评估判断质量</text>
+  <text x="1310" y="374" class="section-label">核心交付物</text>
+  <text x="1310" y="405" class="body">PM、研发、测试 pilot</text>
+  <text x="1310" y="433" class="body">和分层证据报告</text>
+  <path d="M1310 478 C1370 472, 1470 483, 1530 476" fill="none" stroke="#7b5ea7" stroke-width="2"/>
+  <text x="1310" y="519" class="section-label">退出门槛</text>
+  <text x="1310" y="550" class="body">真实数据支持下一轮决策</text>
+  <text x="1310" y="578" class="body">Owner、版本与回滚明确</text>
+
+  <text x="335" y="333" class="gate-label">Gate</text>
+  <text x="645" y="333" class="gate-label">Gate</text>
+  <text x="955" y="333" class="gate-label">Gate</text>
+  <text x="1265" y="333" class="gate-label">Gate</text>
+
+  <path d="M100 785 C420 770, 1160 800, 1500 782" fill="none" stroke="#6b7280" stroke-width="2.3" stroke-linecap="round"/>
+  <text x="800" y="832" class="note">每个 Gate 都检查上一阶段的退出证据；未满足时保留在当前阶段，不因排期自动放行</text>
+</svg>
