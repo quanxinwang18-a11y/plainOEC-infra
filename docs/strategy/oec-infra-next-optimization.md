@@ -23,9 +23,9 @@
 
 外部系统能力再单独区分：
 
-```text
-源码与结构检查 ≠ 自动测试 ≠ mock/integration ≠ 真实非生产 E2E ≠ 生产可用
-```
+![从源码检查到生产可用的五级证据链，前一级不能自动证明后一级](assets/oec-infra-next-optimization/00-evidence-levels.svg)
+
+*图：证据必须逐级建立；每一级都需要说明已证明与尚未证明的边界。*
 
 本文不是以“Prompt 越短越好”为目标。真正的目标是：让模型只承担需要语义理解和权衡的工作，让
 确定性代码保障不变量，让平台 MCP 承担外部系统执行，并让每种能力以正确的 Claude Code 原生组件
@@ -91,19 +91,9 @@
 
 旧实现不能只看 `oec-infra/` 编辑源码。真实运行经过三次形态变化：
 
-```mermaid
-flowchart LR
-    S["编辑源码<br/>oec-infra"] --> B["build-plugin-marketplace"]
-    R["registry / presets"] --> B
-    B --> P["Plugin payload<br/>plugins/oec-ai"]
-    P --> I["oec-project-init"]
-    P --> H["SessionStart sync"]
-    I --> W["业务仓库配置副本"]
-    H --> W
-    W --> C[".claude 或 .codex"]
-    W --> O[".oec-ai managed state"]
-    W --> D["ai-docs templates"]
-```
+![旧 OEC-infra 从编辑源码、Plugin payload 到业务仓库副本的三层分发结构](assets/oec-infra-next-optimization/01-legacy-distribution.svg)
+
+*图：安装 bootstrap Plugin 后，仍需初始化和同步，角色配置才会进入业务仓库。*
 
 实际用户步骤是：
 
@@ -258,20 +248,9 @@ Dispatcher 明确要求调用方读取 `skills/<name>/SKILL.md`；Agent 总览�
 Claude Code 原生 Skill 的关键关系是：宿主发现 `<name>/SKILL.md` 的 name/description，相关时加载
 正文，supporting files 再按需读取。旧实现则用一个顶层 Skill 模拟几十个内部 Skill：
 
-```mermaid
-flowchart LR
-    U["用户请求"] --> N["宿主原生发现<br/>顶层 description"]
-    N --> R1["模型路由<br/>Mega Skill / Dispatcher"]
-    R1 --> F1["Read 内部 SKILL.md"]
-    F1 --> R2["模型再次解释流程"]
-    R2 --> F2["Read reference / STAGE.md"]
-    F2 --> X["执行脚本或外部请求"]
+![Claude Code 原生 Skill 发现与旧文件索引路由的对比](assets/oec-infra-next-optimization/02-native-vs-file-routing.svg)
 
-    classDef native fill:#dff5e1,stroke:#2f7d32;
-    classDef index fill:#fff2cc,stroke:#9a6b00;
-    class N native;
-    class R1,F1,R2,F2 index;
-```
+*图：宿主加载 Skill 与模型读取 Markdown 是两种不同的运行关系。*
 
 绿色节点是宿主原生发现；黄色节点只是普通文件读取。Read 能取得文本，不代表 Claude Code 已把它
 注册为独立 Skill，更不意味着触发、namespace、预加载或权限元数据生效。
@@ -401,20 +380,9 @@ status read-back。
 
 ### 3.6 问题归因总结
 
-```mermaid
-flowchart TB
-    P["旧架构问题"] --> R["角色与能力包错位"]
-    P --> C["原生组件与文件索引错位"]
-    P --> D["Plugin 与项目副本双状态"]
-    P --> J["Prompt 与模型判断职责错位"]
-    P --> X["平台执行与模型职责错位"]
+![旧 OEC-infra 五类结构错位及其影响](assets/oec-infra-next-optimization/03-problem-mechanisms.svg)
 
-    R --> I1["升级和 Owner 耦合"]
-    C --> I2["触发、路径和元数据失效"]
-    D --> I3["安装、卸载和排障不对称"]
-    J --> I4["过度流程、确认和产物"]
-    X --> I5["外部副作用不可确定验证"]
-```
+*图：问题来自职责和生命周期错位，而不是单纯的 Prompt 长度。*
 
 ## 4. Skill 研发与评审框架
 
@@ -509,21 +477,9 @@ Claude Code 官方将这些能力放在不同扩展位置：[扩展模型](https
 
 ### 5.2 组合关系
 
-```mermaid
-flowchart LR
-    U["用户目标"] --> A["主 Agent 或显式领域 Agent"]
-    A --> S["按需 Skill"]
-    S --> R["Skill supporting files"]
-    S --> T["确定性本地工具"]
-    A --> M["MCP Tools"]
-    S --> M
-    M --> E["外部平台"]
+![Marketplace、Plugin、Agent、Skill、supporting files、确定性工具和 MCP 的职责关系](assets/oec-infra-next-optimization/04-component-boundaries.svg)
 
-    P["Plugin"] -.打包.-> A
-    P -.打包.-> S
-    P -.打包.-> M
-    MK["Marketplace"] -.分发.-> P
-```
+*图：Plugin 负责分发组合，Agent、Skill 与 MCP 分别承担身份、知识和平台执行。*
 
 组件可以组合，但不能互相冒充：
 
@@ -539,28 +495,9 @@ flowchart LR
 
 ### 6.1 组件层级
 
-```mermaid
-flowchart TB
-    M["Marketplace<br/>plainOEC-infra 3.0.0"]
+![plainOEC-infra 3.0 当前领域 Plugin 与平台 Plugin 架构](assets/oec-infra-next-optimization/05-current-architecture.svg)
 
-    subgraph D["领域能力"]
-        P["oec-product 3.0.0<br/>1 Agent + 3 Skills"]
-        E["oec-engineering 1.0.0<br/>6 Skills"]
-    end
-
-    subgraph I["平台能力"]
-        E3["oec-e3 1.0.0<br/>1 MCP / 10 Tools"]
-        PL["oec-pipeline 1.0.0<br/>1 MCP / 4 Tools"]
-    end
-
-    M --> P
-    M --> E
-    M --> E3
-    M --> PL
-    P -->|"dependency"| E3
-    E -.场景组合.-> E3
-    E -.场景组合.-> PL
-```
+*图：Product 明确依赖 E3；Engineering 与 E3、Pipeline 仅按使用场景组合。*
 
 | Plugin | Agent | Skills | MCP | 作用与边界 |
 | --- | ---: | ---: | ---: | --- |
@@ -616,37 +553,9 @@ PRD 与研发任务旅程；记录为避免泄密明确不保存远端内部 ID�
 
 ### 7.1 目标层级
 
-```mermaid
-flowchart TB
-    M["plainOEC-infra Marketplace"]
+![OEC-infra 下一阶段领域 Plugin 与平台 Plugin 的目标架构](assets/oec-infra-next-optimization/06-target-architecture.svg)
 
-    subgraph DOMAIN["领域 Plugins"]
-        P["oec-product<br/>已实现"]
-        E["oec-engineering<br/>已实现"]
-        T["oec-testing<br/>审计后建设"]
-    end
-
-    subgraph PLATFORM["平台 Plugins"]
-        E3["oec-e3<br/>已实现并真实验收"]
-        PL["oec-pipeline<br/>已实现，真实验收待授权"]
-        UTP["oec-utp<br/>准入后建设"]
-        SAE["oec-sae<br/>准入后建设"]
-    end
-
-    M --> P
-    M --> E
-    M -.下一阶段.-> T
-    M --> E3
-    M --> PL
-    M -.API与E2E成立后.-> UTP
-    M -.API与E2E成立后.-> SAE
-
-    P -->|"required dependency"| E3
-    E -.按需组合.-> E3
-    E -.按需组合.-> PL
-    T -.按需组合.-> UTP
-    T -.按需组合.-> PL
-```
+*图：Testing 先审计再建设；UTP 与 SAE 只有通过平台准入后才进入 Marketplace。*
 
 明确不新增：
 

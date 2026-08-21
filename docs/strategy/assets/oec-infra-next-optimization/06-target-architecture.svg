@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">OEC-infra 下一阶段目标架构</title>
+  <desc id="desc">目标 Marketplace 保留 Product、Engineering、E3、Pipeline，并在审计后建设 Testing，在平台准入后建设 UTP 和 SAE。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .section { font-size: 26px; font-weight: 700; text-anchor: middle; }
+      .label { font-size: 21px; font-weight: 700; text-anchor: middle; }
+      .status { font-size: 17px; text-anchor: middle; }
+      .note { font-size: 18px; text-anchor: middle; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .future { stroke: #7b5ea7; stroke-width: 3; stroke-dasharray: 11 8; stroke-linecap: round; stroke-linejoin: round; }
+      .dependency { fill: none; stroke: #273142; stroke-width: 5; stroke-linecap: round; marker-end: url(#arrow); }
+      .compose { fill: none; stroke: #7b5ea7; stroke-width: 3; stroke-dasharray: 5 8; marker-end: url(#arrow-purple); }
+      .distribute { fill: none; stroke: #6b7280; stroke-width: 2.5; marker-end: url(#arrow-gray); }
+    </style>
+    <filter id="rough" x="-4%" y="-5%" width="108%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="76" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#273142" stroke-width="2.5" stroke-linecap="round"/></marker>
+    <marker id="arrow-purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#7b5ea7" stroke-width="2.4" stroke-linecap="round"/></marker>
+    <marker id="arrow-gray" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#6b7280" stroke-width="2.2" stroke-linecap="round"/></marker>
+  </defs>
+  <rect width="1600" height="900" fill="#fffaf0"/>
+  <text x="70" y="62" class="heading">下一阶段：先审计领域能力，再准入平台能力</text>
+  <path d="M70 78 C300 70, 560 82, 860 76" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round"/>
+
+  <g filter="url(#rough)">
+    <path d="M190 385 C450 340, 730 340, 990 385" class="dependency"/>
+    <path d="M400 525 C560 550, 760 550, 990 525" class="compose"/>
+    <path d="M400 525 C650 700, 1010 700, 1200 525" class="compose"/>
+    <path d="M610 525 C720 560, 820 600, 895 615" class="compose"/>
+    <path d="M610 525 C760 700, 1050 700, 1200 525" class="compose"/>
+    <rect x="520" y="100" width="560" height="105" rx="25" fill="#e7d8ff" class="outline"/>
+    <rect x="55" y="270" width="690" height="440" rx="30" fill="#e9f4ff" class="outline"/>
+    <rect x="855" y="270" width="690" height="440" rx="30" fill="#fff3d5" class="outline"/>
+
+    <rect x="95" y="390" width="190" height="135" rx="20" fill="#d8f3dc" class="outline"/>
+    <rect x="305" y="390" width="190" height="135" rx="20" fill="#d8f3dc" class="outline"/>
+    <rect x="515" y="390" width="190" height="135" rx="20" fill="#fff0b3" class="future"/>
+
+    <rect x="895" y="390" width="190" height="135" rx="20" fill="#d8f3dc" class="outline"/>
+    <rect x="1105" y="390" width="190" height="135" rx="20" fill="#fff0b3" class="outline"/>
+    <rect x="895" y="565" width="190" height="110" rx="20" fill="#e7d8ff" class="future"/>
+    <rect x="1105" y="565" width="190" height="110" rx="20" fill="#e7d8ff" class="future"/>
+
+    <path d="M800 208 C600 230, 460 235, 400 262" class="distribute"/>
+    <path d="M800 208 C1000 230, 1140 235, 1200 262" class="distribute"/>
+  </g>
+
+  <text x="800" y="142" class="label">plainOEC-infra Marketplace</text>
+  <text x="800" y="177" class="status">角色通过原生 Plugin 组合，不恢复大一统套件</text>
+  <text x="400" y="326" class="section">领域 Plugins</text>
+  <text x="1200" y="326" class="section">平台 Plugins</text>
+
+  <text x="190" y="432" class="label">oec-product</text>
+  <text x="190" y="470" class="status">已实现</text>
+  <text x="190" y="500" class="status">PM Agent + PRD Skills</text>
+  <text x="400" y="432" class="label">oec-engineering</text>
+  <text x="400" y="470" class="status">已实现</text>
+  <text x="400" y="500" class="status">聚焦工程 Skills</text>
+  <text x="610" y="432" class="label">oec-testing</text>
+  <text x="610" y="470" class="status">审计后建设</text>
+  <text x="610" y="500" class="status">不预设 Skill 数量</text>
+
+  <text x="990" y="432" class="label">oec-e3</text>
+  <text x="990" y="470" class="status">已实现并真实验收</text>
+  <text x="990" y="500" class="status">PRD + 研发任务</text>
+  <text x="1200" y="432" class="label">oec-pipeline</text>
+  <text x="1200" y="470" class="status">已实现</text>
+  <text x="1200" y="500" class="status">真实验收待授权</text>
+  <text x="990" y="605" class="label">oec-utp</text>
+  <text x="990" y="643" class="status">API 与 E2E 准入后建设</text>
+  <text x="1200" y="605" class="label">oec-sae</text>
+  <text x="1200" y="643" class="status">API 与 E2E 准入后建设</text>
+
+  <g filter="url(#rough)">
+    <rect x="175" y="760" width="210" height="55" rx="16" fill="#d8f3dc" class="outline"/>
+    <rect x="505" y="760" width="210" height="55" rx="16" fill="#fff0b3" class="outline"/>
+    <rect x="835" y="760" width="210" height="55" rx="16" fill="#e7d8ff" class="future"/>
+    <path d="M1140 788 C1200 780, 1245 796, 1305 788" class="compose"/>
+  </g>
+  <text x="280" y="795" class="status">已实现 / 已验收</text>
+  <text x="610" y="795" class="status">已实现或审计中</text>
+  <text x="940" y="795" class="status">尚未准入</text>
+  <text x="1400" y="795" class="status">按需组合</text>
+  <text x="800" y="858" class="note">粗实线：required dependency　　紫色点线：场景组合　　紫色虚框：未通过准入，不作可用承诺</text>
+</svg>

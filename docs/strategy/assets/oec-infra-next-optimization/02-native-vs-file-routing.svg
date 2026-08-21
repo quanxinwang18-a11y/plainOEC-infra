@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Claude Code 原生 Skill 与文件索引路由的区别</title>
+  <desc id="desc">左侧展示宿主原生发现 Skill 并按需读取 supporting files，右侧展示旧 Mega Skill 通过模型路由和 Read 读取内部 SKILL 或 STAGE 文件。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .lane-title { font-size: 28px; font-weight: 700; text-anchor: middle; }
+      .label { font-size: 22px; font-weight: 700; text-anchor: middle; }
+      .note { font-size: 18px; text-anchor: middle; }
+      .good { font-size: 19px; fill: #2f6b45; font-weight: 700; text-anchor: middle; }
+      .bad { font-size: 19px; fill: #9a3f3f; font-weight: 700; text-anchor: middle; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .ghost { fill: none; stroke: #273142; stroke-width: 1.4; opacity: .23; }
+      .arrow { fill: none; stroke: #273142; stroke-width: 3; stroke-linecap: round; marker-end: url(#arrow); }
+      .read { fill: none; stroke: #9a6b00; stroke-width: 3; stroke-dasharray: 9 7; marker-end: url(#arrow-gold); }
+    </style>
+    <filter id="rough" x="-4%" y="-5%" width="108%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="32" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1 1 L10 6 L1 11" fill="none" stroke="#273142" stroke-width="2.4" stroke-linecap="round"/>
+    </marker>
+    <marker id="arrow-gold" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1 1 L10 6 L1 11" fill="none" stroke="#9a6b00" stroke-width="2.4" stroke-linecap="round"/>
+    </marker>
+  </defs>
+  <rect width="1600" height="900" fill="#fffaf0"/>
+  <text x="70" y="62" class="heading">Read 到一个文件，不等于宿主加载了一个 Skill</text>
+  <path d="M70 78 C305 70, 560 82, 825 76" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round"/>
+
+  <g filter="url(#rough)">
+    <rect x="55" y="115" width="700" height="690" rx="30" fill="#e5f6e9" class="outline"/>
+    <rect x="845" y="115" width="700" height="690" rx="30" fill="#fff0c7" class="outline"/>
+  </g>
+  <text x="405" y="165" class="lane-title">宿主原生发现</text>
+  <text x="1195" y="165" class="lane-title">模型模拟加载</text>
+
+  <g filter="url(#rough)">
+    <rect x="235" y="210" width="340" height="88" rx="18" fill="#ffffff" class="outline"/>
+    <rect x="235" y="350" width="340" height="115" rx="18" fill="#cdeed7" class="outline"/>
+    <rect x="105" y="535" width="270" height="105" rx="18" fill="#ffffff" class="outline"/>
+    <rect x="435" y="535" width="270" height="105" rx="18" fill="#ffffff" class="outline"/>
+    <path d="M405 300 C399 315, 410 329, 405 340" class="arrow"/>
+    <path d="M360 470 C318 492, 278 502, 245 525" class="arrow"/>
+    <path d="M450 470 C492 492, 535 502, 565 525" class="arrow"/>
+
+    <rect x="1025" y="195" width="340" height="88" rx="18" fill="#ffffff" class="outline"/>
+    <rect x="1025" y="325" width="340" height="100" rx="18" fill="#ffdca8" class="outline"/>
+    <rect x="1025" y="465" width="340" height="100" rx="18" fill="#ffd1c7" class="outline"/>
+    <rect x="1025" y="605" width="340" height="100" rx="18" fill="#ffffff" class="outline"/>
+    <path d="M1195 286 C1188 299, 1202 307, 1195 316" class="read"/>
+    <path d="M1195 428 C1188 441, 1202 448, 1195 456" class="read"/>
+    <path d="M1195 568 C1188 581, 1202 588, 1195 596" class="read"/>
+  </g>
+
+  <text x="405" y="247" class="label">用户请求</text>
+  <text x="405" y="390" class="label">宿主匹配 name + description</text>
+  <text x="405" y="427" class="note">加载独立 SKILL.md，frontmatter 生效</text>
+  <text x="240" y="574" class="label">supporting files</text>
+  <text x="240" y="608" class="note">按需渐进披露</text>
+  <text x="570" y="574" class="label">确定性脚本</text>
+  <text x="570" y="608" class="note">只做可验证工作</text>
+  <text x="405" y="718" class="good">可发现 · 可命名 · 元数据有效</text>
+  <text x="405" y="753" class="note">Skill 是宿主组件，不是一个随意命名的 Markdown 文件</text>
+
+  <text x="1195" y="232" class="label">用户请求</text>
+  <text x="1195" y="361" class="label">Mega Skill / Dispatcher</text>
+  <text x="1195" y="394" class="note">模型再次判断意图</text>
+  <text x="1195" y="501" class="label">Read 内部 SKILL.md / STAGE.md</text>
+  <text x="1195" y="534" class="note">只是普通文件读取</text>
+  <text x="1195" y="641" class="label">Read reference → 执行</text>
+  <text x="1195" y="674" class="note">路径与流程继续由 Prompt 解释</text>
+  <text x="1195" y="750" class="bad">不会因此获得 namespace / preload / 权限语义</text>
+
+  <text x="800" y="850" class="note">绿色：宿主发现边　　黄色虚线：模型 Read 边　　两者不能互相冒充</text>
+</svg>

@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 520" role="img" aria-labelledby="title desc">
+  <title id="title">OEC-infra 证据等级</title>
+  <desc id="desc">从源码与结构检查、自动测试、模拟集成、真实非生产验收到生产可用的五级证据链，前一级不能自动证明后一级。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .label { font-size: 23px; font-weight: 700; text-anchor: middle; }
+      .note { font-size: 18px; text-anchor: middle; }
+      .small { font-size: 17px; fill: #7a3e3e; text-anchor: middle; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .ghost { fill: none; stroke: #273142; stroke-width: 1.5; opacity: .24; }
+      .arrow { fill: none; stroke: #273142; stroke-width: 3; stroke-linecap: round; marker-end: url(#arrow); }
+    </style>
+    <filter id="rough" x="-4%" y="-6%" width="108%" height="112%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="11" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1 1 L10 6 L1 11" fill="none" stroke="#273142" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <rect width="1600" height="520" fill="#fffaf0"/>
+  <text x="70" y="62" class="heading">证据必须逐级建立，不能跨级宣称</text>
+  <path d="M69 76 C250 72, 430 80, 620 75" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round"/>
+
+  <g filter="url(#rough)">
+    <rect x="55" y="125" width="250" height="180" rx="22" fill="#dbeafe" class="outline"/>
+    <rect x="58" y="128" width="250" height="180" rx="22" class="ghost"/>
+    <rect x="365" y="125" width="250" height="180" rx="22" fill="#d8f3dc" class="outline"/>
+    <rect x="368" y="128" width="250" height="180" rx="22" class="ghost"/>
+    <rect x="675" y="125" width="250" height="180" rx="22" fill="#fff0b3" class="outline"/>
+    <rect x="678" y="128" width="250" height="180" rx="22" class="ghost"/>
+    <rect x="985" y="125" width="250" height="180" rx="22" fill="#ffd6cc" class="outline"/>
+    <rect x="988" y="128" width="250" height="180" rx="22" class="ghost"/>
+    <rect x="1295" y="125" width="250" height="180" rx="22" fill="#e7d8ff" class="outline"/>
+    <rect x="1298" y="128" width="250" height="180" rx="22" class="ghost"/>
+    <path d="M310 215 C326 211, 339 219, 354 215" class="arrow"/>
+    <path d="M620 215 C636 211, 649 219, 664 215" class="arrow"/>
+    <path d="M930 215 C946 211, 959 219, 974 215" class="arrow"/>
+    <path d="M1240 215 C1256 211, 1269 219, 1284 215" class="arrow"/>
+  </g>
+
+  <text x="180" y="174" class="label">源码与结构</text>
+  <text x="180" y="205" class="label">检查</text>
+  <text x="180" y="263" class="note">文件、manifest、路径</text>
+  <text x="490" y="190" class="label">自动测试</text>
+  <text x="490" y="239" class="note">确定性 contract</text>
+  <text x="490" y="267" class="note">与失败分支</text>
+  <text x="800" y="190" class="label">mock / integration</text>
+  <text x="800" y="239" class="note">替身环境中的</text>
+  <text x="800" y="267" class="note">协议与旅程</text>
+  <text x="1110" y="174" class="label">真实非生产</text>
+  <text x="1110" y="205" class="label">E2E</text>
+  <text x="1110" y="263" class="note">授权、写入、回读</text>
+  <text x="1420" y="190" class="label">生产可用</text>
+  <text x="1420" y="239" class="note">运营、监控、回滚</text>
+  <text x="1420" y="267" class="note">持续证据</text>
+
+  <text x="335" y="336" class="small">不能自动推出</text>
+  <text x="645" y="336" class="small">不能自动推出</text>
+  <text x="955" y="336" class="small">不能自动推出</text>
+  <text x="1265" y="336" class="small">不能自动推出</text>
+
+  <g filter="url(#rough)">
+    <path d="M208 396 C478 385, 1125 389, 1392 398 L1377 462 C1098 469, 494 464, 220 458 Z" fill="#ffffff" class="outline"/>
+  </g>
+  <text x="800" y="428" class="label">汇报原则：逐级说明“已证明什么”与“尚未证明什么”</text>
+  <text x="800" y="454" class="note">测试数量是活动证据，不替代模型判断质量或真实平台验收</text>
+</svg>

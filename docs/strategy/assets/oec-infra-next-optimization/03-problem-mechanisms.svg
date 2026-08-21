@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">旧 OEC-infra 的五类结构错位</title>
+  <desc id="desc">旧架构以一个中心连接角色能力包、原生组件、分发状态、模型判断和平台执行五类错位及对应影响。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .center { font-size: 29px; font-weight: 700; text-anchor: middle; }
+      .label { font-size: 22px; font-weight: 700; text-anchor: middle; }
+      .impact { font-size: 18px; text-anchor: middle; fill: #713f3f; }
+      .note { font-size: 18px; text-anchor: middle; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .ghost { fill: none; stroke: #273142; stroke-width: 1.4; opacity: .22; }
+      .link { fill: none; stroke: #6b7280; stroke-width: 3; stroke-linecap: round; marker-end: url(#arrow); }
+    </style>
+    <filter id="rough" x="-5%" y="-6%" width="110%" height="112%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="43" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.4"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1 1 L10 6 L1 11" fill="none" stroke="#6b7280" stroke-width="2.3" stroke-linecap="round"/>
+    </marker>
+  </defs>
+  <rect width="1600" height="900" fill="#fffaf0"/>
+  <text x="70" y="62" class="heading">旧架构的问题不是“文字多”，而是五类边界错位</text>
+  <path d="M70 78 C305 70, 600 82, 930 76" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round"/>
+
+  <g filter="url(#rough)">
+    <path d="M645 318 C721 294, 885 300, 960 327 L948 547 C868 575, 721 568, 643 540 Z" fill="#ffffff" class="outline"/>
+    <path d="M648 322 C727 302, 880 305, 956 332 L944 542 C865 568, 727 561, 648 536 Z" class="ghost"/>
+
+    <rect x="70" y="150" width="430" height="170" rx="24" fill="#dbeafe" class="outline"/>
+    <rect x="1100" y="150" width="430" height="170" rx="24" fill="#d8f3dc" class="outline"/>
+    <rect x="55" y="435" width="430" height="170" rx="24" fill="#fff0b3" class="outline"/>
+    <rect x="1115" y="435" width="430" height="170" rx="24" fill="#ffd6cc" class="outline"/>
+    <rect x="585" y="675" width="430" height="150" rx="24" fill="#e7d8ff" class="outline"/>
+
+    <path d="M646 356 C585 310, 555 275, 510 245" class="link"/>
+    <path d="M958 356 C1018 310, 1050 274, 1090 245" class="link"/>
+    <path d="M638 485 C572 500, 545 510, 495 520" class="link"/>
+    <path d="M962 485 C1028 500, 1060 510, 1105 520" class="link"/>
+    <path d="M800 570 C797 615, 803 638, 800 665" class="link"/>
+  </g>
+
+  <text x="800" y="385" class="center">旧 OEC-infra</text>
+  <text x="800" y="430" class="note">角色、工作流、脚本与平台 API</text>
+  <text x="800" y="461" class="note">集中在 bootstrap + 项目副本</text>
+  <text x="800" y="510" class="impact">同一请求需要在多套边界间重新解释</text>
+
+  <text x="285" y="200" class="label">① 角色与能力包错位</text>
+  <text x="285" y="240" class="note">PM / Dev / Test / 工具混合 preset</text>
+  <text x="285" y="282" class="impact">影响：升级、风险和 Owner 生命周期耦合</text>
+
+  <text x="1315" y="200" class="label">② 原生组件与文件索引错位</text>
+  <text x="1315" y="240" class="note">Skill、Agent、STAGE 都靠 Read 路由</text>
+  <text x="1315" y="282" class="impact">影响：触发、路径与 frontmatter 语义失效</text>
+
+  <text x="270" y="485" class="label">③ Plugin 与项目副本错位</text>
+  <text x="270" y="525" class="note">cache 与业务仓库形成双状态源</text>
+  <text x="270" y="567" class="impact">影响：安装、升级、卸载与排障不对称</text>
+
+  <text x="1330" y="485" class="label">④ Prompt 与模型判断错位</text>
+  <text x="1330" y="525" class="note">固定阶段、确认和产物覆盖任务规模</text>
+  <text x="1330" y="567" class="impact">影响：小任务被扩张、重复路由与确认</text>
+
+  <text x="800" y="723" class="label">⑤ 平台执行与模型职责错位</text>
+  <text x="800" y="763" class="note">局部脚本存在，但缺少统一类型化执行边界</text>
+  <text x="800" y="802" class="impact">影响：候选、幂等、恢复和完成判断难以统一验证</text>
+
+  <text x="800" y="865" class="note">迁移原则：业务判断留给模型，确定性不变量进入工具，外部副作用进入 MCP</text>
+</svg>

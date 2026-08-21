@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">旧 OEC-infra 的三层真实分发结构</title>
+  <desc id="desc">旧配置从编辑源码和 registry 经构建进入 Plugin payload，再通过项目初始化与 SessionStart 同步复制到业务仓库。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .lane-title { font-size: 27px; font-weight: 700; text-anchor: middle; }
+      .label { font-size: 22px; font-weight: 700; text-anchor: middle; }
+      .note { font-size: 18px; text-anchor: middle; }
+      .callout { font-size: 20px; font-weight: 700; text-anchor: middle; fill: #8b3a3a; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .ghost { fill: none; stroke: #273142; stroke-width: 1.4; opacity: .22; }
+      .arrow { fill: none; stroke: #273142; stroke-width: 3; stroke-linecap: round; marker-end: url(#arrow); }
+      .sync { fill: none; stroke: #7b5ea7; stroke-width: 3; stroke-dasharray: 10 8; marker-end: url(#arrow-purple); }
+    </style>
+    <filter id="rough" x="-4%" y="-5%" width="108%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.01" numOctaves="2" seed="21" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.3"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1 1 L10 6 L1 11" fill="none" stroke="#273142" stroke-width="2.4" stroke-linecap="round"/>
+    </marker>
+    <marker id="arrow-purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M1 1 L10 6 L1 11" fill="none" stroke="#7b5ea7" stroke-width="2.4" stroke-linecap="round"/>
+    </marker>
+  </defs>
+  <rect width="1600" height="900" fill="#fffaf0"/>
+  <text x="70" y="62" class="heading">旧 OEC-infra：安装 Plugin 只是第一步</text>
+  <path d="M70 77 C305 70, 538 81, 778 75" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round"/>
+
+  <g filter="url(#rough)">
+    <rect x="55" y="115" width="430" height="610" rx="28" fill="#e7f1ff" class="outline"/>
+    <rect x="585" y="115" width="430" height="610" rx="28" fill="#fff0b3" class="outline"/>
+    <rect x="1115" y="115" width="430" height="610" rx="28" fill="#dff3e4" class="outline"/>
+  </g>
+  <text x="270" y="165" class="lane-title">① 编辑源码</text>
+  <text x="800" y="165" class="lane-title">② Plugin payload</text>
+  <text x="1330" y="165" class="lane-title">③ 业务仓库副本</text>
+
+  <g filter="url(#rough)">
+    <rect x="105" y="220" width="330" height="120" rx="20" fill="#ffffff" class="outline"/>
+    <rect x="108" y="223" width="330" height="120" rx="20" class="ghost"/>
+    <rect x="105" y="400" width="330" height="120" rx="20" fill="#ffffff" class="outline"/>
+    <rect x="108" y="403" width="330" height="120" rx="20" class="ghost"/>
+    <rect x="105" y="580" width="330" height="90" rx="20" fill="#d8f3dc" class="outline"/>
+
+    <rect x="635" y="220" width="330" height="120" rx="20" fill="#ffffff" class="outline"/>
+    <rect x="638" y="223" width="330" height="120" rx="20" class="ghost"/>
+    <rect x="635" y="400" width="330" height="120" rx="20" fill="#ffd6cc" class="outline"/>
+    <rect x="635" y="580" width="155" height="90" rx="18" fill="#e7d8ff" class="outline"/>
+    <rect x="810" y="580" width="155" height="90" rx="18" fill="#e7d8ff" class="outline"/>
+
+    <rect x="1165" y="205" width="330" height="120" rx="20" fill="#ffffff" class="outline"/>
+    <rect x="1165" y="365" width="330" height="120" rx="20" fill="#ffffff" class="outline"/>
+    <rect x="1165" y="525" width="330" height="120" rx="20" fill="#ffffff" class="outline"/>
+
+    <path d="M435 625 C500 621, 548 558, 625 474" class="arrow"/>
+    <path d="M485 420 C525 417, 545 417, 575 420" class="arrow"/>
+    <path d="M1018 420 C1055 416, 1075 416, 1105 420" class="arrow"/>
+    <path d="M965 625 C1050 624, 1072 585, 1155 585" class="sync"/>
+  </g>
+
+  <text x="270" y="267" class="label">oec-infra/</text>
+  <text x="270" y="301" class="note">Agent、Skills 的编辑源</text>
+  <text x="270" y="447" class="label">registry/presets</text>
+  <text x="270" y="481" class="note">dev / designer；构建生成 all</text>
+  <text x="270" y="617" class="label">build-plugin-marketplace</text>
+  <text x="270" y="646" class="note">复制、扁平化、生成 manifest</text>
+
+  <text x="800" y="267" class="label">plugins/oec-ai</text>
+  <text x="800" y="301" class="note">原生仅 1 Skill + 1 Hook</text>
+  <text x="800" y="447" class="label">payload</text>
+  <text x="800" y="481" class="note">PM / Dev / Test 只是待复制资产</text>
+  <text x="712" y="617" class="label">oec-project-init</text>
+  <text x="712" y="646" class="note">首次物化</text>
+  <text x="887" y="617" class="label">SessionStart</text>
+  <text x="887" y="646" class="note">已初始化项目同步</text>
+
+  <text x="1330" y="252" class="label">.claude / .codex</text>
+  <text x="1330" y="286" class="note">角色 Agent、顶层 Skills、内部文件树</text>
+  <text x="1330" y="412" class="label">.oec-ai</text>
+  <text x="1330" y="446" class="note">installation manifest + 同步运行时</text>
+  <text x="1330" y="572" class="label">ai-docs</text>
+  <text x="1330" y="606" class="note">首次 seed 的项目模板</text>
+
+  <g filter="url(#rough)">
+    <path d="M236 770 C515 758, 1100 760, 1378 774 L1368 838 C1085 846, 512 844, 246 835 Z" fill="#ffffff" class="outline"/>
+  </g>
+  <text x="800" y="802" class="callout">Plugin 安装完成 ≠ PM / 研发 / 测试能力可用</text>
+  <text x="800" y="832" class="note">仍需在每个业务仓库执行初始化，并维护 Plugin cache 与项目副本两份状态</text>
+</svg>

@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Marketplace、Plugin、Agent、Skill 与 MCP 的职责组合</title>
+  <desc id="desc">Marketplace 分发 Plugin，Plugin 打包 Agent、Skills 和 MCP；用户目标由 Agent 协调，Skill 使用 supporting files 与确定性工具，MCP 连接外部平台。</desc>
+  <defs>
+    <style>
+      text { font-family: Kaiti SC; fill: #273142; }
+      .heading { font-size: 34px; font-weight: 700; }
+      .section { font-size: 25px; font-weight: 700; text-anchor: middle; }
+      .label { font-size: 22px; font-weight: 700; text-anchor: middle; }
+      .note { font-size: 18px; text-anchor: middle; }
+      .outline { stroke: #273142; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+      .ghost { fill: none; stroke: #273142; stroke-width: 1.4; opacity: .22; }
+      .call { fill: none; stroke: #273142; stroke-width: 3; stroke-linecap: round; marker-end: url(#arrow); }
+      .package { fill: none; stroke: #7b5ea7; stroke-width: 3; stroke-dasharray: 10 7; marker-end: url(#arrow-purple); }
+      .fact { fill: none; stroke: #2f6b45; stroke-width: 3; stroke-dasharray: 4 7; marker-end: url(#arrow-green); }
+    </style>
+    <filter id="rough" x="-4%" y="-5%" width="108%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.011" numOctaves="2" seed="54" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#273142" stroke-width="2.4" stroke-linecap="round"/></marker>
+    <marker id="arrow-purple" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#7b5ea7" stroke-width="2.4" stroke-linecap="round"/></marker>
+    <marker id="arrow-green" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#2f6b45" stroke-width="2.4" stroke-linecap="round"/></marker>
+  </defs>
+  <rect width="1600" height="900" fill="#fffaf0"/>
+  <text x="70" y="62" class="heading">组件可以组合，但不能互相冒充</text>
+  <path d="M70 78 C260 70, 480 82, 690 76" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round"/>
+
+  <g filter="url(#rough)">
+    <rect x="55" y="190" width="230" height="120" rx="22" fill="#e7d8ff" class="outline"/>
+    <rect x="340" y="110" width="880" height="650" rx="34" fill="#ffffff" class="outline"/>
+    <rect x="343" y="113" width="880" height="650" rx="34" class="ghost"/>
+    <rect x="1285" y="390" width="250" height="140" rx="22" fill="#ffd6cc" class="outline"/>
+    <rect x="55" y="570" width="230" height="130" rx="22" fill="#d8f3dc" class="outline"/>
+
+    <rect x="405" y="210" width="270" height="130" rx="22" fill="#dbeafe" class="outline"/>
+    <rect x="755" y="210" width="380" height="130" rx="22" fill="#fff0b3" class="outline"/>
+    <rect x="405" y="455" width="270" height="130" rx="22" fill="#ffd6cc" class="outline"/>
+    <rect x="755" y="430" width="180" height="120" rx="20" fill="#ffffff" class="outline"/>
+    <rect x="955" y="430" width="180" height="120" rx="20" fill="#ffffff" class="outline"/>
+
+    <path d="M285 250 C307 246, 319 247, 330 250" class="package"/>
+    <path d="M675 275 C705 269, 720 270, 745 275" class="call"/>
+    <path d="M540 345 C537 380, 543 412, 540 445" class="call"/>
+    <path d="M945 345 C900 375, 860 395, 850 420" class="call"/>
+    <path d="M945 345 C1000 375, 1040 395, 1045 420" class="call"/>
+    <path d="M800 340 C755 380, 700 420, 675 480" class="call"/>
+    <path d="M675 520 C900 605, 1130 600, 1280 500" class="call"/>
+    <path d="M285 635 C345 590, 365 365, 395 290" class="fact"/>
+  </g>
+
+  <text x="170" y="235" class="label">Marketplace</text>
+  <text x="170" y="272" class="note">组织级发现、版本与分发</text>
+  <text x="780" y="157" class="section">Plugin：同一生命周期的安装单元</text>
+
+  <text x="540" y="252" class="label">Agent</text>
+  <text x="540" y="287" class="note">身份、独立上下文</text>
+  <text x="540" y="314" class="note">权限或并行边界</text>
+  <text x="945" y="252" class="label">Skill</text>
+  <text x="945" y="287" class="note">领域知识、判断方法</text>
+  <text x="945" y="314" class="note">产物契约与轻量编排</text>
+  <text x="540" y="497" class="label">MCP</text>
+  <text x="540" y="532" class="note">认证、状态、幂等</text>
+  <text x="540" y="559" class="note">恢复与远端验证</text>
+  <text x="845" y="474" class="label">supporting</text>
+  <text x="845" y="505" class="note">references</text>
+  <text x="845" y="530" class="note">templates</text>
+  <text x="1045" y="474" class="label">script/runtime</text>
+  <text x="1045" y="505" class="note">确定性解析</text>
+  <text x="1045" y="530" class="note">校验与格式化</text>
+
+  <text x="1410" y="438" class="label">外部平台</text>
+  <text x="1410" y="474" class="note">E3 / Pipeline / UTP / SAE</text>
+  <text x="170" y="612" class="label">项目事实</text>
+  <text x="170" y="647" class="note">CLAUDE.md / AGENTS.md</text>
+  <text x="170" y="674" class="note">Specs / ADR</text>
+
+  <text x="800" y="812" class="note">实线：运行时调用　　紫色虚线：Marketplace 分发 Plugin　　绿色点线：项目事实按需进入上下文</text>
+  <text x="800" y="850" class="note">Plugin 负责打包，不等于一个角色必须同时拥有 Agent、Skill 和 MCP</text>
+</svg>
