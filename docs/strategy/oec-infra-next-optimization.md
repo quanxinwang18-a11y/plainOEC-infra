@@ -528,9 +528,36 @@ Claude Code 官方将这些能力放在不同扩展位置：[扩展模型](https
 Skill 合并为一个稳定用户目标，还有的平台能力在真实契约不足时保持“待证据”，而不是用 Prompt
 代偿。
 
-#### 5.3.1 为什么外部交互脚本要进入 MCP
+#### 5.3.1 Skill supporting script 与 MCP Tool 的根本区别
 
-判断标准不是“它是不是脚本”，而是它是否跨越本地模型会话与外部系统的信任边界：
+根本区别不是实现语言，也不是代码复杂度，而是这项能力是否成为**宿主可发现、可授权、可约束的正式
+工具接口**。Skill 的 `scripts/` 只是该 Skill 的 supporting files；文件存在不等于宿主注册了一个工具，
+模型通常仍需先加载 Skill，再通过 Bash 组合脚本路径和参数。MCP Tool 则在 Server 启动后直接进入
+Claude Code 工具列表，以名称、description 和 input schema 暴露稳定能力。
+
+| 维度 | Skill 附带 `scripts/` | MCP 注册 Tool |
+| --- | --- | --- |
+| 宿主认知 | Skill 的 supporting file，不是独立组件 | 工具列表中的正式能力 |
+| 发现方式 | 模型加载 Skill 后，按文档导航到脚本 | MCP Server 启动后注册工具名和 description |
+| 调用方式 | Bash + 路径 + argv/stdin，结果通常是退出码和文本 | 结构化 tool call，输入由 JSON schema 和服务端共同校验 |
+| 权限与确认 | 宿主通常看到的是一次通用 Bash 执行 | 可以围绕具体业务工具声明交互要求并应用宿主权限策略 |
+| 实现暴露 | Prompt 往往需要知道脚本路径、参数和部分运行细节 | 调用者不需要知道 HTTP endpoint、token、payload 或实现路径 |
+| 状态与恢复 | 通常由脚本临时文件和调用者串联，跨步骤契约不统一 | Server 可统一绑定 workspace、selection、plan、checkpoint 和过期时间 |
+| 复用与生命周期 | 通常服务于一个 Skill，随该 Skill 内容演进 | 可被多个 Agent/Skill 共用，并按平台 Plugin 独立升级 |
+| 测试边界 | 适合单元测试和 CLI 输入输出测试 | 还可验证协议注册、schema、权限元数据、transport 和远端集成 |
+
+例如，`check-artifacts` 与 `oec-spec` 只读取本地受控文件，负责 YAML、路径、链接、glob 和 fingerprint
+等确定性处理。它们不需要认证、远端状态或跨步骤副作用，因此作为 Skill runtime 更直接，也更容易随
+领域契约共同维护。
+
+相反，E3 发布、研发任务同步和 Pipeline 运行需要认证、远端身份、用户确认、写后恢复和状态回读，
+这些能力必须由宿主看到具体的业务工具，而不是只看到一条包含任意参数的 Bash 命令。因此它们注册为
+MCP Tool，并按平台生命周期独立分发。
+
+#### 5.3.2 为什么外部交互脚本要进入 MCP
+
+判断标准不是“它是不是脚本”，而是它是否跨越本地模型会话与外部系统的信任边界。外部平台执行从
+Skill script 抽出时，主要解决以下问题：
 
 | 执行问题 | 放在 Skill + Bash/Python 中的局限 | MCP 提供的硬边界 |
 | --- | --- | --- |
@@ -547,7 +574,11 @@ MCP 因此不是把一段 Python 改写成 Node 的技术重构，而是把原�
 平台契约提升为宿主可发现、可授权、可验证的执行接口。模型仍决定用户意图和业务取舍，但不能自定义
 任意平台 payload、跳过 plan 或把 warning 解释成发布成功。
 
-#### 5.3.2 Skill 与 MCP 如何协作，而不是互相替代
+注册为 MCP 也不会自动获得安全性。Server 仍必须实现 schema 业务校验、固定可信 origin、凭证脱敏、
+workspace 绑定、不可变 plan、幂等恢复和独立 status；否则只是把一个不安全脚本换成了一个不安全
+Tool。
+
+#### 5.3.3 Skill 与 MCP 如何协作，而不是互相替代
 
 以 PRD 发布为例，新的调用链是：
 
@@ -569,9 +600,9 @@ MCP 因此不是把一段 Python 改写成 Node 的技术重构，而是把原�
 受限的任务创建、进度和状态原子工具。Pipeline 也只负责把一个已经明确的 dev/test 运行计划安全
 执行，不规定研发必须经过哪些阶段。
 
-反过来，`check-artifacts` 和 `oec-spec` 只读取本地受控文件、输出可确定结果，不需要远端认证或持久
-会话状态，因此继续作为自足本地 runtime，而不是为了形式统一包装成 MCP。这个边界避免把“外部执行
-需要平台化”误解为“所有脚本都要 MCP 化”。
+最终形成的不是二选一，而是三层协作：Skill 说明为什么做、何时做和如何解释结果；supporting script
+保证本地确定性处理；MCP 承担外部认证、状态和副作用。既不能把平台写操作藏回 Bash，也不应为了
+形式统一把本地检查器包装成 MCP。
 
 ## 6. 当前 3.0 已实现架构
 
