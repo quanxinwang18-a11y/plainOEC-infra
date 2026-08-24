@@ -28,3 +28,12 @@ Do not write every test before all implementation, force a specific ratio of uni
 tests, or require a persistent task package. If the environment cannot produce a reliable red/green
 signal, explain the limitation and agree on another observable verification rather than claiming
 TDD completion.
+
+## Red Flags
+
+| Thought | Reality |
+|---------|---------|
+| "This is too simple to need a test" | Simple code breaks. A focused test costs seconds. |
+| "I'll implement first, add tests after" | After-the-fact tests pass immediately and prove nothing. |
+| "I already ran the test earlier" | Only the most recent run counts. Re-run now. |
+| "The linter passed" | A linter is not a test runner. |

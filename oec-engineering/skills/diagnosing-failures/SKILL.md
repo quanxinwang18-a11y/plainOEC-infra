@@ -20,8 +20,9 @@ Ground the diagnosis in observed evidence:
 - Re-run the original signal and a regression check that would catch recurrence.
 
 Change one diagnostic variable at a time when practical. Do not stack speculative fixes, infer a
-cause from temporal correlation, or stop at a suppressed symptom. Remove temporary instrumentation
-unless it provides justified ongoing observability.
+cause from temporal correlation, or stop at a suppressed symptom. If three distinct fix attempts
+fail on the same symptom, stop and re-examine architecture or assumptions before attempting a
+fourth. Remove temporary instrumentation unless it provides justified ongoing observability.
 
 Use a durable change note only when the investigation reveals a lasting system fact, decision, or
 residual operational risk. Ordinary debugging does not require a stage file, state directory, or
