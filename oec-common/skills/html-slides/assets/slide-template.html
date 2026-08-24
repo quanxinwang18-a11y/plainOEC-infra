@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1920, initial-scale=1">
+  <title>Slide title</title>
+  <link rel="stylesheet" href="../shared/tokens.css">
+  <style>
+    body {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      align-items: center;
+      gap: 96px;
+    }
+
+    .copy { max-width: 980px; }
+    .copy p { max-width: 34em; color: var(--muted); }
+    .visual {
+      min-height: 640px;
+      border: 2px solid color-mix(in oklch, var(--foreground) 18%, transparent);
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <main class="copy">
+    <p class="label">Section</p>
+    <h1>One primary idea</h1>
+    <p>Replace this copy with real source material. Remove the visual region if it does not carry information.</p>
+  </main>
+  <aside class="visual" aria-label="Visual asset placeholder">Real visual asset or purposeful composition</aside>
+</body>
+</html>
