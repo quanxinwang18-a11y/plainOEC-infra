@@ -33,7 +33,10 @@ Before reconciling, confirm that key verification has happened against the final
   against the final diff.
 
 An untested or unreviewed change is not a closed change. Report what was verified and what was
-not.
+not. If the change was implemented in the main session and has not been independently reviewed,
+consider dispatching an oec-check agent for fresh eyes:
+
+`/oec-engineering:oec-check <change-id>`
 
 Run `oec-spec select --workspace "$PWD" --paths <changed paths> --format json`. Compare the selected
 Specs and accepted ADRs with the implemented behavior:

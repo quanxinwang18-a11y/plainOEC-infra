@@ -64,5 +64,15 @@ When transitioning from planning to implementation, state the change boundary be
 If the real scope turns out to be larger than this, say so and why before continuing. Do not widen
 on your own.
 
+## Implementation
+
+After planning is complete, the change can be implemented in the main session or by dispatching
+an isolated agent:
+
+- `/oec-engineering:oec-implement <change-id>` — the agent reads only the change artifacts and
+  team Specs. Its context is clean, without the planning discussion.
+- `/oec-engineering:oec-research <change-id> <question>` — if the change needs research first,
+  the agent persists findings to the change directory and reports back.
+
 Planning is read-only with respect to business code and external systems. Do not implement the
 change, create E3 tasks, deploy, or commit Git as part of this Skill.
