@@ -14,6 +14,42 @@ Before writing, inspect the relevant repository evidence and show the exact file
 create or update. Proceed after the user confirms that file plan. Create only documents supported
 by real facts; an absent category is better than an empty placeholder.
 
+## Initialize from codebase
+
+When initializing team Specs from an existing repository, work through these layers before
+proposing files:
+
+1. **Package boundaries**: identify each independently buildable or deployable unit. What does
+   each package own? What imports cross boundaries?
+2. **Core abstractions**: which types, services, stores, commands, routes, or adapters define the
+   system shape? Find the files that prove each pattern.
+3. **Existing conventions**: discover patterns already consistently followed. Cite the source
+   files that demonstrate them. A convention with no file evidence is not a convention.
+4. **Decisions to preserve**: identify ADR-worthy choices already made (framework, database,
+   architecture). Check existing ADRs before writing new ones.
+
+For each discovered fact, confirm it with code, configuration, tests, or an accepted decision
+before writing. Do not write a Spec for a module that has no stable conventions.
+
+## Content standards
+
+Every material claim in a Spec must be backed by at least one of:
+
+- A source file that demonstrates the preferred pattern (cite the path).
+- A test file that shows expected behavior.
+- A project document that defines the convention.
+- A repeated pattern across multiple files (cite two or more).
+
+Anti-patterns and common mistakes must come from real code, old comments, or migration paths
+found in the repository. Do not invent speculative pitfalls.
+
+Avoid: placeholder prose (TODO, TBD, 待补充), generic framework advice, tool instructions
+specific to one agent host, long copied code blocks, and rules based on a single accidental
+implementation detail.
+
+Before completing, scan for placeholder text and verify that every internal link target
+exists. `oec-spec check` will catch these mechanically, but review content quality yourself.
+
 Use [references/team-spec-contract.md](references/team-spec-contract.md) for paths, frontmatter,
 current-state and change-package boundaries, ADR rules, host pointers, and Git handling. Use only
 the templates needed for the requested documents:
