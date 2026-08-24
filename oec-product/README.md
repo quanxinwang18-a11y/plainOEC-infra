@@ -8,6 +8,9 @@
 - Skills：`writing-prds`、`reviewing-prds`、`publishing-prds-to-e3`。
 - Platform dependency：`oec-e3@~1.0.0`，提供 E3 MCP 原子工具；Product 自身没有 MCP Server。
 
+一次性 PRD 写作或评审可以直接用自然语言描述目标，由对应 Skill 按场景发现。只有需要持续的
+产品经理工作身份时，才启动完整 PM Agent 会话。
+
 Agent 只预加载 PRD 写作与评审能力。完整 PM 会话通过显式 Agent 启动：
 
 ```bash

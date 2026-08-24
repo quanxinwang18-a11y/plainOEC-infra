@@ -1,6 +1,6 @@
 ---
 name: writing-prds
-description: Creates, revises, and finalizes versioned PRDs, then splits them into child PRDs and HANDOFF artifacts. Use when the user asks to write a PRD, create or change a requirement, generate a version PRD, or merge an external child requirement into the product SSOT.
+description: Creates, revises, and finalizes versioned PRDs, then splits them into child PRDs and HANDOFF artifacts. Use when the user asks to write a PRD, change product requirements, generate a version PRD, or merge an external child requirement into the product SSOT. Do not use for read-only PRD review, technical design or implementation planning, E3 publication, or E3 development-task and progress operations.
 argument-hint: "[requirement, PRD path, or version]"
 ---
 

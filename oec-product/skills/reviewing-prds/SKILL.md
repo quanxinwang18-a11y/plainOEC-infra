@@ -1,6 +1,6 @@
 ---
 name: reviewing-prds
-description: Performs a read-only red-team review of a PRD. Use when the user asks to review a PRD, challenge assumptions, find product risks, or decide whether a requirement is ready to submit.
+description: Performs a read-only red-team review of a PRD. Use when the user asks to review a PRD, challenge assumptions, find product risks, or decide whether a requirement is ready to submit. Do not use to create or edit PRD content, review code or technical designs, publish to E3, or manage E3 development tasks.
 argument-hint: "[PRD path or version]"
 ---
 

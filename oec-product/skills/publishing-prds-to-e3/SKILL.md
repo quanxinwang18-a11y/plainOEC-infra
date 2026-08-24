@@ -1,6 +1,6 @@
 ---
 name: publishing-prds-to-e3
-description: Publishes completed child PRDs and HANDOFF mappings to E3. Use for explicit E3 publishing requests.
+description: Publishes an already finalized version with completed child PRDs and HANDOFF mappings to E3. Use only for explicit E3 PRD publishing requests. Do not use to write or review PRDs, create E3 development tasks, update task progress, or publish incomplete artifacts.
 argument-hint: "[vX.Y.Z]"
 disable-model-invocation: true
 ---

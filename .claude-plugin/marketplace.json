@@ -12,7 +12,7 @@
   "plugins": [
     {
       "name": "oec-product",
-      "version": "3.0.0",
+      "version": "3.0.1",
       "description": "OEC 产品管理能力：PRD 编写、红队评审以及通过 E3 平台 Plugin 发布需求。",
       "source": "./oec-product",
       "category": "product-management"

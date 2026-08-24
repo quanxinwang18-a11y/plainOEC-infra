@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.1
+
+- Add explicit negative discovery boundaries to all three PRD Skills.
+- Clarify that E3 publication requires a finalized version, child PRDs, and HANDOFF artifacts.
+- Add bilingual positive and negative cases for adjacent Product, Engineering, and E3 intents.
+
 ## 3.0.0
 
 - Move the E3 MCP Server into the independent `oec-e3@1.x` platform Plugin.

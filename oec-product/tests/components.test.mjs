@@ -26,14 +26,19 @@ test('skills have distinct positive triggers and E3 publishing is manual-only', 
   const writing = frontmatter('skills/writing-prds/SKILL.md');
   const reviewing = frontmatter('skills/reviewing-prds/SKILL.md');
   const publishing = frontmatter('skills/publishing-prds-to-e3/SKILL.md');
-  assert.match(writing.metadata.description, /write a PRD|create or change a requirement/);
+  for (const item of [writing, reviewing, publishing]) {
+    assert.match(item.metadata.description, /Do not use/i);
+  }
+  assert.match(writing.metadata.description, /write a PRD|change product requirements/);
   assert.match(reviewing.metadata.description, /read-only red-team review/);
-  assert.doesNotMatch(writing.metadata.description, /publish/i);
-  assert.doesNotMatch(reviewing.metadata.description, /write|create|change a requirement/i);
+  assert.match(writing.metadata.description, /technical design or implementation planning/);
+  assert.match(reviewing.metadata.description, /review code or technical designs/);
   assert.match(writing.body, /assets\/root-prd\.md/);
   assert.match(reviewing.body, /RF-01.*RF-05/s);
   assert.equal(publishing.metadata['disable-model-invocation'], true);
-  assert.match(publishing.metadata.description, /explicit E3 publishing requests/);
+  assert.match(publishing.metadata.description, /already finalized version/);
+  assert.match(publishing.metadata.description, /completed child PRDs and HANDOFF/);
+  assert.match(publishing.metadata.description, /explicit E3 PRD publishing requests/);
   assert.match(publishing.body, /original `spaceId`.*selected `pompProjectCode`/s);
   assert.match(publishing.body, /published-version-changed/);
   assert.match(publishing.body, /remote-object-drift/);
@@ -41,6 +46,19 @@ test('skills have distinct positive triggers and E3 publishing is manual-only', 
   assert.match(publishing.body, /git commit -m .* -- <mappingPath>/);
   assert.match(publishing.body, /Never stage plugin data, credentials, configuration, selection, or\s+plan files/s);
   assert.doesNotMatch(publishing.body, /oauth|token file|https?:\/\/|JSON payload|node .*\.mjs|retry/i);
+});
+
+test('each Product Skill carries bilingual positive and negative cases', () => {
+  for (const name of ['writing-prds', 'reviewing-prds', 'publishing-prds-to-e3']) {
+    const path = resolve(pluginRoot, 'skills', name, 'evals', 'cases.md');
+    assert.equal(existsSync(path), true, `${name} eval cases must exist`);
+    const content = readFileSync(path, 'utf8');
+    assert.match(content, /## Positive cases/);
+    assert.match(content, /## Negative cases/);
+    assert.match(content, /[\u4e00-\u9fff]/, `${name} needs a Chinese case`);
+    assert.match(content, /\b(?:PRD|E3|Review|Create|Design|Revise)\b/i, `${name} needs an English case`);
+    assert.doesNotMatch(content, /TODO/);
+  }
 });
 
 test('model-facing capability text does not depend on the OEC label', () => {
@@ -80,7 +98,7 @@ test('writing assets cover the product SSOT and use safe exact-path commit synta
 test('plugin relies on native discovery and has no forbidden root component framework', () => {
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-product');
-  assert.equal(manifest.version, '3.0.0');
+  assert.equal(manifest.version, '3.0.1');
   assert.deepEqual(manifest.dependencies, [{ name: 'oec-e3', version: '~1.0.0' }]);
   const packageManifest = JSON.parse(readFileSync(resolve(pluginRoot, '..', 'package.json'), 'utf8'));
   assert.equal(packageManifest.version, '3.0.0');
