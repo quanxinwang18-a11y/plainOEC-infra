@@ -1,7 +1,7 @@
 # 平台 Plugin 层级与 MCP 迁移设计
 
-> 当前实现：Marketplace `3.0.0`、`oec-product@3.0.0`、`oec-engineering@1.0.0`、
-> `oec-e3@1.0.0`、`oec-pipeline@1.0.0`。本文区分“代码和自动验证已完成”与“真实外部平台已验收”；
+> 当前实现：Marketplace `3.0.0`、`oec-product@3.0.1`、`oec-engineering@1.3.0`、
+> `oec-e3@1.0.0`、`oec-pipeline@1.0.0`、`oec-common@0.2.0`。本文区分“代码和自动验证已完成”与“真实外部平台已验收”；
 > SAE、UTP 和 `oec-testing` 仍未进入 Marketplace。
 
 ## 1. 设计结论
@@ -28,9 +28,10 @@ Marketplace 负责分发
 flowchart TB
     M["Marketplace<br/>plainOEC-infra"]
 
-    subgraph D["领域能力 Plugins"]
+    subgraph D["模型侧能力 Plugins"]
         P["oec-product<br/>PM Agent + Product Skills"]
-        E["oec-engineering<br/>Engineering Skills"]
+        E["oec-engineering<br/>Engineering Skills + explicit Agents"]
+        C["oec-common<br/>HTML Slides Skill"]
         T["oec-testing<br/>未来评估"]
     end
 
@@ -50,6 +51,7 @@ flowchart TB
 
     M --> P
     M --> E
+    M --> C
     M -.后续.-> T
     M --> E3
     M --> PL
@@ -70,10 +72,11 @@ flowchart TB
 
 | Plugin | Agent | Skills | MCP | 责任 |
 | --- | ---: | ---: | ---: | --- |
-| `oec-product@3.0.0` | 1 | 3 | 0 | PRD 领域知识和发布语义 |
-| `oec-engineering@1.0.0` | 0 | 6 | 0 | 团队 Specs 和聚焦工程方法 |
+| `oec-product@3.0.1` | 1 | 3 | 0 | PRD 领域知识和发布语义 |
+| `oec-engineering@1.3.0` | 3 | 6 | 0 | 可选团队 Specs、聚焦工程方法和显式委派 |
 | `oec-e3@1.0.0` | 0 | 0 | 1 | E3 PRD 发布与研发任务执行 |
 | `oec-pipeline@1.0.0` | 0 | 0 | 1 | 既有 dev/test 流水线受控执行 |
+| `oec-common@0.2.0` | 0 | 1 | 0 | 零依赖 HTML-first 幻灯片 |
 
 SAE、UTP 和 `oec-testing` 不创建空目录，也不进入 Marketplace，直到各自准入条件满足。
 
@@ -88,6 +91,7 @@ plainOEC-infra/
 │   └── skills/{writing,reviewing,publishing}-prds*/
 ├── oec-engineering/
 │   ├── skills/
+│   ├── agents/
 │   ├── bin/oec-spec
 │   └── dist/oec-spec.mjs
 ├── oec-e3/
@@ -96,10 +100,12 @@ plainOEC-infra/
 │   │   ├── publication/
 │   │   └── development/
 │   └── dist/e3-server.mjs
-└── oec-pipeline/
+├── oec-pipeline/
     ├── .mcp.json
     ├── servers/pipeline/
-    └── dist/pipeline-server.mjs
+│   └── dist/pipeline-server.mjs
+└── oec-common/
+    └── skills/html-slides/
 ```
 
 共享 artifact contract 不是 Claude 组件、公共 references 层或运行时 npm 包。Product checker 和
@@ -257,12 +263,12 @@ Token、空间选择、plan 和 Pipeline 运行时状态不得进入 Git。旧 P
 
 ## 9. 分发和版本
 
-`oec-product@3.0.0` 声明同 Marketplace 依赖：
+`oec-product@3.0.1` 声明同 Marketplace 依赖：
 
 ```json
 {
   "name": "oec-product",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "dependencies": [
     { "name": "oec-e3", "version": "~1.0.0" }
   ]
@@ -282,6 +288,7 @@ plugin-scoped 身份会变化，因此 Product 使用主版本升级。
 | 六个研发任务工具 | 已验收 | 自动测试、mock journey 与“OBU-AI提效组”真实主链均完成 |
 | 四个 Pipeline 工具 | 已实现 | 自动测试和 mock/integration 已完成；未执行真实 Pipeline |
 | Product dependency cutover | 已完成 | Product 0 MCP；隔离安装自动解析 E3 dependency |
+| Common HTML Slides | 已完成 | 1 个零依赖 Skill；真实浏览器验证 overview、hash 与键盘导航 |
 | SAE、UTP 准入 | 审计中 | 不创建空 Plugin，不进入 Marketplace |
 
 Product cutover 一次性移除了内嵌 E3 Server，因此仓库和安装结果中都只有一套 E3 工具，不存在同名

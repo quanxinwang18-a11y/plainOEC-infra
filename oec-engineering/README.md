@@ -1,12 +1,12 @@
 # oec-engineering
 
-`oec-engineering` provides focused software engineering Skills and a project-owned team Spec
-contract. It does not replace Claude Code's main coding agent or install a development state
-machine.
+`oec-engineering` 提供聚焦的软件工程 Skills、三个显式使用的可选 Agent，以及项目自有的团队
+Spec 契约。它不会替代 Claude Code 主 Coding Agent，不安装研发状态机，也不向所有会话注入
+SessionStart 上下文。
 
-## Install
+## 安装
 
-Add the Git Marketplace once, then install the engineering Plugin:
+首次使用先添加 Git Marketplace，再安装 Engineering Plugin：
 
 ```bash
 claude plugin marketplace add \
@@ -18,16 +18,17 @@ claude plugin install \
   --scope user
 ```
 
-This does not require `npm login`, `npm install`, GitHub Packages, or a manually created `.claude`
-directory. The committed runtime bundle requires Node.js 20 or newer on `PATH`.
+安装不需要 `npm login`、`npm install`、GitHub Packages 或手工创建 `.claude`。提交的 runtime
+bundle 需要 PATH 中存在 Node.js 20 或更新版本。
 
-Use project scope only when the team wants Claude Code to commit the Marketplace and enablement
-declaration for the repository. The CLI owns that settings file; do not hand-write Plugin payloads
-into the project.
+只有团队希望在仓库中共享 Marketplace 与 Plugin 启用声明时才使用 project scope。该 settings
+文件由 CLI 管理，不要把 Plugin payload 手工复制到项目中。
 
-## Capabilities
+## 能力
 
 ### Skills
+
+普通请求直接用自然语言描述目标，Skills 按场景发现：
 
 ```text
 /oec-engineering:managing-team-specs
@@ -38,27 +39,31 @@ into the project.
 /oec-engineering:closing-engineering-changes
 ```
 
+只有 `closing-engineering-changes` 是 user-invoked only。TDD 也只在用户明确要求 test-first 时适用。
+
 ### Agents
 
-Ask Claude to use `oec-implement` for isolated implementation, `oec-check` for a fresh-eyes
-review, or `oec-research` for bounded background research. To guarantee one runs, select its
-plugin-scoped name from Claude Code's `@` agent picker. These are Agents, not slash commands.
+需要独立上下文时，可以要求 Claude 使用：
 
-Agents are optional — implementation, review, and research can also be done in the main
-session. They run only when the user explicitly requests them or an explicitly invoked OEC Skill
-delegates a bounded task. TDD applies only when the user explicitly asks for test-first work.
-Closing is manual-only because it can update project documentation and commit exact files.
+- `oec-implement`：在已声明的 change boundary 内隔离实现；
+- `oec-check`：对未提交改动做 fresh-eyes 检查；
+- `oec-research`：把有边界的研究结果写入 change 目录。
 
-## Initialize team Specs
+通过 Claude Code 的 `@` Agent picker 可以保证派发。它们不是 slash commands，只在用户明确请求，
+或显式调用的 OEC Skill 委派有边界任务时使用；普通实现、评审和研究仍可由主会话完成。
 
-Initialize only when the team wants repository-owned engineering guidance:
+仓库同时保留实验性 Codex manifest 和 TOML Agent。由于本轮没有完成真实 Codex 安装、Agent 发现和
+`oec-spec` PATH 验收，不把这些文件描述为已验证的 Codex 支持。
+
+## 团队 Specs
+
+只有团队需要 repository-owned 工程事实时才初始化：
 
 ```text
 /oec-engineering:managing-team-specs init
 ```
 
-The Skill first inspects repository evidence and presents the exact proposed files. After user
-confirmation, it creates only the current-state Specs and ADRs supported by real facts:
+Skill 会先检查仓库证据并展示拟创建的路径，只生成真实事实支持的 current-state Specs 和 ADRs：
 
 ```text
 ai-docs/engineering/
@@ -68,11 +73,10 @@ ai-docs/engineering/
 └── changes/
 ```
 
-An absent category is valid; initialization does not emit empty architecture, domain, interface,
-data, testing, or delivery templates. Optional root `CLAUDE.md` and `AGENTS.md` blocks point to the
-index without copying Skill workflows.
+缺少某类事实时不创建空模板。可选根 `CLAUDE.md` 或 `AGENTS.md` 只指向团队索引，不复制 Skill
+工作流。
 
-`oec-spec` is added to the Claude Bash `PATH` while the Plugin is enabled:
+Plugin 启用后，`bin/oec-spec` 会加入 Claude Bash PATH：
 
 ```bash
 oec-spec select --workspace "$PWD" --paths <paths> --format json
@@ -80,43 +84,30 @@ oec-spec check --workspace "$PWD"
 oec-spec legacy-audit --workspace "$PWD"
 ```
 
-All three commands are read-only. The audit never deletes old managed files or moves `ai-docs`.
+三个命令均为只读；legacy audit 不删除旧 managed files，也不移动 `ai-docs`。
 
-## Migrate an old Dev project
+## 旧 Dev 项目迁移
 
-1. Run `oec-spec legacy-audit --workspace "$PWD"` and review the reported manifest, Skills, Agents,
-   and preserved `ai-docs` count.
-2. Initialize the new team Spec root without modifying old files.
-3. Import only evidence-backed current facts and durable decisions from legacy architecture, API,
-   and dev-task documents.
-4. Commit the new team Specs separately.
-5. Treat cleanup of `.oec-ai`, old project Skills, and old Agents as a later destructive operation
-   requiring its own exact review and confirmation.
+1. 运行 `oec-spec legacy-audit --workspace "$PWD"`，审阅旧 manifest、Skills、Agents 和保留资产。
+2. 初始化新的团队 Spec 根，不修改旧文件。
+3. 只迁移有代码或已确认决策支持的当前事实与长期决策。
+4. 单独提交新的团队 Specs。
+5. 将 `.oec-ai`、旧项目 Skills 和 Agents 的清理作为另一个需要精确确认的破坏性操作。
 
-The migration rationale and measured legacy layout are in [../dev-migration.md](../dev-migration.md).
+迁移依据和旧分发实测见 [../dev-migration.md](../dev-migration.md)。
 
-## Boundaries
+## 边界
 
-- Team Specs contain durable, evidence-backed engineering facts.
-- Change packages contain context and evidence for a non-trivial change.
-- Ordinary implementation, exploration, and validation remain with the main coding agent.
-- E3, SAE, UTP, remote Git, and Feishu writes are outside this plugin.
-- Installing the plugin does not create `.claude`, `.codex`, or `ai-docs` files in a project.
+- Team Specs 只保存稳定、证据支持的工程事实。
+- Change packages 只保存非平凡变更需要的上下文和证据。
+- 普通实现、探索和验证属于主 Coding Agent。
+- E3、SAE、UTP、远端 Git 和飞书写入不属于本 Plugin。
+- 安装不会在项目中创建 `.claude`、`.codex` 或 `ai-docs`。
+- 项目文件只在用户要求管理团队 Specs 并确认对应路径时创建或修改。
 
-Project files are created or changed only when the user asks to manage team Specs and confirms the
-proposed paths.
+## 开发验证
 
-## Reference boundary
-
-The team-current-state and change-context separation is independently implemented after studying
-Trellis; no Trellis AGPL source, templates, hooks, task runtime, or workflow state machine are
-distributed. The focused Skill granularity is informed by Matt Pocock's MIT-licensed engineering
-Skills, but the instructions in this Plugin are written for the OEC contract rather than copied as a
-second general-purpose workflow library.
-
-## Develop and verify
-
-From the Marketplace root:
+在 Marketplace 根执行：
 
 ```bash
 npm ci --ignore-scripts
@@ -126,5 +117,4 @@ claude plugin validate ./oec-engineering
 git diff --check
 ```
 
-The build output `dist/oec-spec.mjs` is committed so a Marketplace installation does not need
-`node_modules`.
+`dist/oec-spec.mjs` 随 Git 提交，因此 Marketplace 安装不依赖 Plugin 内的 `node_modules`。

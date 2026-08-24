@@ -1,15 +1,14 @@
 # oec-e3
 
-`oec-e3` is an MCP-only Claude Code Plugin for guarded E3 platform operations. It has no Agent,
-Skill, Command, Hook, default settings, or generic CRUD surface.
+`oec-e3` 是 MCP-only Claude Code Plugin，负责受门禁保护的 E3 平台操作。它没有 Agent、Skill、
+Command、Hook、默认 settings 或通用 CRUD surface。
 
-The Plugin exposes the four existing PRD publication tools plus six bounded tools for
-development-task planning, requirement selection, creation, progress, and status verification.
-`oec-product@3.x` declares `oec-e3@~1.0.0` as a native dependency; Product installation therefore
-loads this Server without embedding a second E3 runtime.
+Plugin 提供四个 PRD 发布工具，以及六个研发任务规划、需求选择、创建/复用、进度和状态验证工具。
+`oec-product@3.x` 声明 `oec-e3@~1.0.0` 为原生依赖，因此安装 Product 会加载这一 Server，不会再
+内嵌第二套 E3 runtime。
 
-Runtime state is stored under `${CLAUDE_PLUGIN_DATA}`. The committed `dist/e3-server.mjs` bundle runs
-on Node.js 20 or newer without Plugin-local `node_modules`.
+运行时状态保存在 `${CLAUDE_PLUGIN_DATA}`。提交的 `dist/e3-server.mjs` 在 Node.js 20 或更新版本上
+运行，不依赖 Plugin 内的 `node_modules`。
 
 ## Tools
 
@@ -26,17 +25,14 @@ execute_task_progress
 get_development_task_status
 ```
 
-Every remote write is derived from a short-lived immutable plan and requires host user interaction.
-The Server does not expose generic E3 CRUD, defect/test-request workflows, arbitrary field edits, or
-arbitrary payloads.
+所有远端写入都来自短期不可变 plan，并要求宿主人类交互。Server 不提供通用 E3 CRUD、缺陷/测试
+请求工作流、任意字段编辑或任意 payload。
 
-## Real acceptance
+## 真实验收
 
-On 2026-08-21, the authorized non-production space `OBU-AI提效组` completed a real journey with new
-`oec-e3` Plugin Data: PRD publication and status, exact repeat reuse, development task creation and
-reuse, start, worklog, completion, and final status verification. The final task read-back reported
-status `3`, progress `100`, and `1.0h` spent. Remote objects were retained; no real partial failure was
-injected.
+2026-08-21，授权非生产空间“OBU-AI提效组”使用新的 `oec-e3` Plugin Data 完成了 PRD 发布与
+status、精确重复复用、研发任务创建/复用、start、worklog、complete 和最终状态回读。最终任务
+read-back 为状态 `3`、进度 `100`、工时 `1.0h`。远端对象保留；没有人为制造真实 partial failure。
 
-The detailed evidence and limits are recorded in
-[E3 platform 3.0.0 real acceptance](../docs/evidence/e3-platform-3.0.0-real-acceptance.md).
+完整证据和未覆盖边界见
+[E3 platform 3.0.0 real acceptance](../docs/evidence/e3-platform-3.0.0-real-acceptance.md)。

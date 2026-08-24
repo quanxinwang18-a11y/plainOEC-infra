@@ -295,13 +295,9 @@ Marketplace: plainOEC-infra
 ├── Plugin: oec-product
 │   └── PM Agent / PRD Skills / oec-e3 dependency
 ├── Plugin: oec-engineering
-    ├── managing-team-specs
-    ├── planning-engineering-changes
-    ├── test-driven-development
-    ├── diagnosing-failures
-    ├── reviewing-code-changes
-    ├── closing-engineering-changes
-    └── deterministic oec-spec runtime
+│   ├── 6 focused Skills
+│   ├── 3 explicit-use Agents
+│   └── deterministic oec-spec runtime
 ├── Plugin: oec-e3
 │   └── PRD publication + development task MCP
 └── Plugin: oec-pipeline
@@ -399,13 +395,13 @@ flowchart LR
 - 前端小修复可以直接完成，不生成无意义任务包。
 - 现有 `oec-product` 全部测试继续通过。
 
-E3、Pipeline、SAE、UTP 和真实部署不属于 `oec-engineering@1.0.0` 验收范围。E3 与 Pipeline 即使由
+E3、Pipeline、SAE、UTP 和真实部署不属于 `oec-engineering@1.3.0` 验收范围。E3 与 Pipeline 即使由
 同一 Marketplace 分发，也保持独立 Plugin 和独立证据；SAE/UTP 在类型化接口与非生产 E2E 完成前，
 不以 Markdown、mock 或静态测试宣称旧平台能力已复现。
 
 ## 10. 当前实现状态
 
-`oec-engineering@1.0.0` 已按上述边界实现：
+`oec-engineering@1.3.0` 已按上述边界实现：
 
 - 6 个原生 Skills，3 个可选 Agent，0 Hook，0 MCP，0 Command。
 - `oec-spec` source、CLI、可执行入口和无依赖 bundle。

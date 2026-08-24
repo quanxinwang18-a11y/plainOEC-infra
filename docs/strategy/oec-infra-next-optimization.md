@@ -23,10 +23,12 @@
 
 当前 `plainOEC-infra@3.0.0` 已经完成第一阶段原生化：
 
-- Product：显式 PM Agent + 三个以用户目标划分的 PRD Skills。
-- Engineering：六个聚焦工程 Skills，不创建通用 Dev Agent。
+- Product：显式 PM Agent + 三个以用户目标划分并带跨域负向边界的 PRD Skills。
+- Engineering：六个聚焦工程 Skills + 三个显式使用的可选 Agent；不创建默认接管主线程的通用
+  Dev Agent，也不向非目标会话注入 SessionStart 上下文。
 - E3：独立 MCP-only Plugin，提供十个受控工具。
 - Pipeline：独立 MCP-only Plugin，提供四个既有流水线工具。
+- Common：一个零运行时依赖的 HTML-first 幻灯片 Skill。
 - 分发：Git Marketplace + 自足 bundle，不再通过 SessionStart 向业务仓库同步配置。
 
 这里的迁移不是把旧 Skill 文案缩短后重新命名，而是先把一个旧 Skill 中混在一起的**用户目标、领域
@@ -34,7 +36,7 @@
 MCP 和项目文档。对于原来“Skill 读取说明后执行 Python/TypeScript 调平台”的能力，业务语义仍留在
 Skill，认证、远端选择、写入、幂等和状态验证则进入 MCP；完整拆分方法见第 5.3 节。
 
-当前自动测试为 99/99。E3 的 PRD 发布与研发任务主链已在授权非生产空间完成真实验收；Pipeline
+当前完整自动测试全部通过，精确数量以 `npm test` 输出为准。E3 的 PRD 发布与研发任务主链已在授权非生产空间完成真实验收；Pipeline
 当前只有 mock/integration 证据；Testing、UTP、SAE 尚未进入 Marketplace。
 
 ### 1.3 下一阶段建议
@@ -665,14 +667,15 @@ Plugin 的粒度则由生命周期决定：当外部事实来源、认证权限�
 
 ![plainOEC-infra 3.0 当前领域 Plugin 与平台 Plugin 架构](assets/oec-infra-next-optimization/05-current-architecture.svg)
 
-*图：Product 明确依赖 E3；Engineering 与 E3、Pipeline 仅按使用场景组合。*
+*图：Product 明确依赖 E3；Engineering 与 E3、Pipeline 仅按使用场景组合；Common 独立提供通用 HTML 幻灯片。*
 
 | Plugin | Agent | Skills | MCP | 作用与边界 |
 | --- | ---: | ---: | ---: | --- |
-| `oec-product@3.0.0` | 1 | 3 | 0 | PRD 写作、只读评审和发布语义；依赖 E3 |
-| `oec-engineering@1.0.0` | 0 | 6 | 0 | 团队 Specs、规划、显式 TDD、诊断、review、close |
+| `oec-product@3.0.1` | 1 | 3 | 0 | PRD 写作、只读评审和发布语义；依赖 E3 |
+| `oec-engineering@1.3.0` | 3 | 6 | 0 | 可选团队 Specs、规划、显式 TDD、诊断、review、close |
 | `oec-e3@1.0.0` | 0 | 0 | 1 | 4 个 PRD 发布工具 + 6 个研发任务工具 |
 | `oec-pipeline@1.0.0` | 0 | 0 | 1 | 既有 dev/test 流水线的受控 prepare/execute/status |
+| `oec-common@0.2.0` | 0 | 1 | 0 | 零依赖 HTML-first 幻灯片 |
 
 Product 明确向用户承诺 E3 发布，所以声明 `oec-e3@~1.0.0` dependency。Engineering 的六个 Skills
 不以 E3 或 Pipeline 为完成前提，因此与平台 Plugin 是按场景组合关系，不作强依赖。
@@ -697,6 +700,7 @@ claude plugin marketplace add \
 claude plugin install oec-product@plainOEC-infra --scope user
 claude plugin install oec-engineering@plainOEC-infra --scope user
 claude plugin install oec-pipeline@plainOEC-infra --scope user
+claude plugin install oec-common@plainOEC-infra --scope user
 ```
 
 - Git Marketplace 直接分发版本化 Plugin。
@@ -712,7 +716,8 @@ claude plugin install oec-pipeline@plainOEC-infra --scope user
 | 能力 | 实现 | 自动验证 | 真实外部验收 |
 | --- | --- | --- | --- |
 | Product Agent/Skills | 已完成 | 组件、触发、artifact、bundle 回归 | PM 使用旅程已有 fixture 证据 |
-| Engineering Skills/Specs | 已完成 | 结构、路径选择、bundle、Java/前端 fixture | 不涉及外部平台写入 |
+| Engineering Skills/Specs/Agents | 已完成 | 结构、Agent parity、路径选择、bundle、Java/前端 fixture | 不涉及外部平台写入 |
+| Common HTML Slides | 已完成 | 组件、零依赖 shell、真实浏览器 smoke | 不涉及外部平台写入 |
 | E3 PRD 发布 | 已完成 | OAuth、幂等、漂移、partial 等 | “OBU-AI提效组”真实通过 |
 | E3 研发任务 | 已完成 | 创建/复用、进度、status 等 | “OBU-AI提效组”真实通过 |
 | Pipeline | 已完成 | mock/integration 与 bundle | 未执行真实非生产流水线 |
@@ -722,7 +727,7 @@ claude plugin install oec-pipeline@plainOEC-infra --scope user
 
 *图：真实旅程证明创建、复用、进度和 read-back 主链；图中同时标明不能由此推出的结论。*
 
-当前完整测试为 99/99。E3 的真实验收不是“工具能够注册”或“mock 返回成功”，而是完成了图中的远端
+当前完整自动测试全部通过，精确数量以 `npm test` 输出为准。E3 的真实验收不是“工具能够注册”或“mock 返回成功”，而是完成了图中的远端
 旅程。
 
 [脱敏验收记录](../evidence/e3-platform-3.0.0-real-acceptance.md)没有保存 token、远端内部 ID 或原始
@@ -977,11 +982,12 @@ OEC-infra 后续不应继续做“更多 Prompt、更多角色路由、更多统
 | 项目 | 版本/状态 |
 | --- | --- |
 | Marketplace | `3.0.0` |
-| Product | `3.0.0`，本地 tag `oec-product--v3.0.0` |
-| Engineering | `1.0.0`，tag `oec-engineering--v1.0.0` |
+| Product | `3.0.1`，本轮未创建新 tag |
+| Engineering | `1.3.0`，本轮未创建新 tag |
 | E3 | `1.0.0`，本地 tag `oec-e3--v1.0.0` |
 | Pipeline | `1.0.0`，本地 tag `oec-pipeline--v1.0.0` |
-| 当前自动测试 | 99/99 |
+| Common | `0.2.0`，本轮未创建新 tag |
+| 当前自动测试 | 全部通过；精确数量以 `npm test` 输出为准 |
 | 远端发布 | 3.0 tags 尚未推送远端 |
 
 ## 附录 C：可复核证据索引
@@ -997,8 +1003,8 @@ OEC-infra 后续不应继续做“更多 Prompt、更多角色路由、更多统
 | 旧 Plugin 是 bootstrap | `plugins/oec-ai/.claude-plugin/plugin.json`、`plugins/oec-ai/skills/oec-project-init/`、`plugins/oec-ai/hooks/hooks.json` | 原生入口是初始化 Skill 与 SessionStart Hook；角色资产位于 payload |
 | 旧平台并非没有代码封装 | `oec-infra/skills/tools/oec-manage-task/scripts/client.py`、`oec-infra/skills/tools/oec-git-devops/devops/scripts/client.ts`、`oec-infra/skills/test/skills/platform-gateway/scripts/gateway_client.py` | OAuth、401、响应处理和部分重试已有确定性实现 |
 | 旧平台边界仍不完整 | `oec-infra/skills/tools/oec-manage-task/SKILL.md` 与上述 clients | 模型仍负责文件路由、入口/参数组合和跨步骤流程；Pipeline Client 对写操作使用通用失败重试 |
-| 当前组件层级与 dependency | [Marketplace manifest](../../.claude-plugin/marketplace.json)、[Product manifest](../../oec-product/.claude-plugin/plugin.json)、[Engineering manifest](../../oec-engineering/.claude-plugin/plugin.json)、[E3 manifest](../../oec-e3/.claude-plugin/plugin.json)、[Pipeline manifest](../../oec-pipeline/.claude-plugin/plugin.json) | 当前版本、分发单元和 Product→E3 依赖 |
-| Product/Engineering 的结构与 fixture | [Product 组件测试](../../oec-product/tests/components.test.mjs)、[Engineering 组件测试](../../oec-engineering/tests/components.test.mjs)、[Engineering 分发测试](../../oec-engineering/tests/distribution.test.mjs) | 原生组件、负向触发文本、Spec 工具和无依赖 bundle 等确定性契约 |
+| 当前组件层级与 dependency | [Marketplace manifest](../../.claude-plugin/marketplace.json)、[Product manifest](../../oec-product/.claude-plugin/plugin.json)、[Engineering manifest](../../oec-engineering/.claude-plugin/plugin.json)、[E3 manifest](../../oec-e3/.claude-plugin/plugin.json)、[Pipeline manifest](../../oec-pipeline/.claude-plugin/plugin.json)、[Common manifest](../../oec-common/.claude-plugin/plugin.json) | 当前版本、分发单元和 Product→E3 依赖 |
+| Product/Engineering/Common 的结构与 fixture | [Product 组件测试](../../oec-product/tests/components.test.mjs)、[Engineering 组件测试](../../oec-engineering/tests/components.test.mjs)、[Engineering 分发测试](../../oec-engineering/tests/distribution.test.mjs)、[Common 组件测试](../../oec-common/tests/components.test.mjs) | 原生组件、负向触发文本、Agent parity、Spec 工具、HTML deck shell 和无依赖 bundle 等确定性契约 |
 | E3/Pipeline 的 mock 与 bundle | [E3 mock journey](../../oec-e3/servers/e3/tests/journey.test.mjs)、[E3 bundle 测试](../../oec-e3/servers/e3/tests/distribution.test.mjs)、[Pipeline planner 测试](../../oec-pipeline/servers/pipeline/tests/planner.test.mjs)、[Pipeline bundle 测试](../../oec-pipeline/servers/pipeline/tests/distribution.test.mjs) | 测试替身下的计划/恢复分支和 MCP stdio 分发，不证明真实远端运行 |
 | E3 真实非生产旅程 | [脱敏验收记录](../evidence/e3-platform-3.0.0-real-acceptance.md) | 授权空间、唯一标识、execute/status/read-back 和明确未覆盖边界 |
 | 当前宿主版本 | 2026-08-21 执行 `claude --version` 返回 `2.1.237 (Claude Code)` | 当时验证使用的 Claude Code 版本，不代表未来版本行为 |

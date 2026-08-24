@@ -8,3 +8,12 @@
 - 不新增 legacy `commands/`，新用户入口使用 `skills/<name>/SKILL.md`。
 - 不用提示词复刻 MCP 已确定性实现的认证、API、幂等或恢复逻辑。
 - 每个提交保持单一目的并带对应验证；避免过度设计。
+
+## 语言与用户入口
+
+- Marketplace、Plugin description 和面向 OEC 用户的 README 使用中文。
+- Skill/Agent frontmatter、正文、代码标识和 schema 使用英文。
+- eval corpus 有意覆盖中文和英文真实请求，不为形式统一改成单一语言。
+- 工具名、状态值、版本、文件路径和命令保持原始标识，不翻译或另造别名。
+- 用户文档优先描述自然语言入口；只有真实 Skill/Command 才使用 `/plugin:name`，Agent 使用宿主原生
+  派发或 `@` picker。

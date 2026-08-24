@@ -1,7 +1,7 @@
 {
   "name": "oec-engineering",
   "version": "1.3.0",
-  "description": "OEC engineering — optional team Specs, technical planning, explicit TDD, diagnosis, code review, and closing.",
+  "description": "OEC 软件工程能力：可选团队 Specs、技术规划、显式 TDD、困难诊断、代码评审和工程收口。",
   "author": {
     "name": "OEC"
   },

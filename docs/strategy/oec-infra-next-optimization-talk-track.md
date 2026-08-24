@@ -166,12 +166,13 @@ MCP Tool 适合：
 
 ![plainOEC-infra 3.0 当前领域 Plugin 与平台 Plugin 架构](assets/oec-infra-next-optimization/05-current-architecture.svg)
 
-当前结构只讲四个分发单元：
+当前结构包含五个独立分发单元：
 
-- `oec-product@3.0.0`：1 Agent、3 Skills、0 MCP；明确依赖 `oec-e3`。
-- `oec-engineering@1.0.0`：6 Skills、0 Agent、0 MCP；主 Coding Agent 负责实际开发。
+- `oec-product@3.0.1`：1 Agent、3 Skills、0 MCP；明确依赖 `oec-e3`。
+- `oec-engineering@1.3.0`：6 Skills、3 个显式使用的可选 Agent、0 MCP；普通编码仍由主 Coding Agent 负责。
 - `oec-e3@1.0.0`：1 MCP Server、10 Tools；负责 PRD 发布和研发任务主链。
 - `oec-pipeline@1.0.0`：1 MCP Server、4 Tools；只运行既有 dev/test 流水线。
+- `oec-common@0.2.0`：1 Skill、0 Agent、0 MCP；提供零依赖 HTML-first 幻灯片。
 
 强调两种关系：
 
@@ -189,7 +190,7 @@ MCP Tool 适合：
 
 当前能够明确说明：
 
-- 99/99 自动测试通过。
+- 完整自动测试全部通过，精确数量以 `npm test` 输出为准。
 - E3 PRD 发布和研发任务主链已在授权的“OBU-AI提效组”完成真实非生产验收。
 - E3 验证了精确空间选择、发布、status、重复 prepare、任务创建、start/log/complete 和最终 verified。
 - Pipeline 目前只有 mock/integration 和 bundle 证据，没有真实非生产流水线运行结论。
@@ -249,7 +250,7 @@ MCP Tool 适合：
 2. `02-native-vs-file-routing.svg`：Read 文件为什么不等于原生 Skill。
 3. `12-legacy-skill-decomposition.svg`：旧能力按责任重新拆分。
 4. `13-script-vs-mcp.svg`：本地确定性脚本与外部平台 MCP 的边界。
-5. `05-current-architecture.svg`：当前 3.0 的四个 Plugin。
+5. `05-current-architecture.svg`：当前 3.0 Marketplace 的五个 Plugin。
 6. `08-evidence-gated-roadmap.svg`：下一阶段测试迁移与平台准入顺序。
 
 压缩版仍必须讲清两条边界：E3 已完成真实非生产验收；Pipeline、Testing、UTP、SAE 尚不能借用该

@@ -5,6 +5,7 @@ import test from 'node:test';
 import YAML from 'yaml';
 
 const pluginRoot = resolve(import.meta.dirname, '..');
+const forbiddenAgentSlash = ['/oec-engineering', 'oec-'].join(':');
 
 function skill(name) {
   const relativePath = `skills/${name}/SKILL.md`;
@@ -132,9 +133,9 @@ test('only closing is manual-only and no Skill recreates the legacy router', () 
     assert.doesNotMatch(item.text, /oec-dev-task|oec-dev-flow|STAGE\.md|\.codex\/skills/);
     assert.doesNotMatch(item.text, /Read .*SKILL\.md|读取.*SKILL\.md/i);
     assert.doesNotMatch(item.text, /OAuth|HTTP payload|token cache|partial resume/i);
-    assert.doesNotMatch(item.text, /\/oec-engineering:oec-/);
+    assert.equal(item.text.includes(forbiddenAgentSlash), false);
   }
-  assert.doesNotMatch(readFileSync(resolve(pluginRoot, 'README.md'), 'utf8'), /\/oec-engineering:oec-/);
+  assert.equal(readFileSync(resolve(pluginRoot, 'README.md'), 'utf8').includes(forbiddenAgentSlash), false);
 });
 
 test('team Spec assets encode conditional artifacts and safe project ownership', () => {
