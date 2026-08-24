@@ -1,9 +1,10 @@
 ---
 name: oec-implement
 description: |
-  Implements a planned code change within the stated boundary. Reads
-  change artifacts and team Specs, writes code, runs typecheck and lint.
-  Does not commit, push, or merge.
+  Use only when the user explicitly requests isolated implementation, or an
+  explicitly invoked OEC Skill delegates a bounded planned change. Implements
+  within that boundary, reads change artifacts and team Specs, and verifies the
+  result. Do not use for ordinary coding. Does not commit, push, or merge.
 tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 

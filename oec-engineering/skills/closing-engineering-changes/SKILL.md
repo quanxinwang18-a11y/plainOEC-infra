@@ -34,9 +34,8 @@ Before reconciling, confirm that key verification has happened against the final
 
 An untested or unreviewed change is not a closed change. Report what was verified and what was
 not. If the change was implemented in the main session and has not been independently reviewed,
-consider dispatching an oec-check agent for fresh eyes:
-
-`/oec-engineering:oec-check <change-id>`
+consider dispatching the `oec-check` subagent with the change ID for fresh eyes when the user wants
+an independent review.
 
 Run `oec-spec select --workspace "$PWD" --paths <changed paths> --format json`. Compare the selected
 Specs and accepted ADRs with the implemented behavior:

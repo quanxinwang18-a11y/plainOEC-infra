@@ -1,12 +1,11 @@
 {
   "name": "oec-engineering",
-  "version": "1.2.0",
-  "description": "OEC engineering — team Specs, technical planning, TDD, code review, diagnosis, and closing. Start with /oec-engineering:managing-team-specs init.",
+  "version": "1.3.0",
+  "description": "OEC engineering — optional team Specs, technical planning, explicit TDD, diagnosis, code review, and closing.",
   "author": {
     "name": "OEC"
   },
   "license": "MIT",
   "keywords": ["engineering", "team-specs", "planning", "code-review", "tdd", "diagnosis", "closing"],
-  "skills": "./skills/",
-  "hooks": {}
+  "skills": "./skills/"
 }

@@ -69,10 +69,11 @@ on your own.
 After planning is complete, the change can be implemented in the main session or by dispatching
 an isolated agent:
 
-- `/oec-engineering:oec-implement <change-id>` — the agent reads only the change artifacts and
-  team Specs. Its context is clean, without the planning discussion.
-- `/oec-engineering:oec-research <change-id> <question>` — if the change needs research first,
-  the agent persists findings to the change directory and reports back.
+- Dispatch the `oec-implement` subagent with the change ID when the user wants isolated
+  implementation. It reads only the change artifacts and team Specs, without the planning
+  discussion.
+- Dispatch the `oec-research` subagent with the change ID and question when the user wants bounded
+  research first. It persists findings to the change directory and reports back.
 
 Planning is read-only with respect to business code and external systems. Do not implement the
 change, create E3 tasks, deploy, or commit Git as part of this Skill.

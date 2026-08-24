@@ -19,8 +19,8 @@
     },
     {
       "name": "oec-engineering",
-      "version": "1.2.0",
-      "description": "OEC 软件工程能力：团队 Specs、技术规划、TDD、诊断、代码评审和工程收口。含 SessionStart Hook、subagent 和 Codex 适配。",
+      "version": "1.3.0",
+      "description": "OEC 软件工程能力：可选团队 Specs、技术规划、显式 TDD、诊断、代码评审和工程收口；含 3 个显式使用的 subagent，Codex 配置仍为实验性。",
       "source": "./oec-engineering",
       "category": "development"
     },

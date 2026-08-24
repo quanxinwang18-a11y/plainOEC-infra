@@ -1,9 +1,10 @@
 ---
 name: oec-check
 description: |
-  Reviews uncommitted code changes against team Specs and change
-  artifacts. Fixes mechanical issues directly. Reports design or
-  judgment issues without fixing them. Does not commit.
+  Use only when the user explicitly requests a fresh-eyes review, or an
+  explicitly invoked OEC Skill delegates one. Reviews uncommitted changes
+  against team Specs and change artifacts, fixes mechanical issues, and reports
+  judgment issues. Do not use for ordinary coding. Does not commit.
 tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 

@@ -310,7 +310,8 @@ Marketplace: plainOEC-infra
 
 `oec-engineering` 第一版没有 Agent、MCP、Commands、Hooks 或 settings。主 Coding Agent 就是研发执行者；
 新的 Skills 只在特定目标下改变它的判断。它不依赖 E3 或 Pipeline，开发者只在需要外部平台能力时
-单独安装对应 Plugin。
+单独安装对应 Plugin。1.3.0 提供三个显式使用的可选 Agent，并移除了会影响非目标会话的
+SessionStart Hook。
 
 ## 6. OEC 团队 Spec 闭环
 
@@ -389,7 +390,7 @@ flowchart LR
 
 迁移成功必须证明：
 
-- Claude Code 原生发现 6 个独立 Skills，不发现 Dev Agent、Commands、Hooks 或 MCP。
+- Claude Code 原生发现 6 个独立 Skills 和 3 个可选 Agent，不发现 Dev Agent、Commands 或 MCP。
 - 普通实现和简单缺陷不会被强制进入 planning、TDD 或 closing。
 - 技术方案、TDD、困难诊断、代码评审和 Spec 沉淀分别命中唯一能力。
 - 路径作用域选择、Spec/ADR/变更引用和旧配置审计可确定性执行。
@@ -406,7 +407,7 @@ E3、Pipeline、SAE、UTP 和真实部署不属于 `oec-engineering@1.0.0` 验�
 
 `oec-engineering@1.0.0` 已按上述边界实现：
 
-- 6 个原生 Skills，0 Agent、0 MCP、0 Command、0 Hook。
+- 6 个原生 Skills，3 个可选 Agent，0 Hook，0 MCP，0 Command。
 - `oec-spec` source、CLI、可执行入口和无依赖 bundle。
 - Spec/ADR/change contract、路径选择、链接与引用校验、旧安装只读审计。
 - Java/Spring 和前端路径 fixture、bundle 隔离执行及正负触发 cases。

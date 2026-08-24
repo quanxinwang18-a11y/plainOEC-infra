@@ -14,6 +14,29 @@ function skill(name) {
   return { metadata: YAML.parse(match[1]), body: text.slice(match[0].length), text };
 }
 
+function claudeAgent(name) {
+  const relativePath = `agents/${name}.md`;
+  const text = readFileSync(resolve(pluginRoot, relativePath), 'utf8');
+  const match = /^---\n([\s\S]*?)\n---\n/.exec(text);
+  assert.ok(match, `${relativePath} must have YAML frontmatter`);
+  const body = text.slice(match[0].length).trim().replace(/^# .*\n\n/, '');
+  return { metadata: YAML.parse(match[1]), body };
+}
+
+function codexAgent(name) {
+  const relativePath = `.codex-plugin/agents/${name}.toml`;
+  const text = readFileSync(resolve(pluginRoot, relativePath), 'utf8');
+  const description = /^description = "([^"]+)"$/m.exec(text)?.[1];
+  const instructions = /developer_instructions = """\n([\s\S]*?)\n"""/.exec(text)?.[1]?.trim();
+  assert.ok(description, `${relativePath} must declare description`);
+  assert.ok(instructions, `${relativePath} must declare developer_instructions`);
+  return { description, instructions };
+}
+
+function compact(value) {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
 const expectedSkills = [
   'closing-engineering-changes',
   'diagnosing-failures',
@@ -26,7 +49,8 @@ const expectedSkills = [
 test('engineering plugin exposes six native Skills and no orchestration components', () => {
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-engineering');
-  assert.equal(manifest.version, '1.2.0');
+  assert.equal(manifest.version, '1.3.0');
+  // Agents and Skills are auto-discovered from directories, not declared in plugin.json.
   for (const key of ['skills', 'agents', 'mcpServers', 'commands', 'hooks']) assert.equal(key in manifest, false);
 
   const discovered = readdirSync(resolve(pluginRoot, 'skills'), { withFileTypes: true })
@@ -63,6 +87,17 @@ test('engineering plugin exposes six native Skills and no orchestration componen
   assert.equal(engineeringEntry.source, './oec-engineering');
 });
 
+test('Claude and experimental Codex Agents keep explicit-use policy and matching instructions', () => {
+  for (const name of ['oec-check', 'oec-implement', 'oec-research']) {
+    const claude = claudeAgent(name);
+    const codex = codexAgent(name);
+    assert.match(compact(claude.metadata.description), /user explicitly requests/);
+    assert.match(compact(claude.metadata.description), /explicitly invoked OEC Skill delegates/);
+    assert.equal(compact(claude.metadata.description), compact(codex.description));
+    assert.equal(claude.body, codex.instructions);
+  }
+});
+
 test('skill descriptions make positive and negative judgment boundaries explicit', () => {
   for (const name of expectedSkills) {
     const item = skill(name);
@@ -97,7 +132,9 @@ test('only closing is manual-only and no Skill recreates the legacy router', () 
     assert.doesNotMatch(item.text, /oec-dev-task|oec-dev-flow|STAGE\.md|\.codex\/skills/);
     assert.doesNotMatch(item.text, /Read .*SKILL\.md|读取.*SKILL\.md/i);
     assert.doesNotMatch(item.text, /OAuth|HTTP payload|token cache|partial resume/i);
+    assert.doesNotMatch(item.text, /\/oec-engineering:oec-/);
   }
+  assert.doesNotMatch(readFileSync(resolve(pluginRoot, 'README.md'), 'utf8'), /\/oec-engineering:oec-/);
 });
 
 test('team Spec assets encode conditional artifacts and safe project ownership', () => {

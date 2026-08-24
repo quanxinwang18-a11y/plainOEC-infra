@@ -76,4 +76,7 @@ test('a Git archive contains self-contained Plugin payloads without node_modules
   assert.ok((await readFile(resolve(extracted, 'oec-product', 'skills/writing-prds/runtime/check-artifacts.mjs'))).length > 0);
   assert.ok((await readFile(resolve(extracted, 'oec-e3', 'dist/e3-server.mjs'))).length > 0);
   assert.ok((await readFile(resolve(extracted, 'oec-pipeline', 'dist/pipeline-server.mjs'))).length > 0);
+  // Engineering components are self-contained without node_modules.
+  assert.ok((await readFile(resolve(extracted, 'oec-engineering', 'dist/oec-spec.mjs'))).length > 0);
+  assert.ok((await readFile(resolve(extracted, 'oec-engineering', 'agents/oec-implement.md'))).length > 0);
 });

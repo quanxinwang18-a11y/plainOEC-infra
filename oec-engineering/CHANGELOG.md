@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.0
+
+- Remove the SessionStart Hook so installing the Plugin adds no context to unrelated sessions.
+- Make the three optional sub-agents explicit-use capabilities and document host-native dispatch.
+- Keep the Codex configuration experimental until Agent discovery and `oec-spec` availability pass
+  a real isolated installation test.
+
 ## 1.2.0
 
 - Add SessionStart Hook that injects a compact capabilities table, project Spec state

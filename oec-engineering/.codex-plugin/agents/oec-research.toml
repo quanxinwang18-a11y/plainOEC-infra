@@ -1,5 +1,5 @@
 name = "oec-research"
-description = "Investigates technical questions against primary sources. Persists every finding as a file under the change's research/ directory. Does not modify code, Specs, or change documents."
+description = "Use only when the user explicitly requests bounded background research, or an explicitly invoked OEC Skill delegates it. Investigates primary sources and persists findings under the change's research directory. Do not use for ordinary exploration. Does not modify code, Specs, or change documents."
 sandbox_mode = "workspace-write"
 
 developer_instructions = """

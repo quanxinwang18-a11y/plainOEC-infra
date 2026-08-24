@@ -40,19 +40,18 @@ into the project.
 
 ### Agents
 
-```text
-/oec-engineering:oec-implement   (isolated implementation)
-/oec-engineering:oec-check       (fresh-eyes review)
-/oec-engineering:oec-research    (background research)
-```
+Ask Claude to use `oec-implement` for isolated implementation, `oec-check` for a fresh-eyes
+review, or `oec-research` for bounded background research. To guarantee one runs, select its
+plugin-scoped name from Claude Code's `@` agent picker. These are Agents, not slash commands.
 
 Agents are optional — implementation, review, and research can also be done in the main
-session. TDD applies only when the user explicitly asks for test-first work. Closing is
-manual-only because it can update project documentation and commit exact files.
+session. They run only when the user explicitly requests them or an explicitly invoked OEC Skill
+delegates a bounded task. TDD applies only when the user explicitly asks for test-first work.
+Closing is manual-only because it can update project documentation and commit exact files.
 
 ## Initialize team Specs
 
-Explicitly request initialization:
+Initialize only when the team wants repository-owned engineering guidance:
 
 ```text
 /oec-engineering:managing-team-specs init
