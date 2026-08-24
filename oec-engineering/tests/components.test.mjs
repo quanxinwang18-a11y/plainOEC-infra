@@ -35,11 +35,17 @@ test('engineering plugin exposes six native Skills and no orchestration componen
     .sort();
   assert.deepEqual(discovered, expectedSkills);
 
-  for (const path of ['agents', '.mcp.json', 'commands', 'hooks', 'settings.json', 'references', 'assets', 'lib']) {
+  for (const path of ['.mcp.json', 'commands', 'hooks', 'settings.json', 'references', 'assets', 'lib']) {
     assert.equal(existsSync(resolve(pluginRoot, path)), false, `${path} must not exist at plugin root`);
   }
   assert.equal(existsSync(resolve(pluginRoot, 'package.json')), false);
   assert.equal(existsSync(resolve(pluginRoot, 'package-lock.json')), false);
+
+  const agentFiles = readdirSync(resolve(pluginRoot, 'agents'), { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
+    .map((entry) => entry.name)
+    .sort();
+  assert.deepEqual(agentFiles, ['oec-check.md', 'oec-implement.md', 'oec-research.md']);
 
   const marketplace = JSON.parse(readFileSync(resolve(pluginRoot, '..', '.claude-plugin', 'marketplace.json'), 'utf8'));
   const packageManifest = JSON.parse(readFileSync(resolve(pluginRoot, '..', 'package.json'), 'utf8'));
