@@ -37,6 +37,13 @@
       "description": "现有 dev/test 流水线的受控发现、执行和状态验证。",
       "source": "./oec-pipeline",
       "category": "development"
+    },
+    {
+      "name": "oec-common",
+      "version": "0.1.0",
+      "description": "OEC 公共能力包：HTML 格式幻灯片制作、GIF 录制等通用工具。",
+      "source": "./oec-common",
+      "category": "utility"
     }
   ]
 }

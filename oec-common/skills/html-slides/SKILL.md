@@ -1,0 +1,6 @@
+---
+name: html-slides
+description: TODO — when should Claude use this skill? Add positive and negative trigger boundaries.
+---
+
+TODO: skill instructions for creating HTML-based presentation slides.

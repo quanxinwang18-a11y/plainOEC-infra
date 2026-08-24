@@ -56,6 +56,7 @@ test('engineering plugin exposes six native Skills and no orchestration componen
     'oec-engineering',
     'oec-e3',
     'oec-pipeline',
+    'oec-common',
   ]);
   const engineeringEntry = marketplace.plugins.find((plugin) => plugin.name === manifest.name);
   assert.equal(engineeringEntry.version, manifest.version);

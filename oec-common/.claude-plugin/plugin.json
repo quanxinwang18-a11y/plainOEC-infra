@@ -1,0 +1,10 @@
+{
+  "name": "oec-common",
+  "version": "0.1.0",
+  "description": "OEC 公共能力：HTML 格式幻灯片制作、GIF 录制等通用工具型 Skills。",
+  "author": {
+    "name": "OEC"
+  },
+  "keywords": ["common", "slides", "gif", "utility"],
+  "license": "MIT"
+}

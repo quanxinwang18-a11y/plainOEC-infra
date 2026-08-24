@@ -33,7 +33,7 @@ test('Marketplace versions and native Plugin boundaries are internally consisten
   assert.equal(marketplace.version, '3.0.0');
   assert.equal(packageManifest.version, marketplace.version);
   assert.deepEqual(marketplace.plugins.map((plugin) => plugin.name), [
-    'oec-product', 'oec-engineering', 'oec-e3', 'oec-pipeline',
+    'oec-product', 'oec-engineering', 'oec-e3', 'oec-pipeline', 'oec-common',
   ]);
   for (const entry of marketplace.plugins) {
     assert.equal((await manifest(entry.name)).version, entry.version, entry.name);
@@ -44,6 +44,7 @@ test('Marketplace versions and native Plugin boundaries are internally consisten
   assert.equal(await skillCount('oec-engineering'), 6);
   assert.equal(await skillCount('oec-e3'), 0);
   assert.equal(await skillCount('oec-pipeline'), 0);
+  assert.equal(await skillCount('oec-common'), 2);
 });
 
 test('only platform Plugins own MCP Servers and tool counts remain bounded', async () => {
