@@ -24,6 +24,17 @@ to satisfy this Skill.
 
 ## Reconcile durable knowledge
 
+Before reconciling, confirm that key verification has happened against the final diff:
+
+- Run the project's test command if tests have not already produced trustworthy current results.
+- If the change touches a Spec's responsibility, verify the implementation matches the Spec's
+  invariants.
+- If the user explicitly invoked TDD or code-review earlier, confirm those results are still valid
+  against the final diff.
+
+An untested or unreviewed change is not a closed change. Report what was verified and what was
+not.
+
 Run `oec-spec select --workspace "$PWD" --paths <changed paths> --format json`. Compare the selected
 Specs and accepted ADRs with the implemented behavior:
 
