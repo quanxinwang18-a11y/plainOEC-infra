@@ -42,21 +42,25 @@ fi
 context="<oec-engineering>
 ## Capabilities
 
-You have oec-engineering installed. Use capabilities when they apply:
+You have oec-engineering installed. Use capabilities when they match the situation.
 
-| When you need to            | Use                        |
-|-----------------------------|----------------------------|
-| Init/update team Specs      | managing-team-specs        |
-| Plan a technical change     | planning-engineering-changes |
-| Implement test-first        | test-driven-development    |
-| Diagnose a hard failure     | diagnosing-failures        |
-| Review code                 | reviewing-code-changes     |
-| Close a completed change    | closing-engineering-changes |
-| Isolated implementation     | oec-implement (agent)      |
-| Fresh-eyes review           | oec-check (agent)          |
-| Background research         | oec-research (agent)       |
+closing-engineering-changes is user-invoked only — the model cannot call it.
+Other capabilities are available when the situation matches.
 
-For small fixes, implement directly. Capabilities are tools, not requirements."
+| When you need to                 | Use                        |
+|----------------------------------|----------------------------|
+| Init, update, or migrate team Specs | managing-team-specs     |
+| Plan a non-trivial technical change | planning-engineering-changes |
+| Implement test-first             | test-driven-development    |
+| Diagnose hard-to-reproduce failures | diagnosing-failures     |
+| Review code (read-only)          | reviewing-code-changes     |
+| Close a completed change (user only) | closing-engineering-changes |
+| Isolated implementation          | oec-implement (agent)      |
+| Fresh-eyes review                | oec-check (agent)          |
+| Background research              | oec-research (agent)       |
+
+For small, obvious fixes, implement directly in the main session.
+Capabilities are tools, not requirements."
 
 # --- Dynamic: project state ---
 if [ -d "$ENGINEERING_DIR" ]; then

@@ -27,6 +27,8 @@ into the project.
 
 ## Capabilities
 
+### Skills
+
 ```text
 /oec-engineering:managing-team-specs
 /oec-engineering:planning-engineering-changes
@@ -36,9 +38,17 @@ into the project.
 /oec-engineering:closing-engineering-changes
 ```
 
-There is no `oec-dev` Agent. Ordinary coding, exploration, task breakdown, and validation stay in
-the main Claude Code session. TDD applies only when the user explicitly asks for test-first work.
-Closing is manual-only because it can update project documentation and commit exact files.
+### Agents
+
+```text
+/oec-engineering:oec-implement   (isolated implementation)
+/oec-engineering:oec-check       (fresh-eyes review)
+/oec-engineering:oec-research    (background research)
+```
+
+Agents are optional — implementation, review, and research can also be done in the main
+session. TDD applies only when the user explicitly asks for test-first work. Closing is
+manual-only because it can update project documentation and commit exact files.
 
 ## Initialize team Specs
 
