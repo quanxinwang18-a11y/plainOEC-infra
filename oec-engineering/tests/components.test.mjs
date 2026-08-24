@@ -26,7 +26,7 @@ const expectedSkills = [
 test('engineering plugin exposes six native Skills and no orchestration components', () => {
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-engineering');
-  assert.equal(manifest.version, '1.0.0');
+  assert.equal(manifest.version, '1.2.0');
   for (const key of ['skills', 'agents', 'mcpServers', 'commands', 'hooks']) assert.equal(key in manifest, false);
 
   const discovered = readdirSync(resolve(pluginRoot, 'skills'), { withFileTypes: true })

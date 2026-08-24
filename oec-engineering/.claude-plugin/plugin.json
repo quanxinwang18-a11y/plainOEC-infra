@@ -1,6 +1,6 @@
 {
   "name": "oec-engineering",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "OEC engineering — team Specs, technical planning, TDD, code review, diagnosis, and closing. Start with /oec-engineering:managing-team-specs init.",
   "author": {
     "name": "OEC"
