@@ -24,8 +24,8 @@
 当前 `plainOEC-infra@3.0.0` 已经完成第一阶段原生化：
 
 - Product：显式 PM Agent + 三个以用户目标划分并带跨域负向边界的 PRD Skills。
-- Engineering：七个聚焦工程 Skills + 三个显式使用的可选 Agent；旧 `ai-docs` 迁移与工程收口只
-  允许用户触发，不创建默认接管主线程的通用 Dev Agent，也不注入 SessionStart 上下文。
+- Engineering：九个聚焦工程 Skills + 三个显式使用的可选 Agent；旧 `ai-docs` 迁移、工程决策挑战
+  与工程收口只允许用户触发，不创建默认接管主线程的通用 Dev Agent，也不注入 SessionStart 上下文。
 - E3：独立 MCP-only Plugin，提供十个受控工具。
 - Pipeline：独立 MCP-only Plugin，提供四个既有流水线工具。
 - Common：一个零运行时依赖的 HTML-first 幻灯片 Skill。
@@ -520,10 +520,10 @@ Claude Code 官方将这些能力放在不同扩展位置：[扩展模型](https
 | 旧能力集合 | 拆分判断 | 当前或目标落点 |
 | --- | --- | --- |
 | PM Agent + `oec-pm` Mega Skill + PRD 阶段 Skills | PM 身份、写作、评审和发布是不同职责；内部 `SKILL.md` 路由没有独立价值 | `oec-pm` Agent；writing/reviewing/publishing 三个 Skills；模板和契约归属各自 Skill |
-| 原型设计 | 不属于当前 PRD 写作、评审和发布主链，缺少独立触发与维护证据 | 不随 Product 核心能力迁移；有稳定需求和 Owner 后单独评估 |
+| 产品原型设计 | 不属于当前 PRD 写作、评审和发布主链 | 不随 Product 核心能力迁移；Engineering 仅提供用于回答一个交互或状态问题的 throwaway 决策原型，不生成产品原型资产 |
 | 通用产品/系统需求 CRUD | 会把受控发布扩张为平台管理 SDK，权限与失败面明显增大 | 不迁移；只保留 PRD 发布所需的受限 E3 原子操作 |
 | 文件写入策略 | Claude Code 已有原生文件工具，旧 Prompt 规则不提供额外领域价值 | 交还主 Agent；Skill 只保留产物契约和精确提交边界 |
-| `oec-dev-task` + `oec-dev-flow` | 大部分是现代 Coding Agent 已具备的通用研发流程；团队长期事实仍有独立价值 | 删除总控流程；保留七个聚焦 Engineering Skills 和项目侧团队 Specs，旧知识迁移只允许用户显式触发 |
+| `oec-dev-task` + `oec-dev-flow` | 大部分是现代 Coding Agent 已具备的通用研发流程；团队长期事实仍有独立价值 | 删除总控流程；保留九个聚焦 Engineering Skills 和项目侧团队 Specs，旧知识迁移与决策挑战只允许用户显式触发 |
 | `oec-manage-task` 及 E3 scripts | “何时同步哪些任务”需要业务语义；认证、候选、远端写入和恢复必须确定执行 | 研发规划留在主 Agent/Engineering Skills；平台动作进入 `oec-e3` 六个研发任务工具 |
 | PRD 发布说明 + E3 scripts | 子 PRD、Story 和发布确认属于产品语义；HTTP、mapping 和幂等属于平台执行 | publishing Skill 编排 `oec-e3` 四个 PRD 发布工具 |
 | `oec-dev-flow` 中的流水线步骤及平台 Client | 普通开发流程不应强制绑定流水线；运行既有流水线是独立高副作用能力 | 删除固定开发阶段；`oec-pipeline` 提供四个受控运行工具 |
@@ -672,12 +672,12 @@ Plugin 的粒度则由生命周期决定：当外部事实来源、认证权限�
 | Plugin | Agent | Skills | MCP | 作用与边界 |
 | --- | ---: | ---: | ---: | --- |
 | `oec-product@3.0.1` | 1 | 3 | 0 | PRD 写作、只读评审和发布语义；依赖 E3 |
-| `oec-engineering@1.4.0` | 3 | 7 | 0 | 可选团队 Specs、显式旧 `ai-docs` 迁移、规划、TDD、诊断、review、close |
+| `oec-engineering@1.5.0` | 3 | 9 | 0 | 团队 Specs、显式迁移、规划、决策挑战、决策原型、TDD、诊断、review、close |
 | `oec-e3@1.0.0` | 0 | 0 | 1 | 4 个 PRD 发布工具 + 6 个研发任务工具 |
 | `oec-pipeline@1.0.0` | 0 | 0 | 1 | 既有 dev/test 流水线的受控 prepare/execute/status |
 | `oec-common@0.2.0` | 0 | 1 | 0 | 零依赖 HTML-first 幻灯片 |
 
-Product 明确向用户承诺 E3 发布，所以声明 `oec-e3@~1.0.0` dependency。Engineering 的七个 Skills
+Product 明确向用户承诺 E3 发布，所以声明 `oec-e3@~1.0.0` dependency。Engineering 的九个 Skills
 不以 E3 或 Pipeline 为完成前提，因此与平台 Plugin 是按场景组合关系，不作强依赖。
 
 ![根级 PRD artifact contract 在构建时分别进入 Product checker 与 E3 Server bundle](assets/oec-infra-next-optimization/16-shared-artifact-contract.svg)
@@ -983,7 +983,7 @@ OEC-infra 后续不应继续做“更多 Prompt、更多角色路由、更多统
 | --- | --- |
 | Marketplace | `3.0.0` |
 | Product | `3.0.1`，本轮未创建新 tag |
-| Engineering | `1.4.0`，本轮未创建新 tag |
+| Engineering | `1.5.0`，本轮未创建新 tag |
 | E3 | `1.0.0`，本地 tag `oec-e3--v1.0.0` |
 | Pipeline | `1.0.0`，本地 tag `oec-pipeline--v1.0.0` |
 | Common | `0.2.0`，本轮未创建新 tag |

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.0
+
+- Add the explicit-only `challenging-engineering-decisions` Skill for evidence-grounded, user-led
+  pressure testing without transitioning into planning or implementation.
+- Add `prototyping-decisions` for minimal throwaway interaction or state experiments whose result is
+  a human design decision rather than production code.
+- Keep both capabilities independent from task state, external platforms, and the ordinary coding
+  workflow.
+
 ## 1.4.0
 
 - Add the explicit-only `migrating-legacy-ai-docs` Skill for evidence-backed migration into current

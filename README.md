@@ -88,13 +88,15 @@ E3 发布必须由用户显式调用，并经过 prepare、计划确认、宿主
 
 ### 研发
 
-普通工程请求直接用自然语言描述目标；五个 model-invoked Skills 按场景发现。旧 `ai-docs` 迁移和
-工程收口必须显式调用：
+普通工程请求直接用自然语言描述目标；六个 model-invoked Skills 按场景发现。旧 `ai-docs` 迁移、
+工程决策挑战和工程收口必须显式调用：
 
 ```text
 /oec-engineering:managing-team-specs init
 /oec-engineering:migrating-legacy-ai-docs
 /oec-engineering:planning-engineering-changes
+/oec-engineering:challenging-engineering-decisions
+/oec-engineering:prototyping-decisions
 /oec-engineering:test-driven-development
 /oec-engineering:diagnosing-failures
 /oec-engineering:reviewing-code-changes

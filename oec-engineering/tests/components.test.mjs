@@ -39,19 +39,21 @@ function compact(value) {
 }
 
 const expectedSkills = [
+  'challenging-engineering-decisions',
   'closing-engineering-changes',
   'diagnosing-failures',
   'managing-team-specs',
   'migrating-legacy-ai-docs',
   'planning-engineering-changes',
+  'prototyping-decisions',
   'reviewing-code-changes',
   'test-driven-development',
 ];
 
-test('engineering plugin exposes seven native Skills and no orchestration components', () => {
+test('engineering plugin exposes nine native Skills and no orchestration components', () => {
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-engineering');
-  assert.equal(manifest.version, '1.4.0');
+  assert.equal(manifest.version, '1.5.0');
   // Agents and Skills are auto-discovered from directories, not declared in plugin.json.
   for (const key of ['skills', 'agents', 'mcpServers', 'commands', 'hooks']) assert.equal(key in manifest, false);
 
@@ -113,6 +115,10 @@ test('skill descriptions make positive and negative judgment boundaries explicit
   assert.match(skill('migrating-legacy-ai-docs').metadata.description, /user explicitly invokes/);
   assert.match(skill('planning-engineering-changes').metadata.description, /technical design or implementation plan/);
   assert.match(skill('planning-engineering-changes').metadata.description, /small obvious fix/);
+  assert.match(skill('challenging-engineering-decisions').metadata.description, /user explicitly invokes/);
+  assert.match(skill('challenging-engineering-decisions').metadata.description, /ordinary planning/);
+  assert.match(skill('prototyping-decisions').metadata.description, /throwaway/);
+  assert.match(skill('prototyping-decisions').metadata.description, /production features/);
   assert.match(skill('test-driven-development').metadata.description, /explicitly asks for TDD/);
   assert.match(skill('test-driven-development').metadata.description, /merely because.*should have tests/);
   assert.match(skill('diagnosing-failures').metadata.description, /root cause is unclear/);
@@ -121,10 +127,14 @@ test('skill descriptions make positive and negative judgment boundaries explicit
   assert.match(skill('reviewing-code-changes').metadata.description, /Do not use to implement/);
 });
 
-test('migration and closing are manual-only and no Skill recreates the legacy router', () => {
+test('explicit engineering Skills stay manual-only and no Skill recreates the legacy router', () => {
   for (const name of expectedSkills) {
     const item = skill(name);
-    if (name === 'closing-engineering-changes' || name === 'migrating-legacy-ai-docs') {
+    if ([
+      'challenging-engineering-decisions',
+      'closing-engineering-changes',
+      'migrating-legacy-ai-docs',
+    ].includes(name)) {
       assert.equal(item.metadata['disable-model-invocation'], true);
     } else {
       assert.equal(item.metadata['disable-model-invocation'], undefined);
@@ -149,6 +159,13 @@ test('migration and closing are manual-only and no Skill recreates the legacy ro
   ), 'utf8'));
   assert.equal(openai.policy.allow_implicit_invocation, false);
   assert.match(openai.interface.default_prompt, /\$migrating-legacy-ai-docs/);
+
+  const challenge = YAML.parse(readFileSync(resolve(
+    pluginRoot,
+    'skills/challenging-engineering-decisions/agents/openai.yaml',
+  ), 'utf8'));
+  assert.equal(challenge.policy.allow_implicit_invocation, false);
+  assert.match(challenge.interface.default_prompt, /\$challenging-engineering-decisions/);
   assert.equal(readFileSync(resolve(pluginRoot, 'README.md'), 'utf8').includes(forbiddenAgentSlash), false);
 });
 

@@ -46,7 +46,7 @@ test('Marketplace versions and native Plugin boundaries are internally consisten
   }
   assert.deepEqual((await manifest('oec-product')).dependencies, [{ name: 'oec-e3', version: '~1.0.0' }]);
   assert.equal(await skillCount('oec-product'), 3);
-  assert.equal(await skillCount('oec-engineering'), 7);
+  assert.equal(await skillCount('oec-engineering'), 9);
   assert.equal(await skillCount('oec-e3'), 0);
   assert.equal(await skillCount('oec-pipeline'), 0);
   assert.equal(await skillCount('oec-common'), 1);
@@ -128,6 +128,16 @@ test('a Git archive contains self-contained Plugin payloads without node_modules
     extracted,
     'oec-engineering',
     'skills/migrating-legacy-ai-docs/agents/openai.yaml',
+  ))).length > 0);
+  assert.ok((await readFile(resolve(
+    extracted,
+    'oec-engineering',
+    'skills/challenging-engineering-decisions/agents/openai.yaml',
+  ))).length > 0);
+  assert.ok((await readFile(resolve(
+    extracted,
+    'oec-engineering',
+    'skills/prototyping-decisions/SKILL.md',
   ))).length > 0);
   assert.ok((await readFile(resolve(extracted, 'oec-common', 'skills/html-slides/assets/deck-index.html'))).length > 0);
   assert.ok((await readFile(resolve(extracted, 'oec-common', 'skills/html-slides/LICENSE.huashu-design'))).length > 0);

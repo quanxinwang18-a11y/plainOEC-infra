@@ -34,14 +34,18 @@ bundle 需要 PATH 中存在 Node.js 20 或更新版本。
 /oec-engineering:managing-team-specs
 /oec-engineering:migrating-legacy-ai-docs
 /oec-engineering:planning-engineering-changes
+/oec-engineering:challenging-engineering-decisions
+/oec-engineering:prototyping-decisions
 /oec-engineering:test-driven-development
 /oec-engineering:diagnosing-failures
 /oec-engineering:reviewing-code-changes
 /oec-engineering:closing-engineering-changes
 ```
 
-`migrating-legacy-ai-docs` 和 `closing-engineering-changes` 都是 user-invoked only。前者只迁移经
-证据确认的旧工程知识，不删除源文件；TDD 也只在用户明确要求 test-first 时适用。
+`migrating-legacy-ai-docs`、`challenging-engineering-decisions` 和 `closing-engineering-changes`
+都是 user-invoked only。决策挑战只压力测试一个技术决定，不自动进入规划或实现；决策原型只在用户
+明确要求用 throwaway artifact 回答交互或状态问题时发现。迁移不删除源文件，TDD 也只在用户明确
+要求 test-first 时适用。
 
 ### Agents
 
