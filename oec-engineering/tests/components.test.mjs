@@ -201,7 +201,10 @@ test('team Spec assets encode conditional artifacts and safe project ownership',
   assert.match(contract, /specs\/.*system as it is now/s);
   assert.match(contract, /Add `design\.md` only/);
   assert.match(contract, /Add `plan\.md` only/);
+  assert.match(contract, /research\/.*conditional/);
+  assert.match(contract, /Add `research\/` only/);
   assert.match(contract, /Add `evidence\.md` only/);
+  assert.match(contract, /evidence\.md.*conditional/);
   assert.match(contract, /git add -- <exact team Spec, ADR, or change paths>/);
   assert.doesNotMatch(contract, /\.claude\/settings|\.codex\/skills|SessionStart|task\.py/);
 });

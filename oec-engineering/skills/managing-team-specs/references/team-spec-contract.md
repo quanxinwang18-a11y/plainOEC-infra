@@ -16,7 +16,8 @@ ai-docs/engineering/
         ├── change.md
         ├── design.md       # conditional
         ├── plan.md         # conditional
-        └── evidence.md
+        ├── research/       # conditional; bounded Agent research
+        └── evidence.md     # conditional; observed verification only
 ```
 
 `README.md` is a concise index. `specs/` describes the system as it is now. `decisions/` explains
@@ -94,6 +95,7 @@ empty placeholder. Product-linked IDs use `vX.Y.Z-<featureName>`. Unversioned te
   need explanation.
 - Add `plan.md` only when ordering, coordination, rollback, or high-risk verification needs to be
   durable.
+- Add `research/` only when bounded research for this existing change must persist across sessions.
 - Add `evidence.md` only after recording commands and results actually observed for this change.
 - Link product requirements rather than copying them into engineering documents.
 

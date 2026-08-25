@@ -164,6 +164,7 @@ claude plugin eval ./oec-common --runs 1 --ablation with-without --max-cost-usd 
 
 ## 设计与评审文档
 
+- [PlainOEC-infra 完整架构与能力管理报告](docs/strategy/plainoec-infra-management-report.md)：面向 OEC 项目管理者，完整说明当前五个模块、Dev 设计、跨模块协作、证据等级和发布阻塞。
 - [OEC-infra 下一步完整优化思路](docs/strategy/oec-infra-next-optimization.md)：面向技术与管理决策者，说明旧 PM、研发、测试真实流程、配置问题、组件边界与下一阶段路线。
 - [PM 实现迁移 Review](docs/reviews/pm-implementation-review.md)：对比旧真实分发结构与当前原生实现。
 - [平台 Plugin 层级与 MCP 迁移设计](docs/architecture/platform-plugin-hierarchy.md)：记录已实现的领域/平台分层、分发关系与验收边界。

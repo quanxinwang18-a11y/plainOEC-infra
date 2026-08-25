@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { mkdtemp, readFile, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import test from 'node:test';
 
@@ -73,20 +73,67 @@ test('current-facing documentation stays aligned with Marketplace components', a
   const marketplace = JSON.parse(await readFile(resolve(repositoryRoot, '.claude-plugin', 'marketplace.json'), 'utf8'));
   const rootReadme = await readFile(resolve(repositoryRoot, 'README.md'), 'utf8');
   const hierarchy = await readFile(resolve(repositoryRoot, 'docs/architecture/platform-plugin-hierarchy.md'), 'utf8');
-  const strategy = await readFile(resolve(repositoryRoot, 'docs/strategy/oec-infra-next-optimization.md'), 'utf8');
-  const talkTrack = await readFile(resolve(repositoryRoot, 'docs/strategy/oec-infra-next-optimization-talk-track.md'), 'utf8');
+  const reportPath = resolve(repositoryRoot, 'docs/strategy/plainoec-infra-management-report.md');
+  const report = await readFile(reportPath, 'utf8');
   const architectureSvg = await readFile(resolve(
     repositoryRoot,
     'docs/strategy/assets/oec-infra-next-optimization/05-current-architecture.svg',
   ), 'utf8');
+  assert.match(rootReadme, /\[PlainOEC-infra 完整架构与能力管理报告\]\(docs\/strategy\/plainoec-infra-management-report\.md\)/);
+  assert.match(report, new RegExp(`Marketplace.*${marketplace.version.replaceAll('.', '\\.')}`));
   for (const plugin of marketplace.plugins) {
     assert.match(rootReadme, new RegExp(`\\b${plugin.name}\\b`), `${plugin.name} missing from root README`);
-    for (const [label, document] of [['hierarchy', hierarchy], ['strategy', strategy], ['talk track', talkTrack]]) {
+    for (const [label, document] of [['management report', report], ['hierarchy', hierarchy]]) {
       assert.match(document, new RegExp(`${plugin.name.replace('-', '\\-')}@${plugin.version.replaceAll('.', '\\.')}\\b`),
         `${label} must include ${plugin.name}@${plugin.version}`);
     }
     assert.match(architectureSvg, new RegExp(`>${plugin.name}<`), `${plugin.name} missing from current architecture SVG`);
     assert.match(architectureSvg, new RegExp(`>${plugin.version}(?: |<)`), `${plugin.version} missing from current architecture SVG`);
+  }
+
+  for (const [component, count] of [
+    ['Plugin', 5], ['Agent', 4], ['Skill', 13], ['MCP Server', 2], ['MCP Tool', 14], ['Hook', 0], ['Command', 0],
+  ]) {
+    assert.match(report, new RegExp(`\\| ${component} \\| ${count} \\|`), `${component} count missing from report`);
+  }
+
+  for (const name of [
+    'writing-prds', 'reviewing-prds', 'publishing-prds-to-e3',
+    'managing-team-specs', 'migrating-legacy-ai-docs', 'challenging-engineering-decisions',
+    'prototyping-decisions', 'planning-engineering-changes', 'test-driven-development',
+    'diagnosing-failures', 'reviewing-code-changes', 'closing-engineering-changes', 'html-slides',
+  ]) assert.match(report, new RegExp(`\\b${name}\\b`), `${name} missing from report`);
+
+  for (const name of ['oec-pm', 'oec-implement', 'oec-check', 'oec-research']) {
+    assert.match(report, new RegExp(`\\b${name}\\b`), `${name} missing from report`);
+  }
+
+  for (const name of [
+    'prepare_prd_publish', 'select_product_space', 'execute_prd_publish', 'get_prd_publish_status',
+    'prepare_development_tasks', 'select_development_requirement', 'execute_development_tasks',
+    'prepare_task_progress', 'execute_task_progress', 'get_development_task_status',
+    'prepare_pipeline_run', 'select_pipeline_target', 'execute_pipeline_run', 'get_pipeline_run_status',
+  ]) assert.match(report, new RegExp(`\\b${name}\\b`), `${name} missing from report`);
+
+  assert.match(report, /oec-e3@~1\.0\.0/);
+  assert.match(report, /简单、局部、低风险改动/);
+  assert.match(report, /非平凡、高风险或需跨会话保存上下文的改动/);
+  for (const name of [
+    'publishing-prds-to-e3', 'migrating-legacy-ai-docs',
+    'challenging-engineering-decisions', 'closing-engineering-changes',
+  ]) assert.match(report, new RegExp(`${name}[\\s\\S]{0,180}manual-only`), `${name} manual-only boundary missing`);
+  assert.match(report, /prepared → executing → executed/);
+  assert.match(report, /同一个 plan token 最多[\s\S]{0,80}一次 `runPipeline` POST/);
+  assert.match(report, /无法确定账号时[\s\S]{0,100}prepare[\s\S]{0,100}失败/);
+  assert.match(report, /release candidate/);
+  for (const gap of ['LICENSE/notice', 'E3 `1.0.1`', 'Pipeline `1.0.1`', 'LLM eval']) {
+    assert.match(report, new RegExp(gap.replaceAll('.', '\\.')));
+  }
+
+  for (const match of report.matchAll(/!?\[[^\]]+\]\(([^)]+)\)/g)) {
+    const target = match[1].split('#')[0];
+    if (!target || /^(?:https?:|mailto:)/.test(target)) continue;
+    await readFile(resolve(dirname(reportPath), decodeURIComponent(target)));
   }
 
   const currentUsage = [
