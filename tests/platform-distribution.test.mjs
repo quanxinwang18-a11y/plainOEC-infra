@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdtemp, readFile, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import test from 'node:test';
 
@@ -131,6 +132,30 @@ test('current-facing documentation stays aligned with Marketplace components', a
   }
   assert.doesNotMatch(report, /```mermaid/);
   assert.doesNotMatch(report, /(?<!!)\[[^\]]+\]\([^)]+\)/, 'management report must be self-contained');
+
+  const expectedImages = [
+    'assets/plainoec-infra-management-report/01-legacy-to-plainoec.png',
+    'assets/plainoec-infra-management-report/02-five-plugin-architecture.png',
+    'assets/plainoec-infra-management-report/04-product-e3-flow.png',
+    'assets/plainoec-infra-management-report/03-engineering-collaboration.png',
+    'assets/plainoec-infra-management-report/05-pipeline-idempotency.png',
+    'assets/plainoec-infra-management-report/06-evidence-and-release.png',
+  ];
+  const imageMatches = [...report.matchAll(/!\[([^\]]+)\]\((assets\/plainoec-infra-management-report\/[^)]+\.png)\)\n\n\*图：/g)];
+  assert.deepEqual(imageMatches.map((match) => match[2]), expectedImages);
+  const hashes = new Set();
+  for (const [, alt, target] of imageMatches) {
+    assert.match(alt, /[\u4e00-\u9fff]/, `${target} needs Chinese alt text`);
+    const png = await readFile(resolve(dirname(reportPath), target));
+    assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', `${target} must be PNG`);
+    const width = png.readUInt32BE(16);
+    const height = png.readUInt32BE(20);
+    assert.ok(width >= 1200, `${target} width ${width} is too small`);
+    assert.ok(width / height >= 1.45 && width / height <= 1.85, `${target} must remain landscape`);
+    assert.ok(png.length <= 8 * 1024 * 1024, `${target} exceeds 8 MiB`);
+    hashes.add(createHash('sha256').update(png).digest('hex'));
+  }
+  assert.equal(hashes.size, expectedImages.length, 'management report images must be distinct');
 
   const currentUsage = [
     rootReadme,

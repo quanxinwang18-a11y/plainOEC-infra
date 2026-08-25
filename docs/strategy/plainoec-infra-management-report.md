@@ -76,6 +76,12 @@ files。模型实际加载的是第三层，而不是第一层的源码目录。
 `designer`、`dev` 或 `all`，最后把一整套角色文件树复制到业务仓库。Plugin cache 与项目副本随后
 拥有不同生命周期，形成两个真相源。
 
+![旧 OEC-infra 的三层复制和交叉责任，与 PlainOEC 原生组件、类型化 MCP、项目事实分层的对比](assets/plainoec-infra-management-report/01-legacy-to-plainoec.png)
+
+*图：左侧的复杂度来自相同角色资产在源码、payload 和项目副本之间重复，并由交叉路由连接；问题不是
+文件数量本身，而是责任和生命周期混合。右侧将领域知识、平台执行和项目事实分开，使安装状态、外部
+状态和项目所有权不再互相复制。*
+
 ### 2.2 原系统解决过的问题
 
 旧设计并非没有价值。它曾经解决以下现实问题：
@@ -172,6 +178,12 @@ Human 负责无法从仓库读取的产品选择、风险承受、不可逆操�
 | `oec-e3@1.0.1` | 0 | 0 | 1 | 10 | PRD 发布和研发任务平台操作 |
 | `oec-pipeline@1.0.1` | 0 | 0 | 1 | 4 | 既有 dev/test 流水线运行 |
 | `oec-common@0.2.1` | 0 | 1 | 0 | 0 | HTML-first 幻灯片 |
+
+![PlainOEC Marketplace 分发 Product、Engineering、Common、E3 和 Pipeline 五个 Plugin 的总体架构](assets/plainoec-infra-management-report/02-five-plugin-architecture.png)
+
+*图：Product 通过 required 关系依赖完整 E3；Engineering 只在具体场景中 compose E3 或 Pipeline，
+Common 保持独立。架构没有统一 delivery Plugin，五个分发单元分别管理自己的知识、权限、状态与发布
+周期。*
 
 ```text
 Product ──required dependency──> E3
@@ -282,6 +294,12 @@ bundle，不在运行时跨 Plugin 读取源码，也不维护两套规则。
 Product 保存“做什么、为什么、如何验收”的产品语义。E3 负责 OAuth、空间候选、prepare、execute、
 status、远端 ID、父子关系、checkpoint 和漂移验证。Engineering 通过链接读取 PRD 或 Story，不把
 产品需求复制成工程 Spec，也不能为了实现便利静默改变产品行为。
+
+![产品目标经过编写、评审、人工确认和 E3 受控发布，并将项目产物、本地运行状态和远端对象分开保存](assets/plainoec-infra-management-report/04-product-e3-flow.png)
+
+*图：Product 负责需求语义，E3 负责受控副作用。prepare、Human confirmation、execute 和 status 是
+不同证据阶段；status 从 E3 远端 read-back。PRD/HANDOFF/mapping、OAuth/selection/plan 和远端对象
+分别属于 Project Repo、Plugin Data 与 E3，三者不能互相替代。*
 
 ### 6.7 管理价值
 
@@ -551,6 +569,12 @@ Agent、验证和评审。只有用户明确要求收口时，才协调 evidence
 这些组件是可选能力，不是自动 workflow。简单任务始终走最短路径，Agent、TDD、review 和 closing
 都不是必经阶段。E3、Pipeline 和部署也不属于 Engineering closure 的默认步骤。
 
+![Engineering 将简单改动保持为主 Session 短路径，并为非平凡变更按需组合 Specs、决策、Agent、验证和人工收口](assets/plainoec-infra-management-report/03-engineering-collaboration.png)
+
+*图：上方绿色路径表示简单改动直接由主 Session 实现和验证；下方蓝色路径只在风险需要时加入 Specs、
+challenge、prototype、plan、Research/Implement Agent 和 review。虚线节点均为可选能力，Human 只
+门禁显式 Close；这不是自动 workflow，也不包含 E3、Pipeline 或部署。*
+
 ### 7.10 与 Product、E3 和 Pipeline 的边界
 
 Product PRD 定义用户行为和验收结果。Engineering 通过链接读取来源，不复制产品需求，也不能为了
@@ -730,6 +754,12 @@ plan 创建时生成稳定 marker。第一次远端 POST 前，runtime 原子写
 
 正常成功、unknown POST recovery 和 replay recovery 写入同一 runtime 文件。同一个 plan token 最多
 产生一次 `runPipeline` POST，工具向调用者标记 `idempotentHint: true`。
+
+![Pipeline 在首次 POST 前进入 executing，并在结果未知时仅通过 marker 查询恢复到唯一 executed 状态](assets/plainoec-infra-management-report/05-pipeline-idempotency.png)
+
+*图：`ONE POST` 只发生一次，且 `executing` 已在请求前落盘。结果丢失时重放只进入 marker lookup：
+唯一匹配可以 recover，无匹配保持 unknown，多匹配 blocked；任何分支都不会返回再次提交。unknown 和
+blocked 是保护远端一致性的安全结果，不是用固定成功话术掩盖失败。*
 
 ### 9.5 状态归属和管理价值
 
@@ -940,6 +970,12 @@ Product、Engineering、E3 和 Pipeline 有不同事实来源、权限、状态�
 
 较高证据不能覆盖所有低层失败分支，较低证据也不能替代较高层真实行为。管理报告中的每个“完成”必须
 能映射到具体证据等级。
+
+![PlainOEC 从源码、测试、bundle、安装、Connected 到非生产 E2E 的证据阶梯，以及阻塞正式发布的四个独立门禁](assets/plainoec-infra-management-report/06-evidence-and-release.png)
+
+*图：Connected 与 Non-prod E2E 之间保留明显距离，表示“能连接”不等于真实业务旅程通过。当前本地
+修复已经拥有源码、测试、bundle 和安装证据，但 LICENSE、E3 E2E、Pipeline E2E 与 LLM eval 是四个
+独立门禁；一个模块的成功不能抵消另一个门禁。*
 
 ## 15. 发布状态和阻塞项
 
