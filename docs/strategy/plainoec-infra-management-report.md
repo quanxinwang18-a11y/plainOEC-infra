@@ -35,6 +35,11 @@ PlainOEC-infra 不是将旧 OEC-infra 的 Prompt 缩短后重新打包，而是�
 | Hook | 0 |
 | Command | 0 |
 
+本文中的 Plugin 是宿主可独立安装和升级的能力包；Skill 是按需加载的领域方法；Agent 是拥有独立
+上下文或身份的模型执行单元；MCP 是模型与外部系统之间的类型化工具协议。PRD 是产品需求主文档，
+HANDOFF 保存 PRD 到子需求与 Story 的结构化交接，ADR 保存会约束后续工作的持久技术决定。Plugin
+Data 是宿主为单个 Plugin 隔离的本地状态目录，不属于业务仓库。
+
 Product、Engineering 和 Common 是模型侧领域能力；E3 和 Pipeline 是平台侧受控执行能力。Product
 通过原生 dependency 使用完整 E3 Plugin。Engineering 不强依赖任何平台，主 Session 根据具体目标
 按需组合 E3 或 Pipeline。普通编码始终由主 Session 负责，Engineering 不安装一个默认接管研发过程
@@ -53,7 +58,8 @@ Product、Engineering 和 Common 是模型侧领域能力；E3 和 Pipeline 是�
 
 ### 2.1 原系统实际如何交付
 
-旧 OEC-infra 不能只按维护源码理解。实际交付经历三次形态变化：
+旧系统事实以 `oec-ai-infra` commit `79356008b9961c3e8a70c57e2fe5c9cf0c7ce424` 及其实际构建
+payload 和隔离初始化结果为固定基线，不能只按维护源码目录推断用户行为。实际交付经历三次形态变化：
 
 ```text
 oec-infra 维护源码
@@ -61,8 +67,6 @@ oec-infra 维护源码
 → 初始化器复制角色配置
 → 业务仓库中的项目级 Agent / Skill / ai-docs / scripts
 ```
-
-![旧 OEC-infra 从编辑源码、Plugin payload 到业务仓库副本的三层分发结构](assets/oec-infra-next-optimization/01-legacy-distribution.svg)
 
 第一层是维护者编辑的 Agent、Skill、脚本和模板。第二层是 Marketplace 真正分发的 bootstrap Plugin
 及其 payload。第三层才是产品或研发人员实际使用的项目级 `.claude`、`.codex`、`ai-docs` 和 managed
@@ -95,8 +99,6 @@ PlainOEC 保留这些业务知识与安全思想，但不再以“向每个项�
 | 组件边界错位 | 知识、流程、Agent、脚本和 API 都叫 Skill | 模型必须再次解释内部架构 |
 | 分发边界错位 | Plugin cache 与项目副本并存 | 安装、升级、卸载不对称 |
 | 执行边界错位 | 模型选择脚本、拼参数并判断重试 | 外部副作用缺少硬门禁 |
-
-![旧 OEC-infra 五类结构错位及其影响](assets/oec-infra-next-optimization/03-problem-mechanisms.svg)
 
 角色边界错位意味着测试不是独立能力，而是 Dev 安装包的一部分；平台操作、办公集成和通用工程方法
 也随角色一起进入上下文。组件边界错位意味着宿主只发现少数顶层入口，模型还要阅读内部索引才能知道
@@ -146,8 +148,6 @@ PlainOEC 保留这些业务知识与安全思想，但不再以“向每个项�
 | 项目文档 | 当前事实、ADR、变更上下文和证据 | Plugin 工作流副本 |
 | Marketplace | 发现、依赖和版本分发 | 业务运行状态 |
 
-![Marketplace、Plugin、Agent、Skill、supporting files、确定性工具和 MCP 的职责关系](assets/oec-infra-next-optimization/04-component-boundaries.svg)
-
 ### 3.3 模型约束与代码约束的分界
 
 模型适合判断用户意图、业务语言、技术权衡和哪些证据仍然缺失。确定性代码适合验证文件路径、schema、
@@ -164,8 +164,6 @@ Human 负责无法从仓库读取的产品选择、风险承受、不可逆操�
 但不能通过“第一个候选”“看起来合理”或产品空间创建者等代理事实替代真实身份和选择。
 
 ## 4. 当前五 Plugin 架构
-
-![plainOEC-infra 当前领域 Plugin 与平台 Plugin 架构](assets/oec-infra-next-optimization/05-current-architecture.svg)
 
 | Plugin | Agent | Skill | MCP Server | Tools | 责任 |
 | --- | ---: | ---: | ---: | ---: | --- |
@@ -546,41 +544,12 @@ ai-docs/engineering/changes/<change-id>/research/*.md
 
 ### 7.9 Engineering 协作关系
 
-```mermaid
-flowchart TD
-    U[用户目标] --> Q{简单且明确?}
-    Q -->|是| M[主 Session 实现]
-    M --> V[相关测试]
-    V --> O[报告结果]
+Engineering 有一条简单路径和一条按风险展开的非平凡路径。简单变更由主 Session直接实现并验证；
+非平凡变更才按需组合 Specs、challenge、prototype、planning、change package、Research/Implement
+Agent、验证和评审。只有用户明确要求收口时，才协调 evidence、Spec、ADR 与 exact-path commit。
 
-    Q -->|否| D{决定是否未定?}
-    D -->|压力测试| C[Challenge]
-    D -->|需要体验证据| P[Prototype]
-    D -->|方向明确| PL[Planning]
-
-    C --> PL
-    P --> H[Human 决策]
-    H --> PL
-
-    PL --> CP{需要持久上下文?}
-    CP -->|否| MI[主 Session 实现]
-    CP -->|是| PKG[Change package + Specs]
-
-    PKG --> R[可选 Research Agent]
-    PKG --> I[主 Session 或 Implement Agent]
-    R --> I
-
-    MI --> T[测试 / typecheck / lint]
-    I --> T
-    T --> RV[Review 或 Check Agent]
-    RV --> CL{用户要求收口?}
-    CL -->|否| OUT[报告当前状态]
-    CL -->|是| CLOSE[Evidence / Spec / ADR reconciliation]
-    CLOSE --> G[用户确认 exact-path commit]
-```
-
-该图描述可组合能力，不是自动 workflow。所有节点都可按任务省略；简单任务走最短路径，Agent 不属于
-必经阶段。E3、Pipeline 和部署也不属于 Engineering closure 的默认步骤。
+这些组件是可选能力，不是自动 workflow。简单任务始终走最短路径，Agent、TDD、review 和 closing
+都不是必经阶段。E3、Pipeline 和部署也不属于 Engineering closure 的默认步骤。
 
 ### 7.10 与 Product、E3 和 Pipeline 的边界
 
@@ -1041,22 +1010,7 @@ confirmation、幂等、checkpoint、status、脱敏、mock failure coverage 和
 SAE、UTP 和未来 Testing 均适用这些门槛。旧仓库中存在脚本、Agent 或 `SKILL.md` 只能作为需求线索，
 不能自动证明新 Plugin 的用户价值或可用性。
 
-## 18. 事实来源
-
-- [OEC PM 能力迁移分析](../../migration.md)：旧 PM 分发、路由和当前 Product 边界。
-- [OEC Dev 能力原生化迁移](../../dev-migration.md)：旧 Dev/Test 结构和 Engineering 处置。
-- [平台 Plugin 层级与 MCP 迁移设计](../architecture/platform-plugin-hierarchy.md)：平台粒度、状态和分发关系。
-- [E3 平台 Plugin 3.0.0 真实验收记录](../evidence/e3-platform-3.0.0-real-acceptance.md)：历史真实非生产证据。
-- [SAE 与 UTP 平台能力准入审计](../audits/sae-utp-admission-audit.md)：尚未准入平台的证据门槛。
-- [OEC-infra 下一步完整优化思路](oec-infra-next-optimization.md)：原系统调研、评审框架和未来路线。
-- [Marketplace manifest](../../.claude-plugin/marketplace.json)：当前版本和 Plugin entries。
-- [Product manifest](../../oec-product/.claude-plugin/plugin.json)：Product dependency 和版本。
-- [Engineering manifest](../../oec-engineering/.claude-plugin/plugin.json)：Engineering 版本与分发边界。
-- [E3 manifest](../../oec-e3/.claude-plugin/plugin.json)：E3 Plugin 和账号配置入口。
-- [Pipeline manifest](../../oec-pipeline/.claude-plugin/plugin.json)：Pipeline Plugin 版本。
-- [Common manifest](../../oec-common/.claude-plugin/plugin.json)：Common Plugin 版本。
-
-## 19. 最终结论
+## 18. 最终结论
 
 PlainOEC-infra 已经把原 OEC-infra 从“角色 preset 向项目复制完整配置”的体系，重构为五个按领域和
 平台生命周期独立分发的原生 Plugin。Product、Engineering 和 Common 提供模型真正缺少的组织增量；

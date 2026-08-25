@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { mkdtemp, readFile, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import test from 'node:test';
 
@@ -129,12 +129,8 @@ test('current-facing documentation stays aligned with Marketplace components', a
   for (const gap of ['LICENSE/notice', 'E3 `1.0.1`', 'Pipeline `1.0.1`', 'LLM eval']) {
     assert.match(report, new RegExp(gap.replaceAll('.', '\\.')));
   }
-
-  for (const match of report.matchAll(/!?\[[^\]]+\]\(([^)]+)\)/g)) {
-    const target = match[1].split('#')[0];
-    if (!target || /^(?:https?:|mailto:)/.test(target)) continue;
-    await readFile(resolve(dirname(reportPath), decodeURIComponent(target)));
-  }
+  assert.doesNotMatch(report, /```mermaid/);
+  assert.doesNotMatch(report, /(?<!!)\[[^\]]+\]\([^)]+\)/, 'management report must be self-contained');
 
   const currentUsage = [
     rootReadme,
