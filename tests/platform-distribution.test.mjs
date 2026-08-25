@@ -137,6 +137,11 @@ test('a Git archive contains self-contained Plugin payloads without node_modules
   assert.ok((await readFile(resolve(
     extracted,
     'oec-engineering',
+    'skills/closing-engineering-changes/agents/openai.yaml',
+  ))).length > 0);
+  assert.ok((await readFile(resolve(
+    extracted,
+    'oec-engineering',
     'skills/prototyping-decisions/SKILL.md',
   ))).length > 0);
   assert.ok((await readFile(resolve(extracted, 'oec-common', 'skills/html-slides/assets/deck-index.html'))).length > 0);

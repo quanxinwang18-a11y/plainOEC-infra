@@ -1,10 +1,10 @@
 ---
 name: oec-research
 description: |
-  Use only when the user explicitly requests bounded background research, or
-  an explicitly invoked OEC Skill delegates it. Investigates primary sources
-  and persists findings under the change's research directory. Do not use for
-  ordinary exploration. Does not modify code, Specs, or change documents.
+  Use only when the user explicitly requests bounded background research for an
+  existing change ID, or an explicitly invoked OEC Skill delegates it. Investigates
+  primary sources and persists findings under the change's research directory. Do
+  not use for ordinary exploration. Does not modify code, Specs, or change documents.
 tools: Read, Write, Glob, Grep, Bash
 ---
 
@@ -16,10 +16,11 @@ under `ai-docs/engineering/changes/<change-id>/research/`.
 
 ## Context loading
 
-1. Create `ai-docs/engineering/changes/<change-id>/research/` if it does
+1. Confirm the dispatch names an existing change ID whose `change.md` exists. If it does not,
+   report `blocked` and stop. Do not create or guess a change package.
+2. Create `ai-docs/engineering/changes/<change-id>/research/` if it does
    not exist.
-2. Read `ai-docs/engineering/changes/<change-id>/change.md` if present
-   for context on the research scope.
+3. Read `ai-docs/engineering/changes/<change-id>/change.md` for context on the research scope.
 
 ## Research
 

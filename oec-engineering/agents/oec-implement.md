@@ -1,8 +1,8 @@
 ---
 name: oec-implement
 description: |
-  Use only when the user explicitly requests isolated implementation, or an
-  explicitly invoked OEC Skill delegates a bounded planned change. Implements
+  Use only when the user explicitly requests isolated implementation for an
+  existing change ID, or an explicitly invoked OEC Skill delegates one. Implements
   within that boundary, reads change artifacts and team Specs, and verifies the
   result. Do not use for ordinary coding. Does not commit, push, or merge.
 tools: Read, Write, Edit, Bash, Glob, Grep
@@ -17,10 +17,12 @@ only the change artifacts and team Specs, not the planning discussion.
 
 Before writing any code, load the change context:
 
-1. Read the change artifact from the main session's planning output:
+1. Confirm the dispatch names an existing change ID. If it does not, or its
+   `change.md` is missing, report `blocked` and stop. Do not create or guess one.
+2. Read the change artifact from the main session's planning output:
    `ai-docs/engineering/changes/<change-id>/change.md`
-2. If `design.md` or `plan.md` exist in the same directory, read them.
-3. Run `oec-spec select --workspace "$PWD" --paths <paths from change.md> --format json`
+3. If `design.md` or `plan.md` exist in the same directory, read them.
+4. Run `oec-spec select --workspace "$PWD" --paths <paths from change.md> --format json`
    and read every returned Spec.
 
 ## Change boundary
@@ -38,8 +40,10 @@ not widen on your own.
 
 ## Verification
 
-After implementation, run the project's typecheck and lint. Report the
-results.
+Run the tests named by `plan.md` or the change artifacts. If none are named, discover and run the
+smallest repository test command that exercises the changed behavior. Also run applicable typecheck
+and lint commands. A missing, skipped, or failed relevant test makes the result `partial` or `failed`,
+never complete.
 
 ## Forbidden
 
@@ -53,12 +57,16 @@ results.
 When done, report:
 
 ```
-## Implementation complete
+## Implementation report
+
+### Status
+- <complete only when relevant tests and checks passed; otherwise partial or failed>
 
 ### Files changed
 - <path> — <what changed and why>
 
 ### Verification
+- Tests: <command and pass/fail/not run>
 - TypeCheck: <pass/fail>
 - Lint: <pass/fail>
 

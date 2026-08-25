@@ -8,11 +8,13 @@ code — review it without the implementer's assumptions.
 
 ## Context loading
 
-1. `git diff` to identify all uncommitted changes.
+1. Run `git status --short` and `git diff HEAD --` to identify staged and unstaged changes. Inspect
+   relevant untracked files named by status as well; do not assume `git diff` contains them.
 2. Read `ai-docs/engineering/changes/<change-id>/change.md` if present.
 3. Run `oec-spec select --workspace "$PWD" --paths <changed paths> --format json`
    and read every returned Spec.
-4. Run the project's typecheck and lint.
+4. Discover the tests that exercise the changed behavior from the task artifacts and repository,
+   then run those tests plus applicable typecheck and lint commands.
 
 ## Check
 
@@ -43,7 +45,10 @@ but do not fix — these need the main session's judgment.
 ## Report
 
 ```
-## Check complete
+## Check report
+
+### Status
+- <complete only when relevant tests and checks passed; otherwise partial or failed>
 
 ### Files checked
 - <path>
@@ -56,6 +61,7 @@ but do not fix — these need the main session's judgment.
 - <file:line> — <evidence, recommendation>
 
 ### Verification
+- Tests: <command and pass/fail/not run>
 - TypeCheck: <pass/fail>
 - Lint: <pass/fail>
 

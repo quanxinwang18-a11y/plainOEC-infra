@@ -100,6 +100,18 @@ test('Claude and experimental Codex Agents keep explicit-use policy and matching
     assert.equal(compact(claude.metadata.description), compact(codex.description));
     assert.equal(claude.body, codex.instructions);
   }
+  const implement = claudeAgent('oec-implement');
+  assert.match(compact(implement.metadata.description), /existing change ID/);
+  assert.match(implement.body, /Tests: <command and pass\/fail\/not run>/);
+  assert.doesNotMatch(implement.body, /## Implementation complete/);
+  const check = claudeAgent('oec-check');
+  assert.match(check.body, /git status --short/);
+  assert.match(check.body, /git diff HEAD --/);
+  assert.match(check.body, /relevant untracked files/);
+  assert.match(check.body, /Tests: <command and pass\/fail\/not run>/);
+  const research = claudeAgent('oec-research');
+  assert.match(compact(research.metadata.description), /existing change ID/);
+  assert.match(research.body, /Do not create or guess a change package/);
 });
 
 test('skill descriptions make positive and negative judgment boundaries explicit', () => {
@@ -166,6 +178,13 @@ test('explicit engineering Skills stay manual-only and no Skill recreates the le
   ), 'utf8'));
   assert.equal(challenge.policy.allow_implicit_invocation, false);
   assert.match(challenge.interface.default_prompt, /\$challenging-engineering-decisions/);
+
+  const closingOpenai = YAML.parse(readFileSync(resolve(
+    pluginRoot,
+    'skills/closing-engineering-changes/agents/openai.yaml',
+  ), 'utf8'));
+  assert.equal(closingOpenai.policy.allow_implicit_invocation, false);
+  assert.match(closingOpenai.interface.default_prompt, /\$closing-engineering-changes/);
   assert.equal(readFileSync(resolve(pluginRoot, 'README.md'), 'utf8').includes(forbiddenAgentSlash), false);
 });
 
