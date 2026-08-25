@@ -48,17 +48,28 @@ test('skills have distinct positive triggers and E3 publishing is manual-only', 
   assert.doesNotMatch(publishing.body, /oauth|token file|https?:\/\/|JSON payload|node .*\.mjs|retry/i);
 });
 
-test('each Product Skill carries bilingual positive and negative cases', () => {
+test('each Product Skill carries executable positive and negative eval cases', () => {
+  const prompts = [];
   for (const name of ['writing-prds', 'reviewing-prds', 'publishing-prds-to-e3']) {
-    const path = resolve(pluginRoot, 'skills', name, 'evals', 'cases.md');
-    assert.equal(existsSync(path), true, `${name} eval cases must exist`);
-    const content = readFileSync(path, 'utf8');
-    assert.match(content, /## Positive cases/);
-    assert.match(content, /## Negative cases/);
-    assert.match(content, /[\u4e00-\u9fff]/, `${name} needs a Chinese case`);
-    assert.match(content, /\b(?:PRD|E3|Review|Create|Design|Revise)\b/i, `${name} needs an English case`);
-    assert.doesNotMatch(content, /TODO/);
+    for (const polarity of ['positive', 'negative']) {
+      const directory = `evals/${name}-${polarity}`;
+      const prompt = frontmatter(`${directory}/prompt.md`);
+      const grader = frontmatter(`${directory}/graders/skill-route.md`).metadata;
+      prompts.push(prompt.body);
+      assert.equal(prompt.metadata.name, `${name}-${polarity}`);
+      assert.ok(prompt.metadata.tags.includes(name));
+      assert.ok(prompt.metadata.tags.includes(polarity));
+      assert.equal(grader.type, 'tool_used');
+      assert.equal(grader.tool, 'Skill');
+      assert.match(grader.input_match, new RegExp(name));
+      if (polarity === 'positive') assert.equal(grader.min, 1);
+      else assert.deepEqual({ min: grader.min, max: grader.max, arm: grader.arm }, { min: 0, max: 0, arm: 'both' });
+    }
   }
+  const corpus = prompts.join('\n');
+  assert.match(corpus, /[\u4e00-\u9fff]/);
+  assert.match(corpus, /\b(?:PRD|E3|Review|Create|Design|Revise|Use)\b/i);
+  assert.doesNotMatch(corpus, /TODO/);
 });
 
 test('model-facing capability text does not depend on the OEC label', () => {

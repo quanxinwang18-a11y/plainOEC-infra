@@ -206,12 +206,26 @@ test('team Spec assets encode conditional artifacts and safe project ownership',
   assert.doesNotMatch(contract, /\.claude\/settings|\.codex\/skills|SessionStart|task\.py/);
 });
 
-test('each Skill carries positive and negative eval cases', () => {
+test('each Skill carries executable positive and negative eval cases', () => {
   for (const name of expectedSkills) {
-    const path = resolve(pluginRoot, 'skills', name, 'evals', 'cases.md');
-    assert.equal(existsSync(path), true, `${name} eval cases must exist`);
-    const content = readFileSync(path, 'utf8');
-    assert.match(content, /## Positive cases/);
-    assert.match(content, /## Negative cases/);
+    for (const polarity of ['positive', 'negative']) {
+      const directory = resolve(pluginRoot, 'evals', `${name}-${polarity}`);
+      const promptText = readFileSync(resolve(directory, 'prompt.md'), 'utf8');
+      const promptMatch = /^---\n([\s\S]*?)\n---\n/.exec(promptText);
+      assert.ok(promptMatch, `${name}-${polarity} prompt needs frontmatter`);
+      const prompt = YAML.parse(promptMatch[1]);
+      const graderText = readFileSync(resolve(directory, 'graders/skill-route.md'), 'utf8');
+      const graderMatch = /^---\n([\s\S]*?)\n---\n/.exec(graderText);
+      assert.ok(graderMatch, `${name}-${polarity} grader needs frontmatter`);
+      const grader = YAML.parse(graderMatch[1]);
+      assert.equal(prompt.name, `${name}-${polarity}`);
+      assert.ok(prompt.tags.includes(name));
+      assert.ok(prompt.tags.includes(polarity));
+      assert.equal(grader.type, 'tool_used');
+      assert.equal(grader.tool, 'Skill');
+      assert.match(grader.input_match, new RegExp(name));
+      if (polarity === 'positive') assert.equal(grader.min, 1);
+      else assert.deepEqual({ min: grader.min, max: grader.max, arm: grader.arm }, { min: 0, max: 0, arm: 'both' });
+    }
   }
 });

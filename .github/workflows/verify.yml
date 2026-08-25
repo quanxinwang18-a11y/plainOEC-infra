@@ -1,0 +1,43 @@
+name: verify
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run verify
+      - name: Verify committed bundles are current
+        run: git diff --exit-code
+      - run: git diff --check
+
+  plugin-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install pinned Claude Code validator
+        run: npm install --global @anthropic-ai/claude-code@2.1.243
+      - name: Validate Marketplace and Plugins strictly
+        run: |
+          claude plugin validate --strict .
+          for plugin in oec-product oec-engineering oec-e3 oec-pipeline oec-common; do
+            claude plugin validate --strict "$plugin"
+          done

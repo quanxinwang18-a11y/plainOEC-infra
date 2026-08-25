@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import test from 'node:test';
 import YAML from 'yaml';
 
@@ -71,13 +71,29 @@ test('deck shell is deterministic and zero dependency', () => {
   assert.doesNotMatch(shell, /<script[^>]+src=|\bimport\s|\brequire\s*\(/i);
 });
 
-test('eval corpus covers bilingual positive and negative intent', () => {
-  const path = resolve(skillRoot, 'evals/cases.md');
-  const cases = readFileSync(path, 'utf8');
-  assert.equal(dirname(path), resolve(skillRoot, 'evals'));
-  assert.match(cases, /## Positive cases/);
-  assert.match(cases, /## Negative cases/);
-  assert.match(cases, /[\u4e00-\u9fff]/);
-  assert.match(cases, /\bCreate\b/);
-  assert.doesNotMatch(cases, /TODO/);
+test('eval corpus exposes executable bilingual positive and negative cases', () => {
+  const prompts = [];
+  for (const polarity of ['positive', 'negative']) {
+    const directory = resolve(pluginRoot, 'evals', `html-slides-${polarity}`);
+    const promptText = readFileSync(resolve(directory, 'prompt.md'), 'utf8');
+    const promptMatch = /^---\n([\s\S]*?)\n---\n/.exec(promptText);
+    assert.ok(promptMatch);
+    const prompt = YAML.parse(promptMatch[1]);
+    const graderText = readFileSync(resolve(directory, 'graders/skill-route.md'), 'utf8');
+    const graderMatch = /^---\n([\s\S]*?)\n---\n/.exec(graderText);
+    assert.ok(graderMatch);
+    const grader = YAML.parse(graderMatch[1]);
+    prompts.push(promptText.slice(promptMatch[0].length));
+    assert.equal(prompt.name, `html-slides-${polarity}`);
+    assert.ok(prompt.tags.includes(polarity));
+    assert.equal(grader.type, 'tool_used');
+    assert.equal(grader.tool, 'Skill');
+    assert.match(grader.input_match, /html-slides/);
+    if (polarity === 'positive') assert.equal(grader.min, 1);
+    else assert.deepEqual({ min: grader.min, max: grader.max, arm: grader.arm }, { min: 0, max: 0, arm: 'both' });
+  }
+  const corpus = prompts.join('\n');
+  assert.match(corpus, /[\u4e00-\u9fff]/);
+  assert.match(corpus, /\bCreate\b/);
+  assert.doesNotMatch(corpus, /TODO/);
 });
