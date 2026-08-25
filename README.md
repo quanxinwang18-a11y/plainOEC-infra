@@ -18,7 +18,7 @@ Marketplace: plainOEC-infra
 │   ├── Skills: writing / reviewing / publishing PRDs
 │   └── dependency: oec-e3@~1.0.0
 ├── Plugin: oec-engineering
-│   ├── Skills: team Specs / planning / TDD / diagnosis / review / closing
+│   ├── Skills: team Specs / explicit legacy migration / planning / TDD / diagnosis / review / closing
 │   ├── Agents: implement / check / research（显式使用）
 │   └── Runtime: oec-spec
 ├── Plugin: oec-e3
@@ -88,11 +88,12 @@ E3 发布必须由用户显式调用，并经过 prepare、计划确认、宿主
 
 ### 研发
 
-普通工程请求直接用自然语言描述目标；五个 model-invoked Skills 按场景发现。只有工程收口需要
-显式调用：
+普通工程请求直接用自然语言描述目标；五个 model-invoked Skills 按场景发现。旧 `ai-docs` 迁移和
+工程收口必须显式调用：
 
 ```text
 /oec-engineering:managing-team-specs init
+/oec-engineering:migrating-legacy-ai-docs
 /oec-engineering:planning-engineering-changes
 /oec-engineering:test-driven-development
 /oec-engineering:diagnosing-failures

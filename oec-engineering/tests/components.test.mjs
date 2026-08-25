@@ -42,15 +42,16 @@ const expectedSkills = [
   'closing-engineering-changes',
   'diagnosing-failures',
   'managing-team-specs',
+  'migrating-legacy-ai-docs',
   'planning-engineering-changes',
   'reviewing-code-changes',
   'test-driven-development',
 ];
 
-test('engineering plugin exposes six native Skills and no orchestration components', () => {
+test('engineering plugin exposes seven native Skills and no orchestration components', () => {
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-engineering');
-  assert.equal(manifest.version, '1.3.0');
+  assert.equal(manifest.version, '1.4.0');
   // Agents and Skills are auto-discovered from directories, not declared in plugin.json.
   for (const key of ['skills', 'agents', 'mcpServers', 'commands', 'hooks']) assert.equal(key in manifest, false);
 
@@ -109,6 +110,7 @@ test('skill descriptions make positive and negative judgment boundaries explicit
   }
 
   assert.match(skill('managing-team-specs').metadata.description, /durable project engineering Specs and ADRs/);
+  assert.match(skill('migrating-legacy-ai-docs').metadata.description, /user explicitly invokes/);
   assert.match(skill('planning-engineering-changes').metadata.description, /technical design or implementation plan/);
   assert.match(skill('planning-engineering-changes').metadata.description, /small obvious fix/);
   assert.match(skill('test-driven-development').metadata.description, /explicitly asks for TDD/);
@@ -119,14 +121,11 @@ test('skill descriptions make positive and negative judgment boundaries explicit
   assert.match(skill('reviewing-code-changes').metadata.description, /Do not use to implement/);
 });
 
-test('only closing is manual-only and no Skill recreates the legacy router', () => {
+test('migration and closing are manual-only and no Skill recreates the legacy router', () => {
   for (const name of expectedSkills) {
     const item = skill(name);
-    if (name === 'closing-engineering-changes') {
+    if (name === 'closing-engineering-changes' || name === 'migrating-legacy-ai-docs') {
       assert.equal(item.metadata['disable-model-invocation'], true);
-      assert.match(item.metadata.description, /explicitly asks/);
-      assert.match(item.body, /git add -- <exact code and engineering-document paths>/);
-      assert.match(item.body, /git commit -m .* -- <same exact paths>/);
     } else {
       assert.equal(item.metadata['disable-model-invocation'], undefined);
     }
@@ -135,14 +134,29 @@ test('only closing is manual-only and no Skill recreates the legacy router', () 
     assert.doesNotMatch(item.text, /OAuth|HTTP payload|token cache|partial resume/i);
     assert.equal(item.text.includes(forbiddenAgentSlash), false);
   }
+  const closing = skill('closing-engineering-changes');
+  assert.match(closing.metadata.description, /explicitly asks/);
+  assert.match(closing.body, /git add -- <exact code and engineering-document paths>/);
+  assert.match(closing.body, /git commit -m .* -- <same exact paths>/);
+
+  const migration = skill('migrating-legacy-ai-docs');
+  assert.match(migration.body, /preserve every existing `ai-docs` file in place/i);
+  assert.match(migration.body, /Do not adopt E3 mappings/);
+  assert.match(migration.body, /Do not create a migration state file/);
+  const openai = YAML.parse(readFileSync(resolve(
+    pluginRoot,
+    'skills/migrating-legacy-ai-docs/agents/openai.yaml',
+  ), 'utf8'));
+  assert.equal(openai.policy.allow_implicit_invocation, false);
+  assert.match(openai.interface.default_prompt, /\$migrating-legacy-ai-docs/);
   assert.equal(readFileSync(resolve(pluginRoot, 'README.md'), 'utf8').includes(forbiddenAgentSlash), false);
 });
 
 test('team Spec assets encode conditional artifacts and safe project ownership', () => {
   const managing = skill('managing-team-specs');
   assert.match(managing.body, /absent category is better than an empty placeholder/);
-  assert.match(managing.body, /preserve existing `ai-docs` files in place/);
   assert.match(managing.body, /oec-spec check --workspace/);
+  assert.doesNotMatch(managing.metadata.description, /Creates, migrates/);
 
   const contract = readFileSync(resolve(
     pluginRoot,

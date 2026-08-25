@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.0
+
+- Add the explicit-only `migrating-legacy-ai-docs` Skill for evidence-backed migration into current
+  Specs, ADRs, and active change packages.
+- Preserve legacy `ai-docs` in place and keep E3 adoption, managed-configuration cleanup, deletion,
+  and external writes outside the migration Skill.
+- Encode explicit invocation for both Claude Code and the experimental Codex Skill interface.
+
 ## 1.3.0
 
 - Remove the SessionStart Hook so installing the Plugin adds no context to unrelated sessions.

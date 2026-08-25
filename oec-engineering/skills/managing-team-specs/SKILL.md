@@ -1,7 +1,7 @@
 ---
 name: managing-team-specs
-description: Creates, migrates, or updates durable project engineering Specs and ADRs when the user asks to initialize team knowledge, document current architecture, reconcile documentation with code, or preserve an engineering decision. Do not use for ordinary implementation plans, transient task notes, or product requirements.
-argument-hint: "[init, update, migrate, or engineering topic]"
+description: Creates or updates durable project engineering Specs and ADRs when the user asks to initialize team knowledge, document current architecture, reconcile documentation with code, or preserve an engineering decision. Do not use for legacy ai-docs migration, ordinary implementation plans, transient task notes, or product requirements.
+argument-hint: "[init, update, or engineering topic]"
 ---
 
 # Managing team Specs
@@ -60,13 +60,7 @@ the templates needed for the requested documents:
 - [assets/change.md](assets/change.md) for non-trivial change context.
 - `assets/design.md`, `assets/plan.md`, and `assets/evidence.md` only when their conditions hold.
 
-When migrating legacy material, preserve existing `ai-docs` files in place. Classify each source
-statement as current fact, durable decision, historical change context, or obsolete process before
-copying it. Never migrate workflow stages, routing tables, generated scores, or unverified claims
-into a current-state Spec.
-
-Use `oec-spec legacy-audit --workspace "$PWD"` before proposing a legacy cleanup. Use
-`oec-spec select --workspace "$PWD" --paths <relevant paths> --format json` to locate existing
+Use `oec-spec select --workspace "$PWD" --paths <relevant paths> --format json` to locate existing
 path-scoped facts. After changing team knowledge, run `oec-spec check --workspace "$PWD"`; errors
 block completion and warnings need a concise user-visible note.
 

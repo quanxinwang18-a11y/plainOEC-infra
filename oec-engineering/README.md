@@ -32,6 +32,7 @@ bundle 需要 PATH 中存在 Node.js 20 或更新版本。
 
 ```text
 /oec-engineering:managing-team-specs
+/oec-engineering:migrating-legacy-ai-docs
 /oec-engineering:planning-engineering-changes
 /oec-engineering:test-driven-development
 /oec-engineering:diagnosing-failures
@@ -39,7 +40,8 @@ bundle 需要 PATH 中存在 Node.js 20 或更新版本。
 /oec-engineering:closing-engineering-changes
 ```
 
-只有 `closing-engineering-changes` 是 user-invoked only。TDD 也只在用户明确要求 test-first 时适用。
+`migrating-legacy-ai-docs` 和 `closing-engineering-changes` 都是 user-invoked only。前者只迁移经
+证据确认的旧工程知识，不删除源文件；TDD 也只在用户明确要求 test-first 时适用。
 
 ### Agents
 
@@ -88,11 +90,15 @@ oec-spec legacy-audit --workspace "$PWD"
 
 ## 旧 Dev 项目迁移
 
-1. 运行 `oec-spec legacy-audit --workspace "$PWD"`，审阅旧 manifest、Skills、Agents 和保留资产。
-2. 初始化新的团队 Spec 根，不修改旧文件。
-3. 只迁移有代码或已确认决策支持的当前事实与长期决策。
-4. 单独提交新的团队 Specs。
-5. 将 `.oec-ai`、旧项目 Skills 和 Agents 的清理作为另一个需要精确确认的破坏性操作。
+显式调用迁移 Skill：
+
+```text
+/oec-engineering:migrating-legacy-ai-docs
+```
+
+它会运行只读 legacy audit、枚举旧 `ai-docs`、提出“源路径 → 分类 → 目标路径 → 证据”的精确
+计划，并在确认后只写 `ai-docs/engineering/`。Product PRD、E3 mapping、历史记录和全部旧文件保持
+原位；`.oec-ai`、旧项目 Skills 和 Agents 的清理是另一个需要精确确认的破坏性操作。
 
 迁移依据和旧分发实测见 [../dev-migration.md](../dev-migration.md)。
 
