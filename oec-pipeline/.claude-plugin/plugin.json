@@ -1,6 +1,6 @@
 {
   "name": "oec-pipeline",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "现有非生产流水线的受控发现、执行和状态验证。",
   "author": {
     "name": "OEC"

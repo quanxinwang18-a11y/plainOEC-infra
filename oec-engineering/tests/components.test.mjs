@@ -53,7 +53,7 @@ const expectedSkills = [
 test('engineering plugin exposes nine native Skills and no orchestration components', () => {
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-engineering');
-  assert.equal(manifest.version, '1.5.0');
+  assert.equal(manifest.version, '1.5.1');
   // Agents and Skills are auto-discovered from directories, not declared in plugin.json.
   for (const key of ['skills', 'agents', 'mcpServers', 'commands', 'hooks']) assert.equal(key in manifest, false);
 
@@ -77,7 +77,7 @@ test('engineering plugin exposes nine native Skills and no orchestration compone
 
   const marketplace = JSON.parse(readFileSync(resolve(pluginRoot, '..', '.claude-plugin', 'marketplace.json'), 'utf8'));
   const packageManifest = JSON.parse(readFileSync(resolve(pluginRoot, '..', 'package.json'), 'utf8'));
-  assert.equal(marketplace.version, '3.0.0');
+  assert.equal(marketplace.version, '3.0.1');
   assert.equal(packageManifest.version, marketplace.version);
   assert.deepEqual(marketplace.plugins.map((plugin) => plugin.name), [
     'oec-product',

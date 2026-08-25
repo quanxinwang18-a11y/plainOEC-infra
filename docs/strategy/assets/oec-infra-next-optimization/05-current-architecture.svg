@@ -45,24 +45,24 @@
   </g>
 
   <text x="800" y="148" class="label">plainOEC-infra Marketplace</text>
-  <text x="800" y="187" class="version">3.0.0 · Git 原生分发</text>
+  <text x="800" y="187" class="version">3.0.1 · Git 原生分发</text>
   <text x="395" y="354" class="section">模型侧能力 Plugins</text>
   <text x="1205" y="354" class="section">平台能力 Plugins</text>
 
   <text x="395" y="428" class="label">oec-product</text>
-  <text x="395" y="458" class="version">3.0.1</text>
+  <text x="395" y="458" class="version">3.0.2</text>
   <text x="395" y="483" class="count">1 Agent · 3 Skills · 0 MCP</text>
   <text x="395" y="558" class="label">oec-engineering</text>
-  <text x="395" y="588" class="version">1.5.0</text>
+  <text x="395" y="588" class="version">1.5.1</text>
   <text x="395" y="613" class="count">3 Agents · 9 Skills · 0 MCP</text>
   <text x="395" y="681" class="label">oec-common</text>
-  <text x="395" y="704" class="version">0.2.0 · 1 HTML Slides Skill</text>
+  <text x="395" y="704" class="version">0.2.1 · 1 HTML Slides Skill</text>
 
   <text x="1205" y="452" class="label">oec-e3</text>
-  <text x="1205" y="483" class="version">1.0.0</text>
+  <text x="1205" y="483" class="version">1.0.1</text>
   <text x="1205" y="513" class="count">1 MCP · 10 Tools</text>
   <text x="1205" y="624" class="label">oec-pipeline</text>
-  <text x="1205" y="655" class="version">1.0.0</text>
+  <text x="1205" y="655" class="version">1.0.1</text>
   <text x="1205" y="682" class="count">1 MCP · 4 Tools</text>
 
   <text x="800" y="414" class="status">required dependency</text>

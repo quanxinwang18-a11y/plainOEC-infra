@@ -104,5 +104,5 @@ prepare deployment
 
 - SAE：只读诊断候选方向清晰，但真实 API、认证、权限、日志边界和非生产身份尚未完成验证，未准入。
 - UTP：旧资产仍需逐项清点和归属分类，不能从嵌套文件树直接推导 Plugin 结构，未准入。
-- Marketplace：保持 Product、Engineering、E3 和 Pipeline 四个 Plugin；SAE/UTP 组件数为零。
+- Marketplace：保持 Product、Engineering、E3、Pipeline 和 Common 五个 Plugin；SAE/UTP 组件数为零。
 - 真实操作：本轮不执行 SAE、UTP 或部署写入。

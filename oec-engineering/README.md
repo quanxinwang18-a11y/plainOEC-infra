@@ -51,9 +51,14 @@ bundle 需要 PATH 中存在 Node.js 20 或更新版本。
 
 需要独立上下文时，可以要求 Claude 使用：
 
-- `oec-implement`：在已声明的 change boundary 内隔离实现；
-- `oec-check`：对未提交改动做 fresh-eyes 检查；
-- `oec-research`：把有边界的研究结果写入 change 目录。
+- `oec-implement`：接收已有 change ID，在已声明的 boundary 内隔离实现并运行相关测试；
+- `oec-check`：通过 status 与 `diff HEAD` 覆盖 staged、unstaged、untracked 变更，运行相关测试后做
+  fresh-eyes 检查；
+- `oec-research`：接收已有 change ID，把有边界的研究结果写入对应 change 目录。
+
+`oec-implement` 和 `oec-research` 缺少 change ID 或对应 `change.md` 时会停止并请求主会话补充，不会
+创建或猜测 change package。任何相关测试未运行或失败时，Agent 只报告 partial/failed verification，
+不会输出完成结论。
 
 通过 Claude Code 的 `@` Agent picker 可以保证派发。它们不是 slash commands，只在用户明确请求，
 或显式调用的 OEC Skill 委派有边界任务时使用；普通实现、评审和研究仍可由主会话完成。
@@ -123,7 +128,7 @@ oec-spec legacy-audit --workspace "$PWD"
 npm ci --ignore-scripts
 npm run build
 npm test
-claude plugin validate ./oec-engineering
+claude plugin validate --strict ./oec-engineering
 git diff --check
 ```
 

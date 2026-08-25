@@ -306,7 +306,7 @@ Marketplace: plainOEC-infra
 
 `oec-engineering` 第一版没有 Agent、MCP、Commands、Hooks 或 settings。主 Coding Agent 就是研发执行者；
 新的 Skills 只在特定目标下改变它的判断。它不依赖 E3 或 Pipeline，开发者只在需要外部平台能力时
-单独安装对应 Plugin。1.5.0 提供三个显式使用的可选 Agent、三个只允许用户触发的迁移、决策挑战与
+单独安装对应 Plugin。1.5.1 提供三个显式使用的可选 Agent、三个只允许用户触发的迁移、决策挑战与
 工程收口 Skills、一个按明确原型请求发现的决策原型 Skill，并保持 0 Hook。
 
 ## 6. OEC 团队 Spec 闭环
@@ -395,13 +395,13 @@ flowchart LR
 - 前端小修复可以直接完成，不生成无意义任务包。
 - 现有 `oec-product` 全部测试继续通过。
 
-E3、Pipeline、SAE、UTP 和真实部署不属于 `oec-engineering@1.5.0` 验收范围。E3 与 Pipeline 即使由
+E3、Pipeline、SAE、UTP 和真实部署不属于 `oec-engineering@1.5.1` 验收范围。E3 与 Pipeline 即使由
 同一 Marketplace 分发，也保持独立 Plugin 和独立证据；SAE/UTP 在类型化接口与非生产 E2E 完成前，
 不以 Markdown、mock 或静态测试宣称旧平台能力已复现。
 
 ## 10. 当前实现状态
 
-`oec-engineering@1.5.0` 已按上述边界实现：
+`oec-engineering@1.5.1` 已按上述边界实现：
 
 - 9 个原生 Skills，其中旧 `ai-docs` 迁移、工程决策挑战与工程收口只允许用户触发；3 个可选 Agent，0 Hook，0 MCP，0 Command。
 - `oec-spec` source、CLI、可执行入口和无依赖 bundle。
@@ -411,6 +411,8 @@ E3、Pipeline、SAE、UTP 和真实部署不属于 `oec-engineering@1.5.0` 验�
 
 工程 Plugin 本身没有实施外部写操作，也没有自动清理任何旧项目资产。Marketplace 另有：
 
-- `oec-e3@1.0.0`：四个 PRD 发布工具和六个研发任务工具；研发任务真实 E3 验收单独记录。
-- `oec-pipeline@1.0.0`：四个既有 dev/test 流水线工具；当前只有 mock/integration 证据。
+- `oec-e3@1.0.1`：四个 PRD 发布工具和六个研发任务工具；研发任务真实 E3 验收单独记录，补丁版本的
+  身份 fail-closed 行为尚待明确授权的真实写入复验。
+- `oec-pipeline@1.0.1`：四个既有 dev/test 流水线工具；当前只有 mock/integration 证据，幂等补丁尚待
+  明确授权的真实运行复验。
 - SAE、UTP：仅形成准入审计，不存在 Plugin 组件或 Marketplace entry。

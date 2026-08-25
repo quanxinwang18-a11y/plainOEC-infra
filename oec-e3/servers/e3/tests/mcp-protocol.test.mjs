@@ -62,7 +62,7 @@ test('MCP protocol exposes publication and development-planning tools with guard
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
   try {
-    assert.equal(client.getServerVersion().version, '1.0.0');
+    assert.equal(client.getServerVersion().version, '1.0.1');
     const tools = await client.listTools();
     assert.deepEqual(tools.tools.map((tool) => tool.name), [
       'prepare_prd_publish',

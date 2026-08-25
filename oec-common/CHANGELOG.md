@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+
+- Replace the prose-only case list with native executable positive and adjacent-negative routing
+  evals for `html-slides`.
+
 ## 0.2.0
 
 - Ship `html-slides` as a focused, zero-runtime-dependency HTML-first deck Skill.

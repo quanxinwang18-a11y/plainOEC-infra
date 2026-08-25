@@ -21,7 +21,7 @@
 
 ### 1.2 已完成的迁移
 
-当前 `plainOEC-infra@3.0.0` 已经完成第一阶段原生化：
+当前 release candidate `plainOEC-infra@3.0.1` 已经完成第一阶段原生化：
 
 - Product：显式 PM Agent + 三个以用户目标划分并带跨域负向边界的 PRD Skills。
 - Engineering：九个聚焦工程 Skills + 三个显式使用的可选 Agent；旧 `ai-docs` 迁移、工程决策挑战
@@ -671,11 +671,11 @@ Plugin 的粒度则由生命周期决定：当外部事实来源、认证权限�
 
 | Plugin | Agent | Skills | MCP | 作用与边界 |
 | --- | ---: | ---: | ---: | --- |
-| `oec-product@3.0.1` | 1 | 3 | 0 | PRD 写作、只读评审和发布语义；依赖 E3 |
-| `oec-engineering@1.5.0` | 3 | 9 | 0 | 团队 Specs、显式迁移、规划、决策挑战、决策原型、TDD、诊断、review、close |
-| `oec-e3@1.0.0` | 0 | 0 | 1 | 4 个 PRD 发布工具 + 6 个研发任务工具 |
-| `oec-pipeline@1.0.0` | 0 | 0 | 1 | 既有 dev/test 流水线的受控 prepare/execute/status |
-| `oec-common@0.2.0` | 0 | 1 | 0 | 零依赖 HTML-first 幻灯片 |
+| `oec-product@3.0.2` | 1 | 3 | 0 | PRD 写作、只读评审和发布语义；依赖 E3 |
+| `oec-engineering@1.5.1` | 3 | 9 | 0 | 团队 Specs、显式迁移、规划、决策挑战、决策原型、TDD、诊断、review、close |
+| `oec-e3@1.0.1` | 0 | 0 | 1 | 4 个 PRD 发布工具 + 6 个研发任务工具 |
+| `oec-pipeline@1.0.1` | 0 | 0 | 1 | 既有 dev/test 流水线的受控 prepare/execute/status |
+| `oec-common@0.2.1` | 0 | 1 | 0 | 零依赖 HTML-first 幻灯片 |
 
 Product 明确向用户承诺 E3 发布，所以声明 `oec-e3@~1.0.0` dependency。Engineering 的九个 Skills
 不以 E3 或 Pipeline 为完成前提，因此与平台 Plugin 是按场景组合关系，不作强依赖。
@@ -981,14 +981,15 @@ OEC-infra 后续不应继续做“更多 Prompt、更多角色路由、更多统
 
 | 项目 | 版本/状态 |
 | --- | --- |
-| Marketplace | `3.0.0` |
-| Product | `3.0.1`，本轮未创建新 tag |
-| Engineering | `1.5.0`，本轮未创建新 tag |
-| E3 | `1.0.0`，本地 tag `oec-e3--v1.0.0` |
-| Pipeline | `1.0.0`，本地 tag `oec-pipeline--v1.0.0` |
-| Common | `0.2.0`，本轮未创建新 tag |
+| Marketplace | `3.0.1` release candidate |
+| Product | `3.0.2` release candidate，未创建新 tag |
+| Engineering | `1.5.1` release candidate，未创建新 tag |
+| E3 | `1.0.1` release candidate，未创建新 tag |
+| Pipeline | `1.0.1` release candidate，未创建新 tag |
+| Common | `0.2.1` release candidate，未创建新 tag |
 | 当前自动测试 | 全部通过；精确数量以 `npm test` 输出为准 |
-| 远端发布 | 3.0 tags 尚未推送远端 |
+| Skill 行为 eval | 13 个 Skill 的正负场景已可执行；真实运行受 early-access 账号能力限制 |
+| 远端发布 | LICENSE/notice Owner 决定及外部写入证据完成前阻塞；不创建或推送新 tag |
 
 ## 附录 C：可复核证据索引
 

@@ -9,6 +9,9 @@
 - `oec-pipeline`：现有 dev/test 流水线的受控发现、执行和状态验证。
 - `oec-common`：零运行时依赖的 HTML-first 演示幻灯片。
 
+当前修复分支的 release candidate 为 Marketplace `3.0.1`、Product `3.0.2`、Engineering `1.5.1`、
+E3 `1.0.1`、Pipeline `1.0.1` 和 Common `0.2.1`；这些版本尚未发布。
+
 ## 原生层级
 
 ```text
@@ -121,12 +124,12 @@ E3 发布必须由用户显式调用，并经过 prepare、计划确认、宿主
 npm ci --ignore-scripts
 npm run build
 npm test
-claude plugin validate .
-claude plugin validate ./oec-product
-claude plugin validate ./oec-engineering
-claude plugin validate ./oec-e3
-claude plugin validate ./oec-pipeline
-claude plugin validate ./oec-common
+claude plugin validate --strict .
+claude plugin validate --strict ./oec-product
+claude plugin validate --strict ./oec-engineering
+claude plugin validate --strict ./oec-e3
+claude plugin validate --strict ./oec-pipeline
+claude plugin validate --strict ./oec-common
 claude --plugin-dir ./oec-product plugin details oec-product
 claude --plugin-dir ./oec-engineering plugin details oec-engineering
 claude --plugin-dir ./oec-common plugin details oec-common
@@ -134,6 +137,22 @@ claude --plugin-dir ./oec-common plugin details oec-common
 
 `package.json` 和 lockfile 位于 Marketplace 根，仅供维护和构建使用，不会随 Plugin 复制到缓存。
 发布前重新构建 bundles，并确认没有未提交差异。
+
+Product、Engineering 和 Common 的 13 个 Skills 各有一条正向和一条近邻负向原生 eval。小成本本地
+smoke 可分别对三个 Plugin 运行：
+
+```bash
+claude plugin eval ./oec-product --runs 1 --ablation with-without --max-cost-usd 2 --no-publish
+claude plugin eval ./oec-engineering --runs 1 --ablation with-without --max-cost-usd 4 --no-publish
+claude plugin eval ./oec-common --runs 1 --ablation with-without --max-cost-usd 1 --no-publish
+```
+
+正式 release evidence 使用 `--runs 3`。eval 仍是 Claude Code early-access 能力：账号不可用时，场景
+完整性只能由静态测试证明，不能据此宣称真实模型行为已通过。
+
+当前 Marketplace `3.0.1` 与五个 Plugin 版本仅构成 release candidate。仓库 LICENSE/notice 的 Owner
+决定以及 E3/Pipeline 明确授权的真实非生产写入验收完成前，不创建或推送 release tag，也不宣称正式
+发布。
 
 贡献规则见 [CLAUDE.md](CLAUDE.md)。版本变化记录见
 [oec-product/CHANGELOG.md](oec-product/CHANGELOG.md) 和

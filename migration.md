@@ -1,8 +1,8 @@
 # OEC PM 能力迁移分析
 
 > 本文基于旧仓库 `oec-ai-infra` 的 commit
-> `79356008b9961c3e8a70c57e2fe5c9cf0c7ce424` 和当前 Marketplace `3.0.0`。分析对象分别是旧
-> `oec-ai@0.2.2`，以及当前 `oec-product@3.0.0` 与其平台依赖 `oec-e3@1.0.0`。旧结构的数据来自
+> `79356008b9961c3e8a70c57e2fe5c9cf0c7ce424` 和当前 release candidate Marketplace `3.0.1`。分析对象分别是旧
+> `oec-ai@0.2.2`，以及当前 `oec-product@3.0.2` 与其平台依赖 `oec-e3@1.0.1`。旧结构的数据来自
 > 实际构建产物以及一次隔离临时目录中的
 > `role=designer + tool=claude-code` 初始化，不把编辑源码目录误认为 PM 最终加载的配置。
 
@@ -450,13 +450,13 @@ publishing 不预加载，并设置为只能由用户显式调用。
 
 ```text
 Marketplace: plainOEC-infra
-├── Plugin: oec-product@3.0.0
+├── Plugin: oec-product@3.0.2
 │   ├── agents/oec-pm.md
 │   ├── skills/writing-prds/
 │   ├── skills/reviewing-prds/
 │   ├── skills/publishing-prds-to-e3/
 │   └── dependency: oec-e3@~1.0.0
-└── Plugin: oec-e3@1.0.0
+└── Plugin: oec-e3@1.0.1
     ├── .mcp.json
     ├── servers/e3/
     └── dist/e3-server.mjs
@@ -466,8 +466,8 @@ Marketplace: plainOEC-infra
 
 | Plugin | Skills | Agents | MCP servers | Commands | Hooks |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `oec-product@3.0.0` | 3 | 1 | 0 | 0 | 0 |
-| `oec-e3@1.0.0` | 0 | 0 | 1 | 0 | 0 |
+| `oec-product@3.0.2` | 3 | 1 | 0 | 0 | 0 |
+| `oec-e3@1.0.1` | 0 | 0 | 1 | 0 | 0 |
 
 Product 通过 Marketplace 复制进 Claude Code plugin cache，Claude Code 自动解析 E3 dependency。安装
 过程不会在产品仓库创建 `.claude`、`.oec-ai` 或模板；只有用户真正执行 writing Skill 时，才按业务
@@ -669,16 +669,14 @@ flowchart LR
 
 ### 8.2 自动验证
 
-Marketplace `3.0.0` 当前自动验证结果：
+Marketplace `3.0.1` 当前自动验证命令：
 
 ```text
 npm run build
 npm test
-
-tests: 99
-pass:  99
-fail:  0
 ```
+
+精确测试数量与结果以本次命令输出为准。
 
 测试覆盖：
 

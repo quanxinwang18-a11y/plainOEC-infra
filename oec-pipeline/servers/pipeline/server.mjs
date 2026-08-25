@@ -21,7 +21,7 @@ async function rootsFor(mcpServer) {
 }
 
 export function createPipelineMcpServer({ service } = {}) {
-  const mcpServer = new McpServer({ name: 'oec-pipeline', version: '1.0.0' });
+  const mcpServer = new McpServer({ name: 'oec-pipeline', version: '1.0.1' });
   const pipeline = service ?? new PipelineService({
     client: new PipelineClient({ auth: new AuthManager() }),
   });

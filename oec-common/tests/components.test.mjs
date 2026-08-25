@@ -18,7 +18,7 @@ function skill() {
 test('common 0.2 exposes one finished HTML Slides Skill', () => {
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-common');
-  assert.equal(manifest.version, '0.2.0');
+  assert.equal(manifest.version, '0.2.1');
   assert.doesNotMatch(JSON.stringify(manifest), /gif/i);
 
   const names = readdirSync(resolve(pluginRoot, 'skills'), { withFileTypes: true })

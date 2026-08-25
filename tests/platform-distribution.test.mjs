@@ -32,7 +32,7 @@ async function skillCount(plugin) {
 test('Marketplace versions and native Plugin boundaries are internally consistent', async () => {
   const marketplace = JSON.parse(await readFile(resolve(repositoryRoot, '.claude-plugin', 'marketplace.json'), 'utf8'));
   const packageManifest = JSON.parse(await readFile(resolve(repositoryRoot, 'package.json'), 'utf8'));
-  assert.equal(marketplace.version, '3.0.0');
+  assert.equal(marketplace.version, '3.0.1');
   assert.equal(packageManifest.version, marketplace.version);
   assert.deepEqual(marketplace.plugins.map((plugin) => plugin.name), [
     'oec-product', 'oec-engineering', 'oec-e3', 'oec-pipeline', 'oec-common',

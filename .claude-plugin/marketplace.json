@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "plainOEC-infra",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "OEC 面向 Claude Code 的组织级能力市场。",
   "owner": {
     "name": "OEC"
@@ -12,35 +12,35 @@
   "plugins": [
     {
       "name": "oec-product",
-      "version": "3.0.1",
+      "version": "3.0.2",
       "description": "OEC 产品管理能力：PRD 编写、红队评审以及通过 E3 平台 Plugin 发布需求。",
       "source": "./oec-product",
       "category": "product-management"
     },
     {
       "name": "oec-engineering",
-      "version": "1.5.0",
+      "version": "1.5.1",
       "description": "OEC 软件工程能力：团队 Specs、显式迁移、技术规划、决策挑战、决策原型、TDD、诊断、评审和收口；含 3 个显式使用的 subagent，Codex 配置仍为实验性。",
       "source": "./oec-engineering",
       "category": "development"
     },
     {
       "name": "oec-e3",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "E3 平台原子能力：PRD 发布与研发任务规划、进度和状态验证。",
       "source": "./oec-e3",
       "category": "development"
     },
     {
       "name": "oec-pipeline",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "现有 dev/test 流水线的受控发现、执行和状态验证。",
       "source": "./oec-pipeline",
       "category": "development"
     },
     {
       "name": "oec-common",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "description": "OEC 公共能力包：创建可在浏览器演讲、概览和打印的 HTML 幻灯片。",
       "source": "./oec-common",
       "category": "utility"

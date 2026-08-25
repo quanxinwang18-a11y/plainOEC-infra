@@ -109,16 +109,16 @@ test('writing assets cover the product SSOT and use safe exact-path commit synta
 test('plugin relies on native discovery and has no forbidden root component framework', () => {
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-product');
-  assert.equal(manifest.version, '3.0.1');
+  assert.equal(manifest.version, '3.0.2');
   assert.deepEqual(manifest.dependencies, [{ name: 'oec-e3', version: '~1.0.0' }]);
   const packageManifest = JSON.parse(readFileSync(resolve(pluginRoot, '..', 'package.json'), 'utf8'));
-  assert.equal(packageManifest.version, '3.0.0');
+  assert.equal(packageManifest.version, '3.0.1');
   assert.equal('dependencies' in packageManifest, false);
   assert.equal(packageManifest.devDependencies.esbuild, '0.28.2');
   assert.equal(existsSync(resolve(pluginRoot, 'package.json')), false);
   assert.equal(existsSync(resolve(pluginRoot, 'package-lock.json')), false);
   const marketplace = JSON.parse(readFileSync(resolve(pluginRoot, '..', '.claude-plugin', 'marketplace.json'), 'utf8'));
-  assert.equal(marketplace.version, '3.0.0');
+  assert.equal(marketplace.version, '3.0.1');
   const productEntry = marketplace.plugins.find((plugin) => plugin.name === manifest.name);
   assert.equal(productEntry.version, manifest.version);
   assert.equal(productEntry.source, './oec-product');

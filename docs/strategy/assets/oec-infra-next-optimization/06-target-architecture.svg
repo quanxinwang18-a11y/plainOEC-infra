@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
   <title id="title">OEC-infra 下一阶段目标架构</title>
-  <desc id="desc">目标 Marketplace 保留 Product、Engineering、E3、Pipeline，并在审计后建设 Testing，在平台准入后建设 UTP 和 SAE。</desc>
+  <desc id="desc">目标 Marketplace 保留 Product、Engineering、Common、E3、Pipeline，并在审计后建设 Testing，在平台准入后建设 UTP 和 SAE。</desc>
   <defs>
     <style>
       text { font-family: Kaiti SC; fill: #273142; }

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.1
+
+- Require `oec-implement` and `oec-research` to receive an existing change ID instead of inventing a
+  change package.
+- Require implementation and review Agents to run affected tests and report partial or failed
+  verification when evidence is missing.
+- Keep Claude and Codex Agent instructions aligned, make closing manual-only in Codex, and replace
+  prose-only case lists with native executable routing evals for all nine Skills.
+
 ## 1.5.0
 
 - Add the explicit-only `challenging-engineering-decisions` Skill for evidence-grounded, user-led

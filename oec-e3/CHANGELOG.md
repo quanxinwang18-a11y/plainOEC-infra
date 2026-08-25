@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.1
+
+- Resolve the acting account only from explicit configuration, compatible environment variables, or
+  a verified JWT claim; ambiguous identity now fails before any remote write.
+- Expose optional non-secret `e3_user_account` Plugin configuration and stop inferring identity from
+  a product-space creator.
+- Reject empty, malformed, array, and unknown HTTP success payloads instead of treating any 2xx
+  response as an accepted E3 operation.
+
 ## 1.0.0
 
 - Extract the guarded PRD publication Server from the Product Plugin without changing its four tool

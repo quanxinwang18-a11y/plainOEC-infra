@@ -10,6 +10,10 @@ Plugin 提供四个 PRD 发布工具，以及六个研发任务规划、需求�
 运行时状态保存在 `${CLAUDE_PLUGIN_DATA}`。提交的 `dist/e3-server.mjs` 在 Node.js 20 或更新版本上
 运行，不依赖 Plugin 内的 `node_modules`。
 
+账号只从 OAuth JWT 中可验证的 account claim、`OEC_E3_USER_ACCOUNT` 或兼容旧变量取得；无法确定时
+prepare 在任何远端创建调用前失败。JWT 不含可识别 claim 时，可通过 Plugin 的非敏感
+`e3_user_account` user config 显式提供账号，OAuth token 仍只存放在 Plugin Data。
+
 ## Tools
 
 ```text
@@ -36,3 +40,6 @@ read-back 为状态 `3`、进度 `100`、工时 `1.0h`。远端对象保留；�
 
 完整证据和未覆盖边界见
 [E3 platform 3.0.0 real acceptance](../docs/evidence/e3-platform-3.0.0-real-acceptance.md)。
+
+该记录证明 `1.0.0` 主链，不自动证明 `1.0.1` 的显式账号/认证账号一致性。补丁版本仍需在用户授权的
+唯一非生产对象上复验 owner，在此之前保留 real-E2E evidence gap。

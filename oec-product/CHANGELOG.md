@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.2
+
+- Replace per-Skill prose-only case lists with native executable routing evals.
+- Cover positive and adjacent negative discovery for all three Product Skills without changing the
+  `oec-e3@~1.0.0` platform dependency.
+
 ## 3.0.1
 
 - Add explicit negative discovery boundaries to all three PRD Skills.

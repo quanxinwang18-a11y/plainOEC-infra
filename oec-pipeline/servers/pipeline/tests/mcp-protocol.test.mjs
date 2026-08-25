@@ -19,7 +19,7 @@ test('Pipeline MCP exposes four bounded tools and forwards client roots', async 
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
   try {
-    assert.equal(client.getServerVersion().version, '1.0.0');
+    assert.equal(client.getServerVersion().version, '1.0.1');
     const tools = await client.listTools();
     assert.deepEqual(tools.tools.map((tool) => tool.name), [
       'prepare_pipeline_run',
