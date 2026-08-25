@@ -15,6 +15,47 @@ test('E3 success classifier accepts known codes and rejects permission errors', 
   for (const code of ['E00000000', '0', 0, '200', 200]) assert.equal(isE3Success({ code }), true);
   assert.equal(isE3Success({ success: true }), true);
   assert.equal(isE3Success({ code: '3000600023', msg: 'denied' }), false);
+  assert.equal(isE3Success({ message: 'unknown 2xx shape' }), false);
+  assert.equal(isE3Success({}), false);
+  assert.equal(isE3Success([]), false);
+  assert.equal(isE3Success(null), false);
+});
+
+test('E3 account resolution uses explicit configuration or JWT claims and never a space creator', async () => {
+  const keys = ['OEC_E3_USER_ACCOUNT', 'SKILL_USER_ACCOUNT', 'SKILL_USER_NAME', 'OPENCLAW_USER'];
+  const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  for (const key of keys) delete process.env[key];
+  try {
+    const opaque = new E3Client({
+      auth: { async getAccessToken() { return { token: 'opaque-token', source: 'local' }; } },
+      fetchFn: async () => { throw new Error('currentAccount must not query product spaces'); },
+    });
+    process.env.OEC_E3_USER_ACCOUNT = ' configured-owner ';
+    assert.equal(await opaque.currentAccount(), 'configured-owner');
+    delete process.env.OEC_E3_USER_ACCOUNT;
+    await assert.rejects(opaque.currentAccount(), /Unable to determine the current E3 account/);
+
+    const claims = Buffer.from(JSON.stringify({ preferred_username: 'jwt-owner' })).toString('base64url');
+    const jwt = new E3Client({
+      auth: { async getAccessToken() { return { token: `header.${claims}.signature`, source: 'local' }; } },
+    });
+    assert.equal(await jwt.currentAccount(), 'jwt-owner');
+  } finally {
+    for (const key of keys) {
+      if (previous[key] === undefined) delete process.env[key];
+      else process.env[key] = previous[key];
+    }
+  }
+});
+
+test('E3 client rejects malformed or unknown HTTP 2xx payloads', async () => {
+  for (const payload of ['not-json', JSON.stringify({ message: 'denied without a known wrapper' })]) {
+    const client = new E3Client({
+      auth: { async getAccessToken() { return { token: 'test-token', source: 'local' }; } },
+      fetchFn: async () => new Response(payload, { status: 200 }),
+    });
+    await assert.rejects(client.request('GET', '/api/example'), /E3 API rejected request/);
+  }
 });
 
 test('E3 response adapters support info/data and known created-ID shapes', () => {

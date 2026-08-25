@@ -6,5 +6,12 @@
     "name": "OEC"
   },
   "keywords": ["e3", "requirements", "development-tasks", "mcp"],
-  "license": "MIT"
+  "license": "MIT",
+  "userConfig": {
+    "e3_user_account": {
+      "type": "string",
+      "title": "E3 account",
+      "description": "Optional explicit E3 account used when the OAuth token has no recognized account claim."
+    }
+  }
 }

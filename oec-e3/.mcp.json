@@ -4,7 +4,8 @@
       "command": "node",
       "args": ["${CLAUDE_PLUGIN_ROOT}/dist/e3-server.mjs"],
       "env": {
-        "OEC_PLUGIN_DATA": "${CLAUDE_PLUGIN_DATA}"
+        "OEC_PLUGIN_DATA": "${CLAUDE_PLUGIN_DATA}",
+        "OEC_E3_USER_ACCOUNT": "${user_config.e3_user_account}"
       }
     }
   }

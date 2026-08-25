@@ -104,8 +104,8 @@ function normalizeSource(source = {}) {
   return { ...(requirementId ? { requirementId } : {}), ...(prdVersion ? { prdVersion, featureName } : {}) };
 }
 
-function taskFingerprint(changeId, requirementId, tasks) {
-  return `sha256:${createHash('sha256').update(JSON.stringify({ changeId, requirementId, tasks })).digest('hex')}`;
+function taskFingerprint(changeId, requirementId, tasks, account) {
+  return `sha256:${createHash('sha256').update(JSON.stringify({ changeId, requirementId, tasks, account })).digest('hex')}`;
 }
 
 function progressFingerprint(changeId, config, requirement, updates, tasks) {
@@ -290,6 +290,7 @@ export class DevelopmentTaskService {
 
   async readyPlan({ workspaceUri, workspace, changeId, config, requirement, tasks }) {
     const inspected = await inspectTasks(this.client, workspace, changeId, config, requirement, tasks);
+    const account = await this.client.currentAccount();
     const createdAt = this.now();
     const plan = {
       kind: 'task-creation',
@@ -299,7 +300,8 @@ export class DevelopmentTaskService {
       config,
       requirement,
       tasks,
-      fingerprint: taskFingerprint(changeId, requirement.id, tasks),
+      account,
+      fingerprint: taskFingerprint(changeId, requirement.id, tasks, account),
       createdAt,
       expiresAt: createdAt + PLAN_TTL_MS,
     };
@@ -415,9 +417,11 @@ export class DevelopmentTaskService {
         || String(config.pompProject.code) !== String(plan.config.pompProject.code)) {
       throw new Error('E3 workspace configuration changed after development task prepare');
     }
-    if (taskFingerprint(plan.changeId, plan.requirement.id, plan.tasks) !== plan.fingerprint) {
+    if (taskFingerprint(plan.changeId, plan.requirement.id, plan.tasks, plan.account) !== plan.fingerprint) {
       throw new Error('Development task plan fingerprint is invalid');
     }
+    const account = await this.client.currentAccount();
+    if (account !== plan.account) throw new Error('E3 account changed after development task prepare');
     const metadata = await this.client.requirementMetadata(config.productSpace.id);
     const requirement = await this.client.getRequirement(config.productSpace.id, metadata.workItemId, plan.requirement.id);
     if (!requirement || requirement.title !== plan.requirement.title) {
@@ -437,7 +441,6 @@ export class DevelopmentTaskService {
     let checkpoint = await writeDevelopmentMapping(workspace, plan.changeId, mapping);
     mapping = checkpoint.mapping;
     const changes = [];
-    const account = await this.client.currentAccount();
     try {
       for (const task of plan.tasks) {
         let item = mapping.tasks.find((candidate) => candidate.local_id === task.localId);

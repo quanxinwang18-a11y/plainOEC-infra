@@ -6,10 +6,10 @@ const REQUIREMENT_PRIORITY = { P0: 4, P1: 3, P2: 2, P3: 1 };
 const TASK_PRIORITY = { P0: 0, P1: 1, P2: 2, P3: 3 };
 
 export function isE3Success(response) {
-  if (!response || typeof response !== 'object' || Array.isArray(response)) return true;
+  if (!response || typeof response !== 'object' || Array.isArray(response)) return false;
   if ('code' in response) return SUCCESS_CODES.has(response.code);
   if ('success' in response) return response.success === true;
-  return true;
+  return false;
 }
 
 export function extractE3Data(response, path = '') {
@@ -221,14 +221,14 @@ export class E3Client {
   }
 
   async currentAccount() {
-    for (const key of ['SKILL_USER_ACCOUNT', 'SKILL_USER_NAME', 'OPENCLAW_USER']) {
-      if (process.env[key]) return process.env[key];
+    for (const key of ['OEC_E3_USER_ACCOUNT', 'SKILL_USER_ACCOUNT', 'SKILL_USER_NAME', 'OPENCLAW_USER']) {
+      const value = process.env[key]?.trim();
+      if (value) return value;
     }
     const { token } = await this.auth.getAccessToken();
     const jwt = decodeJwtAccount(token);
     if (jwt) return jwt;
-    const spaces = await this.listSpaces();
-    return spaces[0]?.createBy ?? null;
+    throw new Error('Unable to determine the current E3 account; configure e3_user_account or use a token with a recognized account claim');
   }
 
   async requirementMetadata(spaceId) {

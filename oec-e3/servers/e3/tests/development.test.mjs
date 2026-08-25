@@ -57,6 +57,7 @@ class FakeClient {
     this.unknownStartResult = false;
     this.unknownWorklogResult = false;
     this.failWorklogId = null;
+    this.account = 'owner';
   }
 
   async listRequirements() { return this.requirements; }
@@ -64,7 +65,10 @@ class FakeClient {
   async getRequirement(_spaceId, _workItemId, id) {
     return this.requirements.find((item) => String(item.id) === String(id)) ?? null;
   }
-  async currentAccount() { return 'owner'; }
+  async currentAccount() {
+    if (this.account instanceof Error) throw this.account;
+    return this.account;
+  }
   async listTasks(_spaceId, requirementId) { return this.tasks.get(String(requirementId)) ?? []; }
   async getTask(_spaceId, taskId) {
     return [...this.tasks.values()].flat().find((item) => String(item.id) === String(taskId)) ?? null;
@@ -199,6 +203,33 @@ test('development execution checkpoints created tasks and later plans reuse them
   assert.deepEqual(repeated.counts, { createTasks: 0, reuseTasks: 1 });
   assert.equal((await service.execute({ planToken: repeated.planToken }, value.roots)).status, 'synced');
   assert.equal(client.creates, 1);
+});
+
+test('development prepare fails closed without a verified E3 account and execute rechecks it', async () => {
+  const value = await fixture();
+  const client = new FakeClient();
+  const service = new DevelopmentTaskService({ client, dataDirectory: value.dataDirectory });
+  client.account = new Error('Unable to determine the current E3 account');
+  const blocked = await service.prepare({
+    workspaceUri: value.workspaceUri,
+    ...input({ source: { requirementId: 'req-1' } }),
+  }, value.roots);
+  assert.equal(blocked.status, 'blocked');
+  assert.match(blocked.errors.join('\n'), /Unable to determine the current E3 account/);
+  assert.equal(client.creates, 0);
+
+  client.account = 'owner';
+  const prepared = await service.prepare({
+    workspaceUri: value.workspaceUri,
+    ...input({ source: { requirementId: 'req-1' } }),
+  }, value.roots);
+  assert.equal(prepared.status, 'ready');
+  client.account = 'different-owner';
+  await assert.rejects(
+    service.execute({ planToken: prepared.planToken }, value.roots),
+    /E3 account changed after development task prepare/,
+  );
+  assert.equal(client.creates, 0);
 });
 
 test('development planning reuses a PRD requirement mapping without copying product requirements', async () => {
