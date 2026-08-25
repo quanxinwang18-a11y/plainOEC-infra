@@ -22,10 +22,10 @@ function responseMessage(payload) {
 
 export function isPipelineSuccess(payload) {
   const value = unwrap(payload);
-  if (!value || typeof value !== 'object') return true;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   if ('code' in value) return SUCCESS_CODES.has(value.code);
   if ('success' in value) return value.success === true;
-  return true;
+  return false;
 }
 
 function pageItems(data) {

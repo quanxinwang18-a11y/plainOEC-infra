@@ -7,6 +7,20 @@ test('Pipeline response classifier supports verified success wrappers', () => {
   assert.equal(isPipelineSuccess({ code: '0' }), true);
   assert.equal(isPipelineSuccess({ success: true, data: { code: 0, data: 1 } }), true);
   assert.equal(isPipelineSuccess({ code: 500, message: 'denied' }), false);
+  assert.equal(isPipelineSuccess({ message: 'unknown 2xx shape' }), false);
+  assert.equal(isPipelineSuccess({}), false);
+  assert.equal(isPipelineSuccess([]), false);
+  assert.equal(isPipelineSuccess(null), false);
+});
+
+test('Pipeline client rejects malformed or unknown HTTP 2xx payloads', async () => {
+  for (const payload of ['not-json', JSON.stringify({ message: 'denied without a known wrapper' })]) {
+    const client = new PipelineClient({
+      auth: { async getAccessToken() { return { token: 'token', source: 'local' }; } },
+      fetchFn: async () => new Response(payload, { status: 200 }),
+    });
+    await assert.rejects(client.listWorkspaces('dev'), /Pipeline API rejected request/);
+  }
 });
 
 test('Pipeline client uses fixed OpenAPI endpoints and normalizes exact run IDs', async () => {

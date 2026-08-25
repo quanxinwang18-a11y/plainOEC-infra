@@ -29,6 +29,7 @@ test('Pipeline MCP exposes four bounded tools and forwards client roots', async 
     ]);
     const execute = tools.tools.find((tool) => tool.name === 'execute_pipeline_run');
     assert.equal(execute.annotations.destructiveHint, true);
+    assert.equal(execute.annotations.idempotentHint, true);
     assert.equal(execute._meta['anthropic/requiresUserInteraction'], true);
     const prepareSchema = tools.tools.find((tool) => tool.name === 'prepare_pipeline_run').inputSchema;
     assert.deepEqual(prepareSchema.properties.environment.enum, ['dev', 'test']);

@@ -60,7 +60,7 @@ export function createPipelineMcpServer({ service } = {}) {
     title: 'Execute existing pipeline run',
     description: 'Execute a prepared immutable dev or test pipeline plan after rechecking Git and remote configuration.',
     inputSchema: { planToken: z.string().min(32) },
-    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
     _meta: { 'anthropic/requiresUserInteraction': true },
   }, guarded(async (input) => pipeline.execute(input, await rootsFor(mcpServer))));
 

@@ -69,6 +69,7 @@ class FakeClient {
     this.runCalls = [];
     this.refCommit = 'a'.repeat(40);
     this.unknownRunResult = false;
+    this.failBeforeRemoteResult = false;
     this.deterministicFailure = false;
   }
 
@@ -90,6 +91,10 @@ class FakeClient {
   async runPipeline(_environment, body) {
     this.runCalls.push(structuredClone(body));
     if (this.deterministicFailure) throw new Error('Pipeline API rejected request: denied');
+    if (this.failBeforeRemoteResult) {
+      this.failBeforeRemoteResult = false;
+      throw new Error('connection reset before a remote run became visible');
+    }
     const run = {
       id: String(this.runs.length + 1),
       pipelineId: body.pipelineId,
@@ -214,6 +219,10 @@ test('prepare is non-mutating and execute binds selected stages to exact Git HEA
   assert.equal(request.taskDataList.find((task) => task.id === 'deploy-pipeline-1').data.skipExecution, true);
   assert.equal(request.customParameterRuns[0].defaultValue, 'test');
   assert.deepEqual(request.triggerInfo, { triggerType: 0, triggerParams: {} });
+  const replayed = await pipelineService.execute({ planToken: prepared.planToken }, value.roots);
+  assert.equal(replayed.runId, executed.runId);
+  assert.equal(replayed.runToken, executed.runToken);
+  assert.equal(client.runCalls.length, 1);
 
   const runtimeFile = join(value.dataDirectory, 'pipeline', 'runtime', `${executed.runToken}.json`);
   const before = await readFile(runtimeFile, 'utf8');
@@ -314,4 +323,67 @@ test('unknown POST results are recovered by exact marker and deterministic rejec
   }, value.roots);
   const blocked = await pipelineService.execute({ planToken: prepared.planToken }, value.roots);
   assert.equal(blocked.status, 'blocked');
+  const callsAfterFailure = client.runCalls.length;
+  assert.equal((await pipelineService.execute({ planToken: prepared.planToken }, value.roots)).status, 'blocked');
+  assert.equal(client.runCalls.length, callsAfterFailure);
+});
+
+test('an executing Pipeline plan never reposts and recovers only from its exact marker', async () => {
+  const value = await fixture();
+  const client = new FakeClient();
+  const pipelineService = service(value, client);
+  client.failBeforeRemoteResult = true;
+  const prepared = await pipelineService.prepare({
+    workspaceUri: value.workspaceUri,
+    pipelineId: 'pipeline-1',
+    environment: 'dev',
+  }, value.roots);
+  const uncertain = await pipelineService.execute({ planToken: prepared.planToken }, value.roots);
+  assert.equal(uncertain.status, 'unknown');
+  assert.equal(client.runCalls.length, 1);
+  assert.equal((await pipelineService.execute({ planToken: prepared.planToken }, value.roots)).status, 'unknown');
+  assert.equal(client.runCalls.length, 1);
+
+  const body = client.runCalls[0];
+  client.runs.push({
+    id: 'eventual-run',
+    pipelineId: body.pipelineId,
+    pipelineName: 'Pipeline pipeline-1',
+    status: '100002',
+    statusName: 'Running',
+    runRemark: body.runRemark,
+  });
+  const recovered = await pipelineService.execute({ planToken: prepared.planToken }, value.roots);
+  assert.equal(recovered.status, 'running');
+  assert.equal(recovered.runId, 'eventual-run');
+  assert.equal(recovered.action, 'recovered-after-replay');
+  assert.equal(client.runCalls.length, 1);
+});
+
+test('multiple remote runs for one Pipeline plan block replay recovery', async () => {
+  const value = await fixture();
+  const client = new FakeClient();
+  const pipelineService = service(value, client);
+  client.failBeforeRemoteResult = true;
+  const prepared = await pipelineService.prepare({
+    workspaceUri: value.workspaceUri,
+    pipelineId: 'pipeline-1',
+    environment: 'dev',
+  }, value.roots);
+  assert.equal((await pipelineService.execute({ planToken: prepared.planToken }, value.roots)).status, 'unknown');
+  const body = client.runCalls[0];
+  for (const id of ['duplicate-1', 'duplicate-2']) {
+    client.runs.push({
+      id,
+      pipelineId: body.pipelineId,
+      pipelineName: 'Pipeline pipeline-1',
+      status: '100002',
+      statusName: 'Running',
+      runRemark: body.runRemark,
+    });
+  }
+  const blocked = await pipelineService.execute({ planToken: prepared.planToken }, value.roots);
+  assert.equal(blocked.status, 'blocked');
+  assert.match(blocked.errors.join('\n'), /ambiguous/);
+  assert.equal(client.runCalls.length, 1);
 });

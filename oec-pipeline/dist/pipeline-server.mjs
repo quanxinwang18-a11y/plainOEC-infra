@@ -21212,10 +21212,10 @@ function responseMessage(payload) {
 }
 function isPipelineSuccess(payload) {
   const value = unwrap(payload);
-  if (!value || typeof value !== "object") return true;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   if ("code" in value) return SUCCESS_CODES.has(value.code);
   if ("success" in value) return value.success === true;
-  return true;
+  return false;
 }
 function pageItems(data) {
   if (Array.isArray(data)) return data;
@@ -21655,6 +21655,7 @@ var PipelineService = class {
   }
   async readyPlan({ workspaceUri, workspace, environment, gitSnapshot, candidate, stages }) {
     const runKey = token();
+    const runToken = token();
     const built = await buildRunRequest(this.client, environment, candidate.detail, gitSnapshot, stages, runKey);
     const createdAt = this.now();
     const plan = {
@@ -21667,7 +21668,9 @@ var PipelineService = class {
       stages: built.stages,
       configFingerprint: candidate.fingerprint,
       runKey,
+      runToken,
       warnings: built.warnings,
+      state: "prepared",
       createdAt,
       expiresAt: createdAt + PLAN_TTL_MS
     };
@@ -21766,8 +21769,72 @@ var PipelineService = class {
     return ready;
   }
   async execute({ planToken }, roots) {
-    const plan = await loadTokenFile(planPath(planToken, this.dataDirectory), this.now(), "Pipeline plan");
+    const path = planPath(planToken, this.dataDirectory);
+    let plan = await loadTokenFile(path, this.now(), "Pipeline plan");
     if (plan.kind !== "pipeline-run") throw new Error("planToken is not a pipeline-run plan");
+    if (!plan.runToken) {
+      plan = { ...plan, runToken: token(), state: plan.state ?? "prepared" };
+      await atomicJson(path, plan);
+    }
+    const resultFor = (remote2, action2) => ({
+      status: "running",
+      pipeline: plan.pipeline,
+      runId: String(remote2.id),
+      runToken: plan.runToken,
+      action: action2
+    });
+    const matchingRuns = async () => (await this.client.listRuns(plan.environment, plan.pipeline.id)).filter((run) => run.runRemark === `oec-pipeline:${plan.runKey}`);
+    const checkpointRun = async (remote2, action2) => {
+      await atomicJson(runtimePath(plan.runToken, this.dataDirectory), {
+        workspaceUri: plan.workspaceUri,
+        workspace: plan.workspace,
+        environment: plan.environment,
+        pipeline: plan.pipeline,
+        git: plan.git,
+        stages: plan.stages,
+        runKey: plan.runKey,
+        runId: String(remote2.id),
+        createdAt: this.now()
+      });
+      plan = {
+        ...plan,
+        state: "executed",
+        runId: String(remote2.id),
+        action: action2,
+        executedAt: this.now()
+      };
+      await atomicJson(path, plan);
+      return resultFor(remote2, action2);
+    };
+    const recoverExisting = async (action2) => {
+      const matches = await matchingRuns();
+      if (matches.length === 1) return checkpointRun(matches[0], action2);
+      if (matches.length > 1) {
+        plan = {
+          ...plan,
+          state: "failed",
+          error: "Pipeline run result is ambiguous; exact run marker matched multiple records",
+          failedAt: this.now()
+        };
+        await atomicJson(path, plan);
+        return { status: "blocked", errors: [plan.error] };
+      }
+      return null;
+    };
+    if (plan.state === "executed") {
+      return resultFor({ id: plan.runId }, plan.action ?? "replayed");
+    }
+    if (plan.state === "failed") {
+      return { status: "blocked", errors: [plan.error ?? "Pipeline plan previously failed; prepare again"] };
+    }
+    if (plan.state === "executing") {
+      const recovered = await recoverExisting("recovered-after-replay");
+      return recovered ?? {
+        status: "unknown",
+        planToken,
+        errors: ["Pipeline execution is already in progress or its result is not yet visible; retry this plan token to query again"]
+      };
+    }
     const workspace = await resolveAuthorizedWorkspace(plan.workspaceUri, roots);
     if (workspace !== plan.workspace) throw new Error("Pipeline workspace changed after prepare");
     const gitSnapshot = await this.gitSnapshotFn(workspace, plan.git.ref);
@@ -21778,35 +21845,26 @@ var PipelineService = class {
     }
     const built = await buildRunRequest(this.client, plan.environment, candidate.detail, gitSnapshot, plan.stages, plan.runKey);
     if (fingerprint(built.warnings) !== fingerprint(plan.warnings)) throw new Error("Pipeline runtime configuration changed after prepare");
+    const existing = await recoverExisting("recovered-before-post");
+    if (existing) return existing;
+    plan = { ...plan, state: "executing", executionStartedAt: this.now() };
+    await atomicJson(path, plan);
     let remote;
     let action = "created";
     try {
       remote = await this.client.runPipeline(plan.environment, built.body);
     } catch (error2) {
-      const matches = (await this.client.listRuns(plan.environment, plan.pipeline.id)).filter((run) => run.runRemark === `oec-pipeline:${plan.runKey}`);
-      if (matches.length === 1) {
-        remote = matches[0];
-        action = "recovered-after-unknown-result";
-      } else if (matches.length > 1) {
-        return { status: "blocked", errors: ["Pipeline run result is ambiguous; exact run marker matched multiple records"] };
-      } else {
-        const deterministic = /Pipeline API rejected|Injected Pipeline token|OAuth|environment|permission|denied/i.test(error2.message);
-        return { status: deterministic ? "blocked" : "partial", errors: [error2.message] };
+      const recovered = await recoverExisting("recovered-after-unknown-result");
+      if (recovered) return recovered;
+      const deterministic = /Pipeline API rejected|Injected Pipeline token|OAuth|environment|permission|denied/i.test(error2.message);
+      if (deterministic) {
+        plan = { ...plan, state: "failed", error: error2.message, failedAt: this.now() };
+        await atomicJson(path, plan);
+        return { status: "blocked", errors: [error2.message] };
       }
+      return { status: "unknown", planToken, errors: [error2.message] };
     }
-    const runToken = token();
-    await atomicJson(runtimePath(runToken, this.dataDirectory), {
-      workspaceUri: plan.workspaceUri,
-      workspace,
-      environment: plan.environment,
-      pipeline: plan.pipeline,
-      git: plan.git,
-      stages: plan.stages,
-      runKey: plan.runKey,
-      runId: String(remote.id),
-      createdAt: this.now()
-    });
-    return { status: "running", pipeline: plan.pipeline, runId: String(remote.id), runToken, action };
+    return checkpointRun(remote, action);
   }
   async status({ workspaceUri, runToken }, roots) {
     const runtime = await readJson(runtimePath(runToken, this.dataDirectory));
@@ -21884,7 +21942,7 @@ function createPipelineMcpServer({ service } = {}) {
     title: "Execute existing pipeline run",
     description: "Execute a prepared immutable dev or test pipeline plan after rechecking Git and remote configuration.",
     inputSchema: { planToken: string2().min(32) },
-    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true },
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
     _meta: { "anthropic/requiresUserInteraction": true }
   }, guarded(async (input) => pipeline.execute(input, await rootsFor(mcpServer))));
   mcpServer.registerTool("get_pipeline_run_status", {
