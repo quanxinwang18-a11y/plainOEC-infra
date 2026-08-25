@@ -8,6 +8,8 @@
   verification when evidence is missing.
 - Keep Claude and Codex Agent instructions aligned, make closing manual-only in Codex, and replace
   prose-only case lists with native executable routing evals for all nine Skills.
+- Define risk-appropriate closing review: main-session self-review for small local changes, and
+  fresh-context review or an evidence-recorded user waiver for persisted high-risk change packages.
 
 ## 1.5.0
 

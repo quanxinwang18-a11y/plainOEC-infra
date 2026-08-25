@@ -32,10 +32,13 @@ Before reconciling, confirm that key verification has happened against the final
 - If the user explicitly invoked TDD or code-review earlier, confirm those results are still valid
   against the final diff.
 
-An untested or unreviewed change is not a closed change. Report what was verified and what was
-not. If the change was implemented in the main session and has not been independently reviewed,
-consider dispatching the `oec-check` subagent with the change ID for fresh eyes when the user wants
-an independent review.
+A change is not closed until the final diff has a review appropriate to its risk. A main-session
+self-review is sufficient for a small, local change without a persisted change package. For a
+persisted change package that crosses modules or changes a public interface, data, compatibility,
+or migration behavior, ask the user to dispatch the `oec-check` subagent with the change ID for a
+fresh-context review. If the user declines, record that explicit waiver and the residual review risk
+in `evidence.md`. Here, independent means isolated from the implementation context; it does not imply
+a different model, organization, permission boundary, or security sandbox.
 
 Run `oec-spec select --workspace "$PWD" --paths <changed paths> --format json`. Compare the selected
 Specs and accepted ADRs with the implemented behavior:

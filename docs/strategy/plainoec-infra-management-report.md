@@ -45,7 +45,7 @@ Product、Engineering 和 Common 是模型侧领域能力；E3 和 Pipeline 是�
 按需组合 E3 或 Pipeline。普通编码始终由主 Session 负责，Engineering 不安装一个默认接管研发过程
 的总控 Agent，也不向所有会话注入 SessionStart 上下文。
 
-当前可以确认的事实包括：112 项自动测试全部通过；Marketplace 与五个 Plugin 通过固定 Claude Code
+当前可以确认的事实包括：117 项自动测试全部通过；Marketplace 与五个 Plugin 通过固定 Claude Code
 版本的 strict validation；Git archive 和隔离安装验证了五个 Plugin、十三个 Skills、四个 Agents
 以及两个 MCP Server；E3 和 Pipeline MCP 均能独立启动并显示 Connected。
 
@@ -701,7 +701,10 @@ status。任务 identity 一旦写入 mapping 就不能静默替换。进度计�
 complete 和 read-back。该证据证明当时主链，不证明生产可用、全部错误分支或 `1.0.1` 新身份逻辑。
 
 `1.0.1` 已增加账号来源、opaque token、多空间、JWT claim、未知 2xx、malformed JSON 和无写入阻断
-测试。正式发布前仍需在唯一授权非生产对象上验证远端 owner 等于配置或认证账号。
+测试。publication 现在按 canonical workspace/version 获取独占 Plugin Data 锁，development task creation
+和 progress 按 canonical workspace/change ID 使用同一资源锁；共享同一 Plugin Data 的跨 Server
+实例并发测试证明竞争计划不会重复创建 requirement、研发任务或 worklog。这不声称协调使用不同
+Plugin Data 的独立安装。正式发布前仍需在唯一授权非生产对象上验证远端 owner 等于配置或认证账号。
 
 ## 9. Pipeline 模块
 
@@ -742,8 +745,9 @@ prepared → executing → executed
                      └→ failed
 ```
 
-plan 创建时生成稳定 marker。第一次远端 POST 前，runtime 原子写入 `executing`。这使本地进程在网络
-结果丢失时仍知道请求可能已经到达远端。
+plan 创建时生成稳定 marker。第一次远端 POST 前，调用者必须先通过 plan token 对应的独占 Plugin
+Data claim 取得唯一执行权，再由持有者原子写入 `executing`。并发竞争者不能进入 POST，只能重读状态、
+查询精确 marker 或返回 unknown。这使本地进程在网络结果丢失时仍知道请求可能已经到达远端。
 
 - `executed` 重放返回已保存的 `runId` 和 `runToken`。
 - `executing` 只按精确 marker 查询远端，不再次 POST。
@@ -751,9 +755,11 @@ plan 创建时生成稳定 marker。第一次远端 POST 前，runtime 原子写
 - 无匹配时返回 unknown/partial，等待外部状态变化。
 - 多匹配时返回 blocked，防止选择错误 run。
 - `failed` 返回原确定性错误，要求重新 prepare。
+- 15 分钟 TTL 只约束 `prepared` 授权；`executing` 恢复记录不再被该 TTL 截断。
 
 正常成功、unknown POST recovery 和 replay recovery 写入同一 runtime 文件。同一个 plan token 最多
-产生一次 `runPipeline` POST，工具向调用者标记 `idempotentHint: true`。
+产生一次 `runPipeline` POST，跨两个共享 Plugin Data 的 Service 实例也保持该不变量；工具向调用者
+标记 `idempotentHint: true`。
 
 ![Pipeline 在首次 POST 前进入 executing，并在结果未知时仅通过 marker 查询恢复到唯一 executed 状态](assets/plainoec-infra-management-report/05-pipeline-idempotency.png)
 
@@ -785,8 +791,9 @@ Git repository 只提供当前 remote/ref/HEAD，不保存 Plugin 运行状态�
 
 ### 9.7 当前证据与风险
 
-Pipeline 的 OAuth、dev/test 隔离、Git snapshot、候选选择、状态机、未知结果恢复、单 POST 不变量、
-bundle 和 MCP stdio discovery 已通过自动测试。隔离安装显示 Pipeline MCP Connected。
+Pipeline 的 OAuth、dev/test 隔离、Git snapshot、候选选择、状态机、未知结果恢复、跨实例 single-POST
+申领和 executing 超过 prepared TTL 后的 marker recovery 已通过自动测试。隔离安装显示 Pipeline MCP
+Connected。
 
 当前尚未在明确授权的真实 dev/test pipeline 上执行 `1.0.1`。正式发布前需要执行一个唯一非生产 run，
 并以同一 plan token 重放，确认没有第二个 run。mock、bundle 和 Connected 不能替代这一证据。
@@ -835,6 +842,10 @@ Plugin schema 和 Markdown 测试只能证明组件可发现、字段正确和�
 Product 三个、Engineering 九个、Common 一个，共十三个 Skills。每个 Skill 至少有一个正向和一个
 近邻负向 executable case，共二十六个 cases。grader 验证 `Skill` tool 是否调用正确能力，并对负向
 场景要求零调用。
+
+这些 route graders 只证明能力是否被正确调用或抑制，不证明启用 Skill 后的任务结果优于无 Plugin
+基线。计划质量、无关步骤、change boundary、授权写入和验证证据仍需要固定真实任务集上的 outcome
+grader 与 with/without 消融；在该证据形成前，不以 Skill 数量或 route 通过率声明净收益。
 
 重点边界包括：
 
@@ -982,7 +993,7 @@ Product、Engineering、E3 和 Pipeline 有不同事实来源、权限、状态�
 ### 15.1 当前可以声明
 
 - 本地完整修复已形成 release candidate。
-- 112/112 自动测试通过。
+- 117/117 自动测试通过。
 - Marketplace 和五个 Plugin strict validation 通过。
 - Git archive 与隔离安装通过。
 - 隔离安装结果包含 5 Plugins、13 Skills 和 4 Agents。

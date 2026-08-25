@@ -139,7 +139,8 @@ claude --plugin-dir ./oec-common plugin details oec-common
 发布前重新构建 bundles，并确认没有未提交差异。
 
 Product、Engineering 和 Common 的 13 个 Skills 各有一条正向和一条近邻负向原生 eval。小成本本地
-smoke 可分别对三个 Plugin 运行：
+smoke 可分别对三个 Plugin 运行。当前 grader 只验证 Skill 路由和抑制，不证明任务结果净收益；结果
+质量仍需固定真实任务集上的 outcome grader 与 with/without 消融。
 
 ```bash
 claude plugin eval ./oec-product --runs 1 --ablation with-without --max-cost-usd 2 --no-publish
