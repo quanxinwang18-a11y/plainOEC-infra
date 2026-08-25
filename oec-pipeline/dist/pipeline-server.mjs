@@ -21349,7 +21349,7 @@ var PipelineClient = class {
 // servers/pipeline/planner.mjs
 import { createHash as createHash2, randomBytes as randomBytes2 } from "node:crypto";
 import { execFile } from "node:child_process";
-import { mkdir as mkdir2, readFile as readFile2, realpath, rename as rename2, writeFile as writeFile2 } from "node:fs/promises";
+import { mkdir as mkdir2, open, readFile as readFile2, realpath, rename as rename2, unlink as unlink2, writeFile as writeFile2 } from "node:fs/promises";
 import { promisify } from "node:util";
 import { dirname as dirname2, join as join2, resolve as resolve2 } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21379,6 +21379,10 @@ function runtimePath(token2, dataDirectory) {
   if (!TOKEN_PATTERN.test(token2)) throw new Error("Invalid pipeline run token");
   return join2(dataRoot2(dataDirectory), "runtime", `${token2}.json`);
 }
+function executionClaimPath(token2, dataDirectory) {
+  if (!TOKEN_PATTERN.test(token2)) throw new Error("Invalid pipeline plan token");
+  return join2(dataRoot2(dataDirectory), "execution-claims", `${token2}.lock`);
+}
 async function atomicJson(path, value) {
   await mkdir2(dirname2(path), { recursive: true, mode: 448 });
   const temporary = `${path}.${process.pid}.${randomBytes2(8).toString("hex")}.tmp`;
@@ -21393,6 +21397,29 @@ async function readJson(path) {
     if (error2.code === "ENOENT" || error2 instanceof SyntaxError) return null;
     throw error2;
   }
+}
+async function acquireExecutionClaim(planToken, dataDirectory) {
+  const path = executionClaimPath(planToken, dataDirectory);
+  await mkdir2(dirname2(path), { recursive: true, mode: 448 });
+  let handle;
+  try {
+    handle = await open(path, "wx", 384);
+    await handle.writeFile(`${JSON.stringify({ pid: process.pid, claimedAt: Date.now() })}
+`);
+    await handle.close();
+  } catch (error2) {
+    if (handle) await handle.close().catch(() => {
+    });
+    if (error2.code === "EEXIST") return null;
+    throw error2;
+  }
+  return async () => {
+    try {
+      await unlink2(path);
+    } catch (error2) {
+      if (error2.code !== "ENOENT") throw error2;
+    }
+  };
 }
 function token() {
   return randomBytes2(32).toString("base64url");
@@ -21640,10 +21667,18 @@ async function buildRunRequest(client, environment, detail, gitSnapshot, stageNa
     warnings: [...warnings, ...custom2.warnings]
   };
 }
-async function loadTokenFile(path, now, label) {
+async function loadExpiringTokenFile(path, now, label) {
   const value = await readJson(path);
   if (!value) throw new Error(`${label} does not exist`);
   if (value.expiresAt <= now) throw new Error(`${label} expired; prepare again`);
+  return value;
+}
+async function loadPlanFile(path, now) {
+  const value = await readJson(path);
+  if (!value) throw new Error("Pipeline plan does not exist");
+  if ((value.state ?? "prepared") === "prepared" && value.expiresAt <= now) {
+    throw new Error("Pipeline plan authorization expired; prepare again");
+  }
   return value;
 }
 var PipelineService = class {
@@ -21738,7 +21773,7 @@ var PipelineService = class {
   }
   async selectTarget({ selectionToken, pipelineId }, roots) {
     const path = selectionPath(selectionToken, this.dataDirectory);
-    const selection = await loadTokenFile(path, this.now(), "Pipeline selection");
+    const selection = await loadExpiringTokenFile(path, this.now(), "Pipeline selection");
     if (selection.usedAt) throw new Error("Pipeline selection has already been used");
     const workspace = await resolveAuthorizedWorkspace(selection.workspaceUri, roots);
     if (workspace !== selection.workspace) throw new Error("Pipeline selection workspace changed");
@@ -21770,7 +21805,7 @@ var PipelineService = class {
   }
   async execute({ planToken }, roots) {
     const path = planPath(planToken, this.dataDirectory);
-    let plan = await loadTokenFile(path, this.now(), "Pipeline plan");
+    let plan = await loadPlanFile(path, this.now());
     if (plan.kind !== "pipeline-run") throw new Error("planToken is not a pipeline-run plan");
     if (!plan.runToken) {
       plan = { ...plan, runToken: token(), state: plan.state ?? "prepared" };
@@ -21847,8 +21882,42 @@ var PipelineService = class {
     if (fingerprint(built.warnings) !== fingerprint(plan.warnings)) throw new Error("Pipeline runtime configuration changed after prepare");
     const existing = await recoverExisting("recovered-before-post");
     if (existing) return existing;
-    plan = { ...plan, state: "executing", executionStartedAt: this.now() };
-    await atomicJson(path, plan);
+    const releaseClaim = await acquireExecutionClaim(planToken, this.dataDirectory);
+    if (!releaseClaim) {
+      plan = await loadPlanFile(path, this.now());
+      if (plan.state === "executed") return resultFor({ id: plan.runId }, plan.action ?? "replayed");
+      if (plan.state === "failed") {
+        return { status: "blocked", errors: [plan.error ?? "Pipeline plan previously failed; prepare again"] };
+      }
+      if (plan.state === "executing") {
+        const recovered = await recoverExisting("recovered-after-concurrent-claim");
+        if (recovered) return recovered;
+      }
+      return {
+        status: "unknown",
+        planToken,
+        errors: ["Pipeline execution is being claimed by another caller; retry this plan token to query its exact marker"]
+      };
+    }
+    try {
+      plan = await loadPlanFile(path, this.now());
+      if (plan.state === "executed") return resultFor({ id: plan.runId }, plan.action ?? "replayed");
+      if (plan.state === "failed") {
+        return { status: "blocked", errors: [plan.error ?? "Pipeline plan previously failed; prepare again"] };
+      }
+      if (plan.state === "executing") {
+        const recovered = await recoverExisting("recovered-after-concurrent-claim");
+        return recovered ?? {
+          status: "unknown",
+          planToken,
+          errors: ["Pipeline execution is already in progress or its result is not yet visible; retry this plan token to query again"]
+        };
+      }
+      plan = { ...plan, state: "executing", executionStartedAt: this.now() };
+      await atomicJson(path, plan);
+    } finally {
+      await releaseClaim();
+    }
     let remote;
     let action = "created";
     try {

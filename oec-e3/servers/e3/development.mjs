@@ -12,6 +12,7 @@ import {
   taskUrl,
 } from './publisher.mjs';
 import { readMapping } from './mapping.mjs';
+import { acquireExecutionLock } from './execution-lock.mjs';
 import {
   developmentMappingComplete,
   newDevelopmentMapping,
@@ -427,6 +428,20 @@ export class DevelopmentTaskService {
     if (!requirement || requirement.title !== plan.requirement.title) {
       throw new Error('remote-object-drift: selected requirement identity changed after prepare');
     }
+    const releaseLock = await acquireExecutionLock(
+      pluginDataRoot(this.dataDirectory),
+      `development:${workspace}:${plan.changeId}`,
+    );
+    if (!releaseLock) {
+      const current = await readDevelopmentMapping(workspace, plan.changeId);
+      return {
+        status: 'partial',
+        changeId: plan.changeId,
+        mappingPath: current.path,
+        errors: ['E3 development work for this workspace change is already executing; query status and retry this plan after it finishes'],
+      };
+    }
+    try {
     const existing = await readDevelopmentMapping(workspace, plan.changeId);
     assertMappingIdentity(existing.mapping, config, { ...requirement, changeId: plan.changeId });
     let mapping = existing.mapping ?? newDevelopmentMapping({
@@ -483,6 +498,9 @@ export class DevelopmentTaskService {
       checkpoint = await writeDevelopmentMapping(workspace, plan.changeId, mapping);
       const status = /remote-object-drift|Ambiguous|changed|mismatch/i.test(error.message) ? 'blocked' : 'partial';
       return { status, changeId: plan.changeId, mappingPath: checkpoint.path, changes, errors: [error.message] };
+    }
+    } finally {
+      await releaseLock();
     }
   }
 
@@ -582,6 +600,20 @@ export class DevelopmentTaskService {
     if (progressFingerprint(plan.changeId, config, plan.requirement, plan.updates, plan.tasks) !== plan.fingerprint) {
       throw new Error('Development task progress plan fingerprint is invalid');
     }
+    const releaseLock = await acquireExecutionLock(
+      pluginDataRoot(this.dataDirectory),
+      `development:${workspace}:${plan.changeId}`,
+    );
+    if (!releaseLock) {
+      const current = await readDevelopmentMapping(workspace, plan.changeId);
+      return {
+        status: 'partial',
+        changeId: plan.changeId,
+        mappingPath: current.path,
+        errors: ['E3 development work for this workspace change is already executing; query status and retry this plan after it finishes'],
+      };
+    }
+    try {
     let stored = await readDevelopmentMapping(workspace, plan.changeId);
     if (!stored.mapping) throw new Error('Development task mapping disappeared after progress prepare');
     assertMappingIdentity(stored.mapping, config, { ...plan.requirement, changeId: plan.changeId });
@@ -622,6 +654,8 @@ export class DevelopmentTaskService {
               throw new Error(`${update.localId} is already completed with different progress`);
             }
             action = 'already-complete';
+          } else if (update.action === 'log' && sameWorklog(logInfo, update)) {
+            action = `already-${update.action}`;
           } else {
             try {
               await this.client.writeTaskWorklog(config.productSpace.id, remote.id, logInfo, update);
@@ -649,6 +683,9 @@ export class DevelopmentTaskService {
     } catch (error) {
       const status = /drift|mismatch|terminal|terminated|completed/i.test(error.message) ? 'blocked' : 'partial';
       return { status, changeId: plan.changeId, mappingPath: stored.path, changes, errors: [error.message] };
+    }
+    } finally {
+      await releaseLock();
     }
   }
 

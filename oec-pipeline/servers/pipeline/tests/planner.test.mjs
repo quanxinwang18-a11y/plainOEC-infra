@@ -71,6 +71,7 @@ class FakeClient {
     this.unknownRunResult = false;
     this.failBeforeRemoteResult = false;
     this.deterministicFailure = false;
+    this.runDelayMs = 0;
   }
 
   async listWorkspaces() { return [{ id: 'space-1', name: 'Workspace' }]; }
@@ -90,6 +91,7 @@ class FakeClient {
   }
   async runPipeline(_environment, body) {
     this.runCalls.push(structuredClone(body));
+    if (this.runDelayMs) await new Promise((resolve) => setTimeout(resolve, this.runDelayMs));
     if (this.deterministicFailure) throw new Error('Pipeline API rejected request: denied');
     if (this.failBeforeRemoteResult) {
       this.failBeforeRemoteResult = false;
@@ -357,6 +359,83 @@ test('an executing Pipeline plan never reposts and recovers only from its exact 
   assert.equal(recovered.status, 'running');
   assert.equal(recovered.runId, 'eventual-run');
   assert.equal(recovered.action, 'recovered-after-replay');
+  assert.equal(client.runCalls.length, 1);
+});
+
+test('concurrent Pipeline execution claims allow only one POST across service instances', async () => {
+  const value = await fixture();
+  const client = new FakeClient();
+  client.runDelayMs = 25;
+  const firstService = service(value, client);
+  const secondService = service(value, client);
+  const prepared = await firstService.prepare({
+    workspaceUri: value.workspaceUri,
+    pipelineId: 'pipeline-1',
+    environment: 'dev',
+  }, value.roots);
+
+  const results = await Promise.all([
+    firstService.execute({ planToken: prepared.planToken }, value.roots),
+    secondService.execute({ planToken: prepared.planToken }, value.roots),
+  ]);
+
+  assert.equal(client.runCalls.length, 1);
+  assert.equal(results.some((result) => result.status === 'running'), true);
+  assert.equal(results.every((result) => ['running', 'unknown'].includes(result.status)), true);
+  const replayed = await secondService.execute({ planToken: prepared.planToken }, value.roots);
+  assert.equal(replayed.status, 'running');
+  assert.equal(replayed.runId, client.runs[0].id);
+  assert.equal(client.runCalls.length, 1);
+});
+
+test('prepared authorization expires but executing recovery remains available beyond the plan TTL', async () => {
+  const value = await fixture();
+  const client = new FakeClient();
+  let now = 1_000;
+  const pipelineService = new PipelineService({
+    client,
+    dataDirectory: value.dataDirectory,
+    now: () => now,
+    gitSnapshotFn: async () => snapshot(),
+  });
+  const expired = await pipelineService.prepare({
+    workspaceUri: value.workspaceUri,
+    pipelineId: 'pipeline-1',
+    environment: 'dev',
+  }, value.roots);
+  now += 16 * 60 * 1000;
+  await assert.rejects(
+    pipelineService.execute({ planToken: expired.planToken }, value.roots),
+    /authorization expired/,
+  );
+
+  now = 2_000;
+  client.failBeforeRemoteResult = true;
+  const prepared = await pipelineService.prepare({
+    workspaceUri: value.workspaceUri,
+    pipelineId: 'pipeline-1',
+    environment: 'dev',
+  }, value.roots);
+  assert.equal((await pipelineService.execute({ planToken: prepared.planToken }, value.roots)).status, 'unknown');
+  assert.equal(client.runCalls.length, 1);
+
+  now += 16 * 60 * 1000;
+  assert.equal((await pipelineService.execute({ planToken: prepared.planToken }, value.roots)).status, 'unknown');
+  assert.equal(client.runCalls.length, 1);
+  const body = client.runCalls[0];
+  client.runs.push({
+    id: 'eventual-after-ttl',
+    pipelineId: body.pipelineId,
+    pipelineName: 'Pipeline pipeline-1',
+    status: '100002',
+    statusName: 'Running',
+    runRemark: body.runRemark,
+  });
+  const recovered = await pipelineService.execute({ planToken: prepared.planToken }, value.roots);
+  assert.equal(recovered.status, 'running');
+  assert.equal(recovered.runId, 'eventual-after-ttl');
+  assert.equal(client.runCalls.length, 1);
+  assert.equal((await pipelineService.execute({ planToken: prepared.planToken }, value.roots)).runId, 'eventual-after-ttl');
   assert.equal(client.runCalls.length, 1);
 });
 

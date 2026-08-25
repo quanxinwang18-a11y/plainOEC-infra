@@ -72,6 +72,7 @@ class FakeE3Client {
     this.nextTask = 1;
     this.failStoryId = null;
     this.unknownRequirementResult = false;
+    this.createDelayMs = 0;
     this.projects = [{ code: 'pomp-1', name: 'Default POMP', isDefault: true }];
     this.calls = 0;
     this.metadataSpaces = [];
@@ -86,6 +87,7 @@ class FakeE3Client {
   async findRequirementsByExactTitle(_spaceId, title) { return this.requirements.filter((item) => item.title === title); }
   async getRequirement(_spaceId, _workItemId, id) { return this.requirements.find((item) => String(item.id) === String(id)) ?? null; }
   async createRequirement(_spaceId, _metadata, artifact) {
+    if (this.createDelayMs) await new Promise((resolve) => setTimeout(resolve, this.createDelayMs));
     const item = { id: `r-${this.nextRequirement++}`, title: artifact.remoteTitle };
     this.requirements.push(item);
     if (this.unknownRequirementResult) {
@@ -103,6 +105,7 @@ class FakeE3Client {
   }
   async createTask(_spaceId, requirementId, _config, story) {
     if (story.id === this.failStoryId) throw new Error('task creation failed');
+    if (this.createDelayMs) await new Promise((resolve) => setTimeout(resolve, this.createDelayMs));
     const item = { id: `t-${this.nextTask++}`, title: story.remoteTitle, requirementId: String(requirementId) };
     const tasks = this.tasks.get(String(requirementId)) ?? [];
     tasks.push(item);
@@ -238,6 +241,30 @@ test('prepare is read-only, execute recovers an unknown POST result, and status 
   const beforeStatus = await readFile(mappingFile, 'utf8');
   assert.equal((await service.status({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots)).status, 'published');
   assert.equal(await readFile(mappingFile, 'utf8'), beforeStatus, 'status tool must not mutate mapping');
+});
+
+test('concurrent publication plans serialize one workspace version across service instances', async () => {
+  const value = await fixture();
+  const client = new FakeE3Client();
+  client.createDelayMs = 20;
+  const firstService = new PublisherService({ client, dataDirectory: value.dataDirectory });
+  const secondService = new PublisherService({ client, dataDirectory: value.dataDirectory });
+  await configure(firstService, value);
+  const firstPlan = await firstService.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  const secondPlan = await secondService.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+
+  const results = await Promise.all([
+    firstService.execute({ planToken: firstPlan.planToken }, value.roots),
+    secondService.execute({ planToken: secondPlan.planToken }, value.roots),
+  ]);
+
+  assert.equal(client.requirements.length, 1);
+  assert.equal([...client.tasks.values()].flat().length, 1);
+  assert.equal(results.some((result) => result.status === 'published'), true);
+  assert.equal(results.every((result) => ['published', 'partial'].includes(result.status)), true);
+  assert.equal((await secondService.execute({ planToken: secondPlan.planToken }, value.roots)).status, 'published');
+  assert.equal(client.requirements.length, 1);
+  assert.equal([...client.tasks.values()].flat().length, 1);
 });
 
 test('status uses the v2 mapping space without mutating a missing or different workspace config', async () => {

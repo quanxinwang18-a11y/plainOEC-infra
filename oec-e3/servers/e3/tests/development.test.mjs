@@ -9,9 +9,9 @@ import { DevelopmentTaskService } from '../development.mjs';
 import { readDevelopmentMapping } from '../development-mapping.mjs';
 import { atomicJson, configPath } from '../publisher.mjs';
 
-async function fixture() {
+async function fixture(sharedDataDirectory) {
   const workspace = await mkdtemp(join(tmpdir(), 'oec-development-workspace-'));
-  const dataDirectory = await mkdtemp(join(tmpdir(), 'oec-development-data-'));
+  const dataDirectory = sharedDataDirectory ?? await mkdtemp(join(tmpdir(), 'oec-development-data-'));
   const canonical = await realpath(workspace);
   const workspaceUri = pathToFileURL(canonical).href;
   await atomicJson(configPath(canonical, dataDirectory), {
@@ -54,6 +54,8 @@ class FakeClient {
     this.logs = new Map();
     this.starts = 0;
     this.worklogWrites = 0;
+    this.createDelayMs = 0;
+    this.worklogDelayMs = 0;
     this.unknownStartResult = false;
     this.unknownWorklogResult = false;
     this.failWorklogId = null;
@@ -78,6 +80,7 @@ class FakeClient {
   }
   async createTask(_spaceId, requirementId, _config, task) {
     if (task.remoteTitle === this.failTitle) throw new Error('E3 task creation failed');
+    if (this.createDelayMs) await new Promise((resolve) => setTimeout(resolve, this.createDelayMs));
     this.creates += 1;
     const remote = {
       id: `task-${this.nextTask++}`,
@@ -122,6 +125,7 @@ class FakeClient {
   }
   async writeTaskWorklog(_spaceId, taskId, logInfo, update) {
     if (String(taskId) === String(this.failWorklogId)) throw new Error('worklog write failed');
+    if (this.worklogDelayMs) await new Promise((resolve) => setTimeout(resolve, this.worklogDelayMs));
     this.worklogWrites += 1;
     const remote = await this.getTask(null, taskId);
     const complete = update.action === 'complete';
@@ -202,6 +206,34 @@ test('development execution checkpoints created tasks and later plans reuse them
   }, value.roots);
   assert.deepEqual(repeated.counts, { createTasks: 0, reuseTasks: 1 });
   assert.equal((await service.execute({ planToken: repeated.planToken }, value.roots)).status, 'synced');
+  assert.equal(client.creates, 1);
+});
+
+test('concurrent development plans serialize task creation for one workspace change', async () => {
+  const value = await fixture();
+  const client = new FakeClient();
+  client.createDelayMs = 20;
+  const firstService = new DevelopmentTaskService({ client, dataDirectory: value.dataDirectory });
+  const secondService = new DevelopmentTaskService({ client, dataDirectory: value.dataDirectory });
+  const firstPlan = await firstService.prepare({
+    workspaceUri: value.workspaceUri,
+    ...input({ source: { requirementId: 'req-1' } }),
+  }, value.roots);
+  const secondPlan = await secondService.prepare({
+    workspaceUri: value.workspaceUri,
+    ...input({ source: { requirementId: 'req-1' } }),
+  }, value.roots);
+
+  const results = await Promise.all([
+    firstService.execute({ planToken: firstPlan.planToken }, value.roots),
+    secondService.execute({ planToken: secondPlan.planToken }, value.roots),
+  ]);
+
+  assert.equal(client.creates, 1);
+  assert.equal((client.tasks.get('req-1') ?? []).length, 1);
+  assert.equal(results.some((result) => result.status === 'synced'), true);
+  assert.equal(results.every((result) => ['synced', 'partial'].includes(result.status)), true);
+  assert.equal((await secondService.execute({ planToken: secondPlan.planToken }, value.roots)).status, 'synced');
   assert.equal(client.creates, 1);
 });
 
@@ -371,6 +403,36 @@ test('task progress logs work and completes through server-derived metadata', as
     workspaceUri: value.workspaceUri,
     changeId: 'v1.2.3-alpha',
   }, value.roots)).tasks[0].status, '3');
+});
+
+test('concurrent progress plans serialize one workspace change and avoid duplicate worklogs', async () => {
+  const value = await fixture();
+  const client = new FakeClient();
+  const firstService = await createMappedTasks(value, client);
+  const secondService = new DevelopmentTaskService({ client, dataDirectory: value.dataDirectory });
+  const update = { localId: 'DEV-001', action: 'log', worklog: 'One serialized update.', spentHours: 1 };
+  const firstPlan = await firstService.prepareProgress({
+    workspaceUri: value.workspaceUri,
+    changeId: 'v1.2.3-alpha',
+    updates: [update],
+  }, value.roots);
+  const secondPlan = await secondService.prepareProgress({
+    workspaceUri: value.workspaceUri,
+    changeId: 'v1.2.3-alpha',
+    updates: [update],
+  }, value.roots);
+  client.worklogDelayMs = 20;
+
+  const results = await Promise.all([
+    firstService.executeProgress({ planToken: firstPlan.planToken }, value.roots),
+    secondService.executeProgress({ planToken: secondPlan.planToken }, value.roots),
+  ]);
+
+  assert.equal(client.worklogWrites, 1);
+  assert.equal(results.some((result) => result.status === 'synced'), true);
+  assert.equal(results.every((result) => ['synced', 'partial'].includes(result.status)), true);
+  assert.equal((await secondService.executeProgress({ planToken: secondPlan.planToken }, value.roots)).status, 'synced');
+  assert.equal(client.worklogWrites, 1);
 });
 
 test('task progress validates bounded inputs and checkpoints before a partial failure', async () => {

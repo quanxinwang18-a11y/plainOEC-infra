@@ -8,6 +8,10 @@
   a product-space creator.
 - Reject empty, malformed, array, and unknown HTTP success payloads instead of treating any 2xx
   response as an accepted E3 operation.
+- Serialize PRD publication by workspace/version and development creation/progress by
+  workspace/change ID through exclusive Plugin Data locks.
+- Cover concurrent service instances sharing Plugin Data so competing plans cannot create duplicate
+  requirements, duplicate development tasks, or duplicate worklog updates.
 
 ## 1.0.0
 

@@ -28906,14 +28906,14 @@ var E3Client = class {
 };
 
 // servers/e3/development.mjs
-import { createHash as createHash3, randomBytes as randomBytes5 } from "node:crypto";
-import { join as join6 } from "node:path";
+import { createHash as createHash4, randomBytes as randomBytes5 } from "node:crypto";
+import { join as join7 } from "node:path";
 
 // servers/e3/publisher.mjs
 var import_yaml3 = __toESM(require_dist2(), 1);
-import { createHash as createHash2, randomBytes as randomBytes3 } from "node:crypto";
-import { mkdir as mkdir3, readFile as readFile3, readdir, realpath, rename as rename3, stat, writeFile as writeFile3 } from "node:fs/promises";
-import { dirname as dirname3, isAbsolute as isAbsolute2, join as join4, relative as relative2, resolve as resolve3, sep as sep2 } from "node:path";
+import { createHash as createHash3, randomBytes as randomBytes3 } from "node:crypto";
+import { mkdir as mkdir4, readFile as readFile3, readdir, realpath, rename as rename3, stat, writeFile as writeFile3 } from "node:fs/promises";
+import { dirname as dirname4, isAbsolute as isAbsolute2, join as join5, relative as relative2, resolve as resolve3, sep as sep2 } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 // ../packages/prd-artifact-contract/check-artifacts.mjs
@@ -29120,11 +29120,42 @@ function checkArtifacts({ workspace, version: version2, stage = "finalize", stri
   };
 }
 
+// servers/e3/execution-lock.mjs
+import { createHash as createHash2 } from "node:crypto";
+import { mkdir as mkdir2, open, unlink as unlink2 } from "node:fs/promises";
+import { dirname as dirname2, join as join3 } from "node:path";
+function lockKey(identity) {
+  return createHash2("sha256").update(identity).digest("hex");
+}
+async function acquireExecutionLock(pluginRoot, identity) {
+  const path = join3(pluginRoot, "execution-locks", `${lockKey(identity)}.lock`);
+  await mkdir2(dirname2(path), { recursive: true, mode: 448 });
+  let handle;
+  try {
+    handle = await open(path, "wx", 384);
+    await handle.writeFile(`${JSON.stringify({ pid: process.pid, claimedAt: Date.now() })}
+`);
+    await handle.close();
+  } catch (error2) {
+    if (handle) await handle.close().catch(() => {
+    });
+    if (error2.code === "EEXIST") return null;
+    throw error2;
+  }
+  return async () => {
+    try {
+      await unlink2(path);
+    } catch (error2) {
+      if (error2.code !== "ENOENT") throw error2;
+    }
+  };
+}
+
 // servers/e3/mapping.mjs
 var import_yaml2 = __toESM(require_dist2(), 1);
 import { randomBytes as randomBytes2 } from "node:crypto";
-import { mkdir as mkdir2, readFile as readFile2, rename as rename2, writeFile as writeFile2 } from "node:fs/promises";
-import { dirname as dirname2, join as join3 } from "node:path";
+import { mkdir as mkdir3, readFile as readFile2, rename as rename2, writeFile as writeFile2 } from "node:fs/promises";
+import { dirname as dirname3, join as join4 } from "node:path";
 function mappingRelativePath(version2) {
   return `ai-docs/integrations/e3/${version2}.yaml`;
 }
@@ -29180,7 +29211,7 @@ function normalizeMapping(raw) {
 async function readMapping(workspace, version2) {
   const relativePath = mappingRelativePath(version2);
   try {
-    const value = import_yaml2.default.parse(await readFile2(join3(workspace, relativePath), "utf8"));
+    const value = import_yaml2.default.parse(await readFile2(join4(workspace, relativePath), "utf8"));
     return { path: relativePath, mapping: normalizeMapping(value) };
   } catch (error2) {
     if (error2.code === "ENOENT") return { path: relativePath, mapping: null };
@@ -29189,8 +29220,8 @@ async function readMapping(workspace, version2) {
 }
 async function writeMapping(workspace, version2, mapping) {
   const relativePath = mappingRelativePath(version2);
-  const absolutePath = join3(workspace, relativePath);
-  await mkdir2(dirname2(absolutePath), { recursive: true });
+  const absolutePath = join4(workspace, relativePath);
+  await mkdir3(dirname3(absolutePath), { recursive: true });
   const temporary = `${absolutePath}.${process.pid}.${randomBytes2(8).toString("hex")}.tmp`;
   const value = { ...mapping, schema_version: 2, updated_at: (/* @__PURE__ */ new Date()).toISOString() };
   await writeFile2(temporary, import_yaml2.default.stringify(value), { mode: 384 });
@@ -29259,21 +29290,21 @@ function pluginDataRoot(value = process.env.OEC_PLUGIN_DATA) {
   return resolve3(value, "e3");
 }
 function workspaceKey(workspace) {
-  return createHash2("sha256").update(workspace).digest("hex");
+  return createHash3("sha256").update(workspace).digest("hex");
 }
 function configPath(workspace, dataDirectory) {
-  return join4(pluginDataRoot(dataDirectory), "workspaces", workspaceKey(workspace), "config.json");
+  return join5(pluginDataRoot(dataDirectory), "workspaces", workspaceKey(workspace), "config.json");
 }
 function selectionPath(token, dataDirectory) {
   if (!TOKEN_PATTERN.test(token)) throw new Error("Invalid selection token");
-  return join4(pluginDataRoot(dataDirectory), "selections", `${token}.json`);
+  return join5(pluginDataRoot(dataDirectory), "selections", `${token}.json`);
 }
 function planPath(token, dataDirectory) {
   if (!TOKEN_PATTERN.test(token)) throw new Error("Invalid plan token");
-  return join4(pluginDataRoot(dataDirectory), "plans", `${token}.json`);
+  return join5(pluginDataRoot(dataDirectory), "plans", `${token}.json`);
 }
 async function atomicJson(path, value) {
-  await mkdir3(dirname3(path), { recursive: true, mode: 448 });
+  await mkdir4(dirname4(path), { recursive: true, mode: 448 });
   const temporary = `${path}.${process.pid}.${randomBytes3(8).toString("hex")}.tmp`;
   await writeFile3(temporary, `${JSON.stringify(value, null, 2)}
 `, { mode: 384 });
@@ -29296,7 +29327,7 @@ function compareVersions2(left, right) {
   return 0;
 }
 async function latestVersion(workspace) {
-  const entries = await readdir(join4(workspace, "ai-docs", "versions"), { withFileTypes: true });
+  const entries = await readdir(join5(workspace, "ai-docs", "versions"), { withFileTypes: true });
   return entries.filter((entry) => entry.isDirectory() && VERSION_PATTERN2.test(entry.name)).map((entry) => entry.name).sort(compareVersions2).at(-1);
 }
 function isWithin(root, target) {
@@ -29356,7 +29387,7 @@ function descriptionHtml(childMarkdown, storyId) {
   ].filter(([, body]) => body).map(([heading, body]) => `<h2>${escapeHtml(heading)}</h2>${paragraphsToHtml(body)}`).join("");
 }
 function artifactFingerprint(files) {
-  const hash = createHash2("sha256");
+  const hash = createHash3("sha256");
   for (const file of [...files].sort((left, right) => left.path.localeCompare(right.path))) {
     hash.update(file.path).update("\0").update(file.content).update("\0");
   }
@@ -29748,69 +29779,86 @@ var PublisherService = class {
     if (artifacts.fingerprint !== plan.fingerprint) throw new Error("PRD artifacts changed after prepare");
     const config2 = await loadConfig(workspace, this.dataDirectory);
     if (!sameConfig(config2, plan.config)) throw new Error("E3 product-space configuration changed after prepare");
-    const existing = await readMapping(workspace, artifacts.version);
-    const compatibility = mappingCompatibility(existing.mapping, artifacts, config2);
-    const metadata = await this.client.requirementMetadata(config2.productSpace.id);
-    const warnings = normalizeWarnings(artifacts.warnings, compatibility.warnings, metadata.warnings);
-    try {
-      await planRemoteObjects(this.client, config2, artifacts.artifacts, compatibility.usableMapping);
-    } catch (error2) {
+    const releaseLock = await acquireExecutionLock(
+      pluginDataRoot(this.dataDirectory),
+      `publication:${workspace}:${artifacts.version}`
+    );
+    if (!releaseLock) {
+      const current = await readMapping(workspace, artifacts.version);
       return {
-        status: "blocked",
-        mappingPath: existing.path,
-        counts: mappingCounts(existing.mapping),
-        errors: [error2.message]
+        status: "partial",
+        mappingPath: current.path,
+        counts: mappingCounts(current.mapping),
+        errors: ["E3 publication for this workspace version is already executing; query status and retry this plan after it finishes"]
       };
     }
-    let mapping = compatibility.adoption || !compatibility.usableMapping ? adoptMappingCheckpoints(newMapping({
-      version: artifacts.version,
-      handoffPath: artifacts.handoffPath,
-      fingerprint: artifacts.fingerprint,
-      config: config2,
-      artifacts: artifacts.artifacts,
-      warnings
-    }), compatibility.usableMapping) : compatibility.usableMapping;
-    mapping.quality_gate = { ...mapping.quality_gate, warnings };
-    mapping.sync_state = "partial";
-    let checkpoint = await writeMapping(workspace, artifacts.version, mapping);
-    mapping = checkpoint.mapping;
-    const changes = [];
     try {
-      for (const artifact of artifacts.artifacts) {
-        const mappingItem = mapping.requirements.find((item) => item.featureName === artifact.featureName);
-        const requirement = await reconcileRequirement(this.client, config2, metadata, artifact, mappingItem);
-        mappingItem.e3_requirement = {
-          id: requirement.id,
-          title: artifact.remoteTitle,
-          url: requirementUrl(config2.productSpace.id, requirement.id),
-          action: requirement.action
+      const existing = await readMapping(workspace, artifacts.version);
+      const compatibility = mappingCompatibility(existing.mapping, artifacts, config2);
+      const metadata = await this.client.requirementMetadata(config2.productSpace.id);
+      const warnings = normalizeWarnings(artifacts.warnings, compatibility.warnings, metadata.warnings);
+      try {
+        await planRemoteObjects(this.client, config2, artifacts.artifacts, compatibility.usableMapping);
+      } catch (error2) {
+        return {
+          status: "blocked",
+          mappingPath: existing.path,
+          counts: mappingCounts(existing.mapping),
+          errors: [error2.message]
         };
-        changes.push({ type: "requirement", featureName: artifact.featureName, ...requirement });
-        checkpoint = await writeMapping(workspace, artifacts.version, mapping);
-        mapping = checkpoint.mapping;
-        for (const story of artifact.stories) {
-          const taskItem = mappingItem.story_tasks.find((item) => item.story_id === story.id);
-          const task = await reconcileTask(this.client, config2, metadata.inChargeBy, requirement.id, story, taskItem);
-          taskItem.e3_task = {
-            id: task.id,
-            title: story.remoteTitle,
-            url: taskUrl(config2.productSpace.id, task.id),
-            action: task.action
+      }
+      let mapping = compatibility.adoption || !compatibility.usableMapping ? adoptMappingCheckpoints(newMapping({
+        version: artifacts.version,
+        handoffPath: artifacts.handoffPath,
+        fingerprint: artifacts.fingerprint,
+        config: config2,
+        artifacts: artifacts.artifacts,
+        warnings
+      }), compatibility.usableMapping) : compatibility.usableMapping;
+      mapping.quality_gate = { ...mapping.quality_gate, warnings };
+      mapping.sync_state = "partial";
+      let checkpoint = await writeMapping(workspace, artifacts.version, mapping);
+      mapping = checkpoint.mapping;
+      const changes = [];
+      try {
+        for (const artifact of artifacts.artifacts) {
+          const mappingItem = mapping.requirements.find((item) => item.featureName === artifact.featureName);
+          const requirement = await reconcileRequirement(this.client, config2, metadata, artifact, mappingItem);
+          mappingItem.e3_requirement = {
+            id: requirement.id,
+            title: artifact.remoteTitle,
+            url: requirementUrl(config2.productSpace.id, requirement.id),
+            action: requirement.action
           };
-          changes.push({ type: "task", storyId: story.id, ...task });
+          changes.push({ type: "requirement", featureName: artifact.featureName, ...requirement });
           checkpoint = await writeMapping(workspace, artifacts.version, mapping);
           mapping = checkpoint.mapping;
+          for (const story of artifact.stories) {
+            const taskItem = mappingItem.story_tasks.find((item) => item.story_id === story.id);
+            const task = await reconcileTask(this.client, config2, metadata.inChargeBy, requirement.id, story, taskItem);
+            taskItem.e3_task = {
+              id: task.id,
+              title: story.remoteTitle,
+              url: taskUrl(config2.productSpace.id, task.id),
+              action: task.action
+            };
+            changes.push({ type: "task", storyId: story.id, ...task });
+            checkpoint = await writeMapping(workspace, artifacts.version, mapping);
+            mapping = checkpoint.mapping;
+          }
         }
+        mapping.sync_state = mappingIsComplete(mapping) ? "published" : "partial";
+        checkpoint = await writeMapping(workspace, artifacts.version, mapping);
+        return { status: checkpoint.mapping.sync_state, mappingPath: checkpoint.path, changes, counts: mappingCounts(checkpoint.mapping) };
+      } catch (error2) {
+        mapping.sync_state = "partial";
+        mapping.last_error = error2.message;
+        checkpoint = await writeMapping(workspace, artifacts.version, mapping);
+        const status = /remote-object-drift|Ambiguous E3/i.test(error2.message) ? "blocked" : "partial";
+        return { status, mappingPath: checkpoint.path, changes, counts: mappingCounts(checkpoint.mapping), errors: [error2.message] };
       }
-      mapping.sync_state = mappingIsComplete(mapping) ? "published" : "partial";
-      checkpoint = await writeMapping(workspace, artifacts.version, mapping);
-      return { status: checkpoint.mapping.sync_state, mappingPath: checkpoint.path, changes, counts: mappingCounts(checkpoint.mapping) };
-    } catch (error2) {
-      mapping.sync_state = "partial";
-      mapping.last_error = error2.message;
-      checkpoint = await writeMapping(workspace, artifacts.version, mapping);
-      const status = /remote-object-drift|Ambiguous E3/i.test(error2.message) ? "blocked" : "partial";
-      return { status, mappingPath: checkpoint.path, changes, counts: mappingCounts(checkpoint.mapping), errors: [error2.message] };
+    } finally {
+      await releaseLock();
     }
   }
   async status({ workspaceUri, version: version2 }, roots) {
@@ -29895,15 +29943,15 @@ var PublisherService = class {
 // servers/e3/development-mapping.mjs
 var import_yaml4 = __toESM(require_dist2(), 1);
 import { randomBytes as randomBytes4 } from "node:crypto";
-import { mkdir as mkdir4, readFile as readFile4, rename as rename4, writeFile as writeFile4 } from "node:fs/promises";
-import { dirname as dirname4, join as join5 } from "node:path";
+import { mkdir as mkdir5, readFile as readFile4, rename as rename4, writeFile as writeFile4 } from "node:fs/promises";
+import { dirname as dirname5, join as join6 } from "node:path";
 function developmentMappingRelativePath(changeId) {
   return `ai-docs/integrations/e3/development/${changeId}.yaml`;
 }
 async function readDevelopmentMapping(workspace, changeId) {
   const path = developmentMappingRelativePath(changeId);
   try {
-    const value = import_yaml4.default.parse(await readFile4(join5(workspace, path), "utf8"));
+    const value = import_yaml4.default.parse(await readFile4(join6(workspace, path), "utf8"));
     return { path, mapping: value && typeof value === "object" ? value : null };
   } catch (error2) {
     if (error2.code === "ENOENT") return { path, mapping: null };
@@ -29912,8 +29960,8 @@ async function readDevelopmentMapping(workspace, changeId) {
 }
 async function writeDevelopmentMapping(workspace, changeId, mapping) {
   const path = developmentMappingRelativePath(changeId);
-  const absolute = join5(workspace, path);
-  await mkdir4(dirname4(absolute), { recursive: true });
+  const absolute = join6(workspace, path);
+  await mkdir5(dirname5(absolute), { recursive: true });
   const temporary = `${absolute}.${process.pid}.${randomBytes4(8).toString("hex")}.tmp`;
   const value = { ...mapping, schema_version: 1, updated_at: (/* @__PURE__ */ new Date()).toISOString() };
   await writeFile4(temporary, import_yaml4.default.stringify(value), { mode: 384 });
@@ -29952,11 +30000,11 @@ var LOCAL_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 var PLAN_TTL_MS2 = 15 * 60 * 1e3;
 function selectionPath2(token, dataDirectory) {
   if (!TOKEN_PATTERN2.test(token)) throw new Error("Invalid development selection token");
-  return join6(pluginDataRoot(dataDirectory), "development", "selections", `${token}.json`);
+  return join7(pluginDataRoot(dataDirectory), "development", "selections", `${token}.json`);
 }
 function planPath2(token, dataDirectory) {
   if (!TOKEN_PATTERN2.test(token)) throw new Error("Invalid development plan token");
-  return join6(pluginDataRoot(dataDirectory), "development", "plans", `${token}.json`);
+  return join7(pluginDataRoot(dataDirectory), "development", "plans", `${token}.json`);
 }
 async function storeDevelopmentSelection(value, dataDirectory) {
   const token = randomBytes5(32).toString("base64url");
@@ -30023,10 +30071,10 @@ function normalizeSource(source = {}) {
   return { ...requirementId ? { requirementId } : {}, ...prdVersion ? { prdVersion, featureName } : {} };
 }
 function taskFingerprint(changeId, requirementId, tasks, account) {
-  return `sha256:${createHash3("sha256").update(JSON.stringify({ changeId, requirementId, tasks, account })).digest("hex")}`;
+  return `sha256:${createHash4("sha256").update(JSON.stringify({ changeId, requirementId, tasks, account })).digest("hex")}`;
 }
 function progressFingerprint(changeId, config2, requirement, updates, tasks) {
-  return `sha256:${createHash3("sha256").update(JSON.stringify({
+  return `sha256:${createHash4("sha256").update(JSON.stringify({
     changeId,
     spaceId: String(config2.productSpace.id),
     requirementId: String(requirement.id),
@@ -30326,62 +30374,79 @@ var DevelopmentTaskService = class {
     if (!requirement || requirement.title !== plan.requirement.title) {
       throw new Error("remote-object-drift: selected requirement identity changed after prepare");
     }
-    const existing = await readDevelopmentMapping(workspace, plan.changeId);
-    assertMappingIdentity(existing.mapping, config2, { ...requirement, changeId: plan.changeId });
-    let mapping = existing.mapping ?? newDevelopmentMapping({
-      changeId: plan.changeId,
-      config: config2,
-      requirement: {
-        ...requirement,
-        url: requirementUrl(config2.productSpace.id, requirement.id)
-      }
-    });
-    mapping.sync_state = "partial";
-    let checkpoint = await writeDevelopmentMapping(workspace, plan.changeId, mapping);
-    mapping = checkpoint.mapping;
-    const changes = [];
+    const releaseLock = await acquireExecutionLock(
+      pluginDataRoot(this.dataDirectory),
+      `development:${workspace}:${plan.changeId}`
+    );
+    if (!releaseLock) {
+      const current = await readDevelopmentMapping(workspace, plan.changeId);
+      return {
+        status: "partial",
+        changeId: plan.changeId,
+        mappingPath: current.path,
+        errors: ["E3 development work for this workspace change is already executing; query status and retry this plan after it finishes"]
+      };
+    }
     try {
-      for (const task of plan.tasks) {
-        let item = mapping.tasks.find((candidate) => candidate.local_id === task.localId);
-        if (!item) {
-          item = { local_id: task.localId, title: task.title, e3_task: null };
-          mapping.tasks.push(item);
+      const existing = await readDevelopmentMapping(workspace, plan.changeId);
+      assertMappingIdentity(existing.mapping, config2, { ...requirement, changeId: plan.changeId });
+      let mapping = existing.mapping ?? newDevelopmentMapping({
+        changeId: plan.changeId,
+        config: config2,
+        requirement: {
+          ...requirement,
+          url: requirementUrl(config2.productSpace.id, requirement.id)
         }
-        if (item.title !== task.title) throw new Error(`development-task-changed: ${task.localId} title is immutable after mapping`);
-        let remote = await resolveExistingTask(this.client, config2.productSpace.id, requirement.id, task, item);
-        let action = remote ? "reused" : "created";
-        if (!remote) {
-          try {
-            remote = await this.client.createTask(config2.productSpace.id, requirement.id, config2, task, account);
-          } catch (error2) {
-            const matches = await this.client.findTasksByExactTitle(config2.productSpace.id, requirement.id, task.remoteTitle);
-            if (matches.length === 1) {
-              [remote] = matches;
-              action = "reused-after-unknown-result";
-            } else if (matches.length > 1) {
-              throw new Error(`Task create result is ambiguous: ${task.remoteTitle}`);
-            } else throw error2;
-          }
-        }
-        item.e3_task = {
-          id: String(remote.id),
-          title: task.remoteTitle,
-          url: taskUrl(config2.productSpace.id, remote.id),
-          action
-        };
-        changes.push({ localId: task.localId, id: String(remote.id), action });
-        checkpoint = await writeDevelopmentMapping(workspace, plan.changeId, mapping);
-        mapping = checkpoint.mapping;
-      }
-      mapping.sync_state = developmentMappingComplete(mapping) ? "synced" : "partial";
-      checkpoint = await writeDevelopmentMapping(workspace, plan.changeId, mapping);
-      return { status: checkpoint.mapping.sync_state, changeId: plan.changeId, mappingPath: checkpoint.path, changes };
-    } catch (error2) {
+      });
       mapping.sync_state = "partial";
-      mapping.last_error = error2.message;
-      checkpoint = await writeDevelopmentMapping(workspace, plan.changeId, mapping);
-      const status = /remote-object-drift|Ambiguous|changed|mismatch/i.test(error2.message) ? "blocked" : "partial";
-      return { status, changeId: plan.changeId, mappingPath: checkpoint.path, changes, errors: [error2.message] };
+      let checkpoint = await writeDevelopmentMapping(workspace, plan.changeId, mapping);
+      mapping = checkpoint.mapping;
+      const changes = [];
+      try {
+        for (const task of plan.tasks) {
+          let item = mapping.tasks.find((candidate) => candidate.local_id === task.localId);
+          if (!item) {
+            item = { local_id: task.localId, title: task.title, e3_task: null };
+            mapping.tasks.push(item);
+          }
+          if (item.title !== task.title) throw new Error(`development-task-changed: ${task.localId} title is immutable after mapping`);
+          let remote = await resolveExistingTask(this.client, config2.productSpace.id, requirement.id, task, item);
+          let action = remote ? "reused" : "created";
+          if (!remote) {
+            try {
+              remote = await this.client.createTask(config2.productSpace.id, requirement.id, config2, task, account);
+            } catch (error2) {
+              const matches = await this.client.findTasksByExactTitle(config2.productSpace.id, requirement.id, task.remoteTitle);
+              if (matches.length === 1) {
+                [remote] = matches;
+                action = "reused-after-unknown-result";
+              } else if (matches.length > 1) {
+                throw new Error(`Task create result is ambiguous: ${task.remoteTitle}`);
+              } else throw error2;
+            }
+          }
+          item.e3_task = {
+            id: String(remote.id),
+            title: task.remoteTitle,
+            url: taskUrl(config2.productSpace.id, remote.id),
+            action
+          };
+          changes.push({ localId: task.localId, id: String(remote.id), action });
+          checkpoint = await writeDevelopmentMapping(workspace, plan.changeId, mapping);
+          mapping = checkpoint.mapping;
+        }
+        mapping.sync_state = developmentMappingComplete(mapping) ? "synced" : "partial";
+        checkpoint = await writeDevelopmentMapping(workspace, plan.changeId, mapping);
+        return { status: checkpoint.mapping.sync_state, changeId: plan.changeId, mappingPath: checkpoint.path, changes };
+      } catch (error2) {
+        mapping.sync_state = "partial";
+        mapping.last_error = error2.message;
+        checkpoint = await writeDevelopmentMapping(workspace, plan.changeId, mapping);
+        const status = /remote-object-drift|Ambiguous|changed|mismatch/i.test(error2.message) ? "blocked" : "partial";
+        return { status, changeId: plan.changeId, mappingPath: checkpoint.path, changes, errors: [error2.message] };
+      }
+    } finally {
+      await releaseLock();
     }
   }
   async prepareProgress({ workspaceUri, changeId, updates }, roots) {
@@ -30478,71 +30543,90 @@ var DevelopmentTaskService = class {
     if (progressFingerprint(plan.changeId, config2, plan.requirement, plan.updates, plan.tasks) !== plan.fingerprint) {
       throw new Error("Development task progress plan fingerprint is invalid");
     }
-    let stored = await readDevelopmentMapping(workspace, plan.changeId);
-    if (!stored.mapping) throw new Error("Development task mapping disappeared after progress prepare");
-    assertMappingIdentity(stored.mapping, config2, { ...plan.requirement, changeId: plan.changeId });
-    const changes = [];
+    const releaseLock = await acquireExecutionLock(
+      pluginDataRoot(this.dataDirectory),
+      `development:${workspace}:${plan.changeId}`
+    );
+    if (!releaseLock) {
+      const current = await readDevelopmentMapping(workspace, plan.changeId);
+      return {
+        status: "partial",
+        changeId: plan.changeId,
+        mappingPath: current.path,
+        errors: ["E3 development work for this workspace change is already executing; query status and retry this plan after it finishes"]
+      };
+    }
     try {
-      for (let index = 0; index < plan.updates.length; index += 1) {
-        const update = plan.updates[index];
-        const snapshot = plan.tasks[index];
-        const mapped = stored.mapping.tasks.find((item) => item.local_id === update.localId);
-        if (!mapped?.e3_task?.id || String(mapped.e3_task.id) !== snapshot.id) {
-          throw new Error(`development-mapping-task-mismatch: ${update.localId}`);
-        }
-        const remote = await resolveExistingTask(
-          this.client,
-          config2.productSpace.id,
-          plan.requirement.id,
-          expectedTask(mapped),
-          mapped
-        );
-        let action = update.action;
-        if (update.action === "start") {
-          if (remote.status === "3" || remote.status === "4") throw new Error(`${update.localId} entered a terminal state`);
-          if (remote.status !== "2") {
-            try {
-              await this.client.startTask(config2.productSpace.id, remote.id);
-            } catch (error2) {
-              const recovered = await this.client.getTask(config2.productSpace.id, remote.id);
-              if (recovered?.status !== "2") throw error2;
-              action = "start-recovered";
-            }
-          } else action = "already-started";
-        } else {
-          let logInfo = await this.client.getTaskLogInfo(config2.productSpace.id, remote.id);
-          const currentStatus = String(remote.status ?? logInfo.status ?? "");
-          if (currentStatus === "4") throw new Error(`${update.localId} is terminated`);
-          if (currentStatus === "3") {
-            if (update.action !== "complete" || !sameWorklog(logInfo, update)) {
-              throw new Error(`${update.localId} is already completed with different progress`);
-            }
-            action = "already-complete";
+      let stored = await readDevelopmentMapping(workspace, plan.changeId);
+      if (!stored.mapping) throw new Error("Development task mapping disappeared after progress prepare");
+      assertMappingIdentity(stored.mapping, config2, { ...plan.requirement, changeId: plan.changeId });
+      const changes = [];
+      try {
+        for (let index = 0; index < plan.updates.length; index += 1) {
+          const update = plan.updates[index];
+          const snapshot = plan.tasks[index];
+          const mapped = stored.mapping.tasks.find((item) => item.local_id === update.localId);
+          if (!mapped?.e3_task?.id || String(mapped.e3_task.id) !== snapshot.id) {
+            throw new Error(`development-mapping-task-mismatch: ${update.localId}`);
+          }
+          const remote = await resolveExistingTask(
+            this.client,
+            config2.productSpace.id,
+            plan.requirement.id,
+            expectedTask(mapped),
+            mapped
+          );
+          let action = update.action;
+          if (update.action === "start") {
+            if (remote.status === "3" || remote.status === "4") throw new Error(`${update.localId} entered a terminal state`);
+            if (remote.status !== "2") {
+              try {
+                await this.client.startTask(config2.productSpace.id, remote.id);
+              } catch (error2) {
+                const recovered = await this.client.getTask(config2.productSpace.id, remote.id);
+                if (recovered?.status !== "2") throw error2;
+                action = "start-recovered";
+              }
+            } else action = "already-started";
           } else {
-            try {
-              await this.client.writeTaskWorklog(config2.productSpace.id, remote.id, logInfo, update);
-            } catch (error2) {
-              logInfo = await this.client.getTaskLogInfo(config2.productSpace.id, remote.id);
-              const recovered = sameWorklog(logInfo, update) && (update.action !== "complete" || String(logInfo.status ?? logInfo.progress) === "3" || String(logInfo.progress) === "100");
-              if (!recovered) throw error2;
-              action = `${update.action}-recovered`;
+            let logInfo = await this.client.getTaskLogInfo(config2.productSpace.id, remote.id);
+            const currentStatus = String(remote.status ?? logInfo.status ?? "");
+            if (currentStatus === "4") throw new Error(`${update.localId} is terminated`);
+            if (currentStatus === "3") {
+              if (update.action !== "complete" || !sameWorklog(logInfo, update)) {
+                throw new Error(`${update.localId} is already completed with different progress`);
+              }
+              action = "already-complete";
+            } else if (update.action === "log" && sameWorklog(logInfo, update)) {
+              action = `already-${update.action}`;
+            } else {
+              try {
+                await this.client.writeTaskWorklog(config2.productSpace.id, remote.id, logInfo, update);
+              } catch (error2) {
+                logInfo = await this.client.getTaskLogInfo(config2.productSpace.id, remote.id);
+                const recovered = sameWorklog(logInfo, update) && (update.action !== "complete" || String(logInfo.status ?? logInfo.progress) === "3" || String(logInfo.progress) === "100");
+                if (!recovered) throw error2;
+                action = `${update.action}-recovered`;
+              }
             }
           }
+          mapped.last_progress = {
+            action: update.action,
+            worklog: update.worklog,
+            spent_hours: update.spentHours,
+            remote_result: action,
+            updated_at: (/* @__PURE__ */ new Date()).toISOString()
+          };
+          changes.push({ localId: update.localId, taskId: remote.id, action });
+          stored = await writeDevelopmentMapping(workspace, plan.changeId, stored.mapping);
         }
-        mapped.last_progress = {
-          action: update.action,
-          worklog: update.worklog,
-          spent_hours: update.spentHours,
-          remote_result: action,
-          updated_at: (/* @__PURE__ */ new Date()).toISOString()
-        };
-        changes.push({ localId: update.localId, taskId: remote.id, action });
-        stored = await writeDevelopmentMapping(workspace, plan.changeId, stored.mapping);
+        return { status: "synced", changeId: plan.changeId, mappingPath: stored.path, changes };
+      } catch (error2) {
+        const status = /drift|mismatch|terminal|terminated|completed/i.test(error2.message) ? "blocked" : "partial";
+        return { status, changeId: plan.changeId, mappingPath: stored.path, changes, errors: [error2.message] };
       }
-      return { status: "synced", changeId: plan.changeId, mappingPath: stored.path, changes };
-    } catch (error2) {
-      const status = /drift|mismatch|terminal|terminated|completed/i.test(error2.message) ? "blocked" : "partial";
-      return { status, changeId: plan.changeId, mappingPath: stored.path, changes, errors: [error2.message] };
+    } finally {
+      await releaseLock();
     }
   }
   async status({ workspaceUri, changeId }, roots) {

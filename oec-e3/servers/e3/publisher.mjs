@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import YAML from 'yaml';
 import { checkArtifacts } from '../../../packages/prd-artifact-contract/check-artifacts.mjs';
 import { E3_ORIGIN } from './auth.mjs';
+import { acquireExecutionLock } from './execution-lock.mjs';
 import {
   adoptMappingCheckpoints,
   mappingCounts,
@@ -593,6 +594,20 @@ export class PublisherService {
     const config = await loadConfig(workspace, this.dataDirectory);
     if (!sameConfig(config, plan.config)) throw new Error('E3 product-space configuration changed after prepare');
 
+    const releaseLock = await acquireExecutionLock(
+      pluginDataRoot(this.dataDirectory),
+      `publication:${workspace}:${artifacts.version}`,
+    );
+    if (!releaseLock) {
+      const current = await readMapping(workspace, artifacts.version);
+      return {
+        status: 'partial',
+        mappingPath: current.path,
+        counts: mappingCounts(current.mapping),
+        errors: ['E3 publication for this workspace version is already executing; query status and retry this plan after it finishes'],
+      };
+    }
+    try {
     const existing = await readMapping(workspace, artifacts.version);
     const compatibility = mappingCompatibility(existing.mapping, artifacts, config);
     const metadata = await this.client.requirementMetadata(config.productSpace.id);
@@ -659,6 +674,9 @@ export class PublisherService {
       checkpoint = await writeMapping(workspace, artifacts.version, mapping);
       const status = /remote-object-drift|Ambiguous E3/i.test(error.message) ? 'blocked' : 'partial';
       return { status, mappingPath: checkpoint.path, changes, counts: mappingCounts(checkpoint.mapping), errors: [error.message] };
+    }
+    } finally {
+      await releaseLock();
     }
   }
 

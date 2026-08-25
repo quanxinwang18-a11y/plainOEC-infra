@@ -30,7 +30,10 @@ get_development_task_status
 ```
 
 所有远端写入都来自短期不可变 plan，并要求宿主人类交互。Server 不提供通用 E3 CRUD、缺陷/测试
-请求工作流、任意字段编辑或任意 payload。
+请求工作流、任意字段编辑或任意 payload。在同一 Plugin Data 内，PRD publication 按 canonical
+workspace 与 version 串行，研发任务创建和 progress 按 canonical workspace 与 change ID 串行；并发
+竞争者返回 partial 并要求查询 status 后重试，不会同时创建对象或重复写 worklog。资源锁只存在于
+Plugin Data，不进入业务仓库，也不声称协调使用不同 Plugin Data 的独立安装。
 
 ## 真实验收
 
