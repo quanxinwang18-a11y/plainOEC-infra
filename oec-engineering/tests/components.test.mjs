@@ -41,6 +41,7 @@ function compact(value) {
 const expectedSkills = [
   'challenging-engineering-decisions',
   'closing-engineering-changes',
+  'delegating-engineering-agents',
   'diagnosing-failures',
   'managing-team-specs',
   'migrating-legacy-ai-docs',
@@ -50,10 +51,10 @@ const expectedSkills = [
   'test-driven-development',
 ];
 
-test('engineering plugin exposes nine native Skills and no orchestration components', () => {
+test('engineering plugin exposes ten native Skills and no always-on orchestration components', () => {
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-engineering');
-  assert.equal(manifest.version, '1.5.1');
+  assert.equal(manifest.version, '1.6.0');
   // Agents and Skills are auto-discovered from directories, not declared in plugin.json.
   for (const key of ['skills', 'agents', 'mcpServers', 'commands', 'hooks']) assert.equal(key in manifest, false);
 
@@ -129,6 +130,8 @@ test('skill descriptions make positive and negative judgment boundaries explicit
   assert.match(skill('planning-engineering-changes').metadata.description, /small obvious fix/);
   assert.match(skill('challenging-engineering-decisions').metadata.description, /user explicitly invokes/);
   assert.match(skill('challenging-engineering-decisions').metadata.description, /ordinary planning/);
+  assert.match(skill('delegating-engineering-agents').metadata.description, /Explicitly routes/);
+  assert.match(skill('delegating-engineering-agents').metadata.description, /ordinary coding/);
   assert.match(skill('prototyping-decisions').metadata.description, /throwaway/);
   assert.match(skill('prototyping-decisions').metadata.description, /production features/);
   assert.match(skill('test-driven-development').metadata.description, /explicitly asks for TDD/);
@@ -145,6 +148,7 @@ test('explicit engineering Skills stay manual-only and no Skill recreates the le
     if ([
       'challenging-engineering-decisions',
       'closing-engineering-changes',
+      'delegating-engineering-agents',
       'migrating-legacy-ai-docs',
     ].includes(name)) {
       assert.equal(item.metadata['disable-model-invocation'], true);
@@ -160,6 +164,25 @@ test('explicit engineering Skills stay manual-only and no Skill recreates the le
   assert.match(closing.metadata.description, /explicitly asks/);
   assert.match(closing.body, /git add -- <exact code and engineering-document paths>/);
   assert.match(closing.body, /git commit -m .* -- <same exact paths>/);
+
+  const delegation = skill('delegating-engineering-agents');
+  assert.match(delegation.body, /existing change ID and a concrete research question/);
+  assert.match(delegation.body, /make the first repository operation a direct existence/);
+  assert.match(delegation.body, /run no further tools/);
+  assert.match(delegation.body, /Never create or guess a change package/);
+  assert.match(delegation.body, /`oec-research`[\s\S]*`oec-implement`[\s\S]*`oec-check`/);
+  assert.match(delegation.body, /Treat a missing status as `partial`/);
+  assert.match(delegation.body, /stop on `partial`, `failed`, or `blocked`/);
+  assert.match(delegation.body, /Never run Agents concurrently in `full`/);
+  assert.match(delegation.body, /automatic retry loop/);
+  assert.match(delegation.body, /Do not claim that the engineering change is closed/);
+
+  const delegationOpenai = YAML.parse(readFileSync(resolve(
+    pluginRoot,
+    'skills/delegating-engineering-agents/agents/openai.yaml',
+  ), 'utf8'));
+  assert.equal(delegationOpenai.policy.allow_implicit_invocation, false);
+  assert.match(delegationOpenai.interface.default_prompt, /\$delegating-engineering-agents/);
 
   const migration = skill('migrating-legacy-ai-docs');
   assert.match(migration.body, /preserve every existing `ai-docs` file in place/i);

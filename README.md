@@ -14,7 +14,7 @@ Engineering 和内容交付能力，平台 Plugin 用确定性 MCP 处理 E3 与
 | Plugin | 作用 | 组件 | 外部副作用 | 依赖 |
 | --- | --- | --- | --- | --- |
 | `oec-product` | PRD 写作、只读评审和显式发布 | 1 Agent + 3 Skills | 显式发布时写 E3 | 自动依赖 `oec-e3` |
-| `oec-engineering` | 团队 Specs、规划、诊断、review 和 closing | 9 Skills + 3 Agents + `oec-spec` | 无默认外部写入 | 无平台强依赖 |
+| `oec-engineering` | 团队 Specs、规划、诊断、显式 Agent 委派、review 和 closing | 10 Skills + 3 Agents + `oec-spec` | 无默认外部写入 | 无平台强依赖 |
 | `oec-e3` | PRD 发布、研发任务、进度和状态 | 1 MCP Server / 10 Tools | 受控写 E3 | 可独立安装，也被 Product 依赖 |
 | `oec-pipeline` | 发现并运行已有 dev/test 流水线 | 1 MCP Server / 4 Tools | 受控启动流水线 | 独立安装 |
 | `oec-common` | 可演讲、概览和打印的 HTML Slides | 1 Skill | 无远端业务写入 | 独立安装 |
@@ -29,7 +29,7 @@ Marketplace 只负责发现和分发。Plugin 可独立安装、升级和卸载�
 | --- | --- |
 | Marketplace | `3.0.1` |
 | Product | `3.0.2` |
-| Engineering | `1.5.1` |
+| Engineering | `1.6.0` |
 | E3 | `1.0.1` |
 | Pipeline | `1.0.1` |
 | Common | `0.2.1` |
@@ -73,14 +73,14 @@ Marketplace 只负责发现和分发。Plugin 可独立安装、升级和卸载�
 - Marketplace 与五个 Plugin strict validation 通过；
 - committed bundles 可在没有 Plugin 内 `node_modules` 的隔离环境运行；
 - E3/Pipeline 的路径、身份、并发、幂等和失败恢复具有自动测试；
-- Product、Engineering 与 Common 共有 26 个正负 eval cases。
+- Product、Engineering 与 Common 共有 28 个正负 eval cases。
 
 仍不能声明：
 
 - 当前候选版本已经正式发布；
 - E3 `1.0.1` 的账号 Owner 逻辑已完成真实补丁复验；
 - Pipeline `1.0.1` 已在授权非生产流水线上完成 single-POST 真实验收；
-- 13个 Skills 已通过真实 LLM outcome eval；当前 grader 只验证路由和抑制；
+- 14 个 Skills 已通过真实 LLM outcome eval；当前 grader 只验证路由和抑制；
 - MCP Connected 等于真实业务验收或生产可用；
 - Codex Agents 已完成完整宿主验收。
 

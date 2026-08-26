@@ -8,7 +8,7 @@
 | Plugin | 作用 | 主要组件 | 外部副作用 | 依赖关系 |
 | --- | --- | --- | --- | --- |
 | `oec-product` | PRD 写作、只读评审和显式发布 | 1 Agent + 3 Skills | 显式发布时写 E3 | 自动依赖 `oec-e3` |
-| `oec-engineering` | Specs、规划、诊断、review 和 closing | 9 Skills + 3 Agents + `oec-spec` | 无默认外部写入 | 无平台强依赖 |
+| `oec-engineering` | Specs、规划、诊断、显式 Agent 委派、review 和 closing | 10 Skills + 3 Agents + `oec-spec` | 无默认外部写入 | 无平台强依赖 |
 | `oec-e3` | PRD 发布、研发任务和进度 | 10 MCP Tools | 受控写 E3 | 可独立安装，也被 Product 依赖 |
 | `oec-pipeline` | 运行已有 dev/test 流水线 | 4 MCP Tools | 受控启动流水线 | 独立安装 |
 | `oec-common` | HTML Slides | 1 Skill | 无远端业务写入 | 独立安装 |

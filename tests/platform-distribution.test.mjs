@@ -47,7 +47,7 @@ test('Marketplace versions and native Plugin boundaries are internally consisten
   }
   assert.deepEqual((await manifest('oec-product')).dependencies, [{ name: 'oec-e3', version: '~1.0.0' }]);
   assert.equal(await skillCount('oec-product'), 3);
-  assert.equal(await skillCount('oec-engineering'), 9);
+  assert.equal(await skillCount('oec-engineering'), 10);
   assert.equal(await skillCount('oec-e3'), 0);
   assert.equal(await skillCount('oec-pipeline'), 0);
   assert.equal(await skillCount('oec-common'), 1);
@@ -119,7 +119,7 @@ test('current-facing documentation stays aligned with Marketplace components', a
   await assert.rejects(readFile(resolve(repositoryRoot, 'dev-migration.md')), /ENOENT/);
 
   for (const [component, count] of [
-    ['Plugin', 5], ['Agent', 4], ['Skill', 13], ['MCP Server', 2], ['MCP Tool', 14], ['Hook', 0], ['Command', 0],
+    ['Plugin', 5], ['Agent', 4], ['Skill', 14], ['MCP Server', 2], ['MCP Tool', 14], ['Hook', 0], ['Command', 0],
   ]) {
     assert.match(report, new RegExp(`\\| ${component} \\| ${count} \\|`), `${component} count missing from report`);
   }
@@ -128,7 +128,8 @@ test('current-facing documentation stays aligned with Marketplace components', a
     'writing-prds', 'reviewing-prds', 'publishing-prds-to-e3',
     'managing-team-specs', 'migrating-legacy-ai-docs', 'challenging-engineering-decisions',
     'prototyping-decisions', 'planning-engineering-changes', 'test-driven-development',
-    'diagnosing-failures', 'reviewing-code-changes', 'closing-engineering-changes', 'html-slides',
+    'diagnosing-failures', 'reviewing-code-changes', 'delegating-engineering-agents',
+    'closing-engineering-changes', 'html-slides',
   ]) assert.match(report, new RegExp(`\\b${name}\\b`), `${name} missing from report`);
 
   for (const name of ['oec-pm', 'oec-implement', 'oec-check', 'oec-research']) {
@@ -149,7 +150,8 @@ test('current-facing documentation stays aligned with Marketplace components', a
   assert.match(report, /非平凡、高风险或需跨会话保存上下文的改动/);
   for (const name of [
     'publishing-prds-to-e3', 'migrating-legacy-ai-docs',
-    'challenging-engineering-decisions', 'closing-engineering-changes',
+    'challenging-engineering-decisions', 'delegating-engineering-agents',
+    'closing-engineering-changes',
   ]) assert.match(report, new RegExp(`${name}[\\s\\S]{0,180}manual-only`), `${name} manual-only boundary missing`);
   assert.match(report, /prepared → executing → executed/);
   assert.match(report, /同一个 plan token 最多[\s\S]{0,80}一次 `runPipeline` POST/);

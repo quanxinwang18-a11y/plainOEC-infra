@@ -1,10 +1,10 @@
 {
   "name": "oec-engineering",
-  "version": "1.5.1",
-  "description": "OEC 软件工程能力：团队 Specs、显式旧 ai-docs 迁移、技术规划、决策挑战、决策原型、TDD、困难诊断、代码评审和工程收口。",
+  "version": "1.6.0",
+  "description": "OEC 软件工程能力：团队 Specs、显式旧 ai-docs 迁移、技术规划、决策挑战、决策原型、TDD、困难诊断、代码评审、Agent 委派和工程收口。",
   "author": {
     "name": "OEC"
   },
-  "keywords": ["engineering", "team-specs", "migration", "planning", "decision-challenge", "prototype", "code-review", "tdd", "diagnosis", "closing"],
+  "keywords": ["engineering", "team-specs", "migration", "planning", "decision-challenge", "prototype", "code-review", "tdd", "diagnosis", "agent-delegation", "closing"],
   "license": "MIT"
 }

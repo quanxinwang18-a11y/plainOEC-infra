@@ -1,6 +1,6 @@
 # oec-engineering
 
-`oec-engineering` 提供聚焦的软件工程 Skills、三个显式使用的可选 Agent，以及项目自有的团队
+`oec-engineering` 提供十个聚焦的软件工程 Skills、三个显式使用的可选 Agent，以及项目自有的团队
 Spec 契约。它不会替代 Claude Code 主 Coding Agent，不安装研发状态机，也不向所有会话注入
 SessionStart 上下文。
 
@@ -39,11 +39,13 @@ bundle 需要 PATH 中存在 Node.js 20 或更新版本。
 /oec-engineering:test-driven-development
 /oec-engineering:diagnosing-failures
 /oec-engineering:reviewing-code-changes
+/oec-engineering:delegating-engineering-agents
 /oec-engineering:closing-engineering-changes
 ```
 
 `migrating-legacy-ai-docs`、`challenging-engineering-decisions` 和 `closing-engineering-changes`
-都是 user-invoked only。决策挑战只压力测试一个技术决定，不自动进入规划或实现；决策原型只在用户
+以及 `delegating-engineering-agents` 都是 user-invoked only。决策挑战只压力测试一个技术决定，
+不自动进入规划或实现；Agent 委派只协调已有 change 或当前 diff，不创建工作流状态；决策原型只在用户
 明确要求用 throwaway artifact 回答交互或状态问题时发现。迁移不删除源文件，TDD 也只在用户明确
 要求 test-first 时适用。
 
@@ -62,6 +64,10 @@ bundle 需要 PATH 中存在 Node.js 20 或更新版本。
 
 通过 Claude Code 的 `@` Agent picker 可以保证派发。它们不是 slash commands，只在用户明确请求，
 或显式调用的 OEC Skill 委派有边界任务时使用；普通实现、评审和研究仍可由主会话完成。
+
+需要统一入口时，显式调用 `delegating-engineering-agents` 并选择 `research`、`implement`、`check`
+或 `full`。`full` 只按 `research → implement → check` 串行推进，任何 Agent 未报告 complete 或研究
+要求修改设计时立即停止；该 Skill 不自动重试、不维护阶段状态，也不提交或关闭 change。
 
 仓库同时保留实验性 Codex manifest 和 TOML Agent。由于本轮没有完成真实 Codex 安装、Agent 发现和
 `oec-spec` PATH 验收，不把这些文件描述为已验证的 Codex 支持。

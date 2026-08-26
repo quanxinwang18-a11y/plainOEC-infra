@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.0
+
+- Add the manual-only `delegating-engineering-agents` Skill as a single explicit entry point for
+  `oec-research`, `oec-implement`, and `oec-check`.
+- Gate the sequential `full` mode on persisted change context, a concrete research question,
+  complete Agent reports, and explicit handling of pre-existing working-tree changes.
+- Keep delegation stateless and host-native: no automatic retries, workflow state, commits, external
+  writes, or changes to the three Agent contracts.
+
 ## 1.5.1
 
 - Require `oec-implement` and `oec-research` to receive an existing change ID instead of inventing a
