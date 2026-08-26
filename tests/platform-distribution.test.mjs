@@ -86,14 +86,13 @@ test('current-facing documentation stays aligned with Marketplace components', a
   assert.match(rootReadme, /\[QUICKSTART\]\(QUICKSTART\.md\)/);
   assert.match(rootReadme, /\[PlainOEC 文档地图\]\(docs\/README\.md\)/);
   assert.match(docsIndex, /\[QUICKSTART\]\(\.\.\/QUICKSTART\.md\)/);
-  assert.match(report, new RegExp(`Marketplace.*${marketplace.version.replaceAll('.', '\\.')}`));
+  assert.match(report, /Marketplace/);
   for (const plugin of marketplace.plugins) {
     assert.match(rootReadme, new RegExp(`\\b${plugin.name}\\b`), `${plugin.name} missing from root README`);
     assert.match(quickstart, new RegExp(`\\b${plugin.name}\\b`), `${plugin.name} missing from QUICKSTART`);
-    for (const [label, document] of [['management report', report], ['hierarchy', hierarchy]]) {
-      assert.match(document, new RegExp(`${plugin.name.replace('-', '\\-')}@${plugin.version.replaceAll('.', '\\.')}\\b`),
-        `${label} must include ${plugin.name}@${plugin.version}`);
-    }
+    assert.match(report, new RegExp(`\\b${plugin.name}\\b`), `management report must include ${plugin.name}`);
+    assert.match(hierarchy, new RegExp(`${plugin.name.replace('-', '\\-')}@${plugin.version.replaceAll('.', '\\.')}\\b`),
+      `hierarchy must include ${plugin.name}@${plugin.version}`);
     assert.match(architectureSvg, new RegExp(`>${plugin.name}<`), `${plugin.name} missing from current architecture SVG`);
     assert.match(architectureSvg, new RegExp(`>${plugin.version}(?: |<)`), `${plugin.version} missing from current architecture SVG`);
   }
@@ -143,7 +142,9 @@ test('current-facing documentation stays aligned with Marketplace components', a
     'prepare_pipeline_run', 'select_pipeline_target', 'execute_pipeline_run', 'get_pipeline_run_status',
   ]) assert.match(report, new RegExp(`\\b${name}\\b`), `${name} missing from report`);
 
-  assert.match(report, /oec-e3@~1\.0\.0/);
+  assert.match(report, /对 `oec-e3` 的必需依赖/);
+  assert.doesNotMatch(report, /\| 项目 \| 版本 \|/);
+  assert.doesNotMatch(report, /\boec-(?:product|engineering|e3|pipeline|common)@[~^]?\d+\.\d+\.\d+\b/);
   assert.match(report, /简单、局部、低风险改动/);
   assert.match(report, /非平凡、高风险或需跨会话保存上下文的改动/);
   for (const name of [
@@ -154,7 +155,7 @@ test('current-facing documentation stays aligned with Marketplace components', a
   assert.match(report, /同一个 plan token 最多[\s\S]{0,80}一次 `runPipeline` POST/);
   assert.match(report, /无法确定账号时[\s\S]{0,100}prepare[\s\S]{0,100}失败/);
   assert.match(report, /release candidate/);
-  for (const gap of ['LICENSE/notice', 'E3 `1.0.1`', 'Pipeline `1.0.1`', 'LLM eval']) {
+  for (const gap of ['LICENSE/notice', 'E3 当前实现', 'Pipeline 当前实现', 'LLM eval']) {
     assert.match(report, new RegExp(gap.replaceAll('.', '\\.')));
   }
   assert.doesNotMatch(report, /```mermaid/);
@@ -163,7 +164,10 @@ test('current-facing documentation stays aligned with Marketplace components', a
   const expectedImages = [
     'assets/plainoec-infra-management-report/01-legacy-to-plainoec.png',
     'assets/plainoec-infra-management-report/02-five-plugin-architecture.png',
+    'assets/plainoec-infra-management-report/07-pm-skills-map.png',
     'assets/plainoec-infra-management-report/04-product-e3-flow.png',
+    'assets/plainoec-infra-management-report/08-dev-spec-governance.png',
+    'assets/plainoec-infra-management-report/09-dev-skills-map.png',
     'assets/plainoec-infra-management-report/03-engineering-collaboration.png',
     'assets/plainoec-infra-management-report/05-pipeline-idempotency.png',
     'assets/plainoec-infra-management-report/06-evidence-and-release.png',

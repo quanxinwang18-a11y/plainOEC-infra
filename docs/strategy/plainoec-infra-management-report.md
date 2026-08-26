@@ -12,16 +12,16 @@ PlainOEC-infra 不是将旧 OEC-infra 的 Prompt 缩短后重新打包，而是�
 知识、通用模型能力、确定性校验、外部平台操作和项目事实重新分配到宿主原生组件。迁移的主要收益不
 是减少文本行数，而是让每一类能力拥有清楚的 Owner、状态、失败语义、安装边界和验证证据。
 
-当前候选版本由五个可独立分发的 Plugin 组成：
+当前候选方案由五个可独立分发的 Plugin 组成：
 
-| 项目 | 版本 | 当前定位 |
-| --- | --- | --- |
-| Marketplace | `3.0.1` | 组织级发现、依赖和版本分发 |
-| Product | `3.0.2` | PRD 编写、评审和发布语义 |
-| Engineering | `1.5.1` | 团队工程知识与聚焦工程方法 |
-| E3 | `1.0.1` | PRD 和研发任务的受控平台操作 |
-| Pipeline | `1.0.1` | 既有 dev/test 流水线的受控运行 |
-| Common | `0.2.1` | HTML-first 公共内容交付能力 |
+| 项目 | 当前定位 |
+| --- | --- |
+| Marketplace | 组织级发现、依赖、发布和升级管理 |
+| Product | PRD 编写、评审和发布语义 |
+| Engineering | 团队工程知识与聚焦工程方法 |
+| E3 | PRD 和研发任务的受控平台操作 |
+| Pipeline | 既有 dev/test 流水线的受控运行 |
+| Common | HTML-first 公共内容交付能力 |
 
 当前组件规模：
 
@@ -35,24 +35,43 @@ PlainOEC-infra 不是将旧 OEC-infra 的 Prompt 缩短后重新打包，而是�
 | Hook | 0 |
 | Command | 0 |
 
-本文中的 Plugin 是宿主可独立安装和升级的能力包；Skill 是按需加载的领域方法；Agent 是拥有独立
-上下文或身份的模型执行单元；MCP 是模型与外部系统之间的类型化工具协议。PRD 是产品需求主文档，
-HANDOFF 保存 PRD 到子需求与 Story 的结构化交接，ADR 保存会约束后续工作的持久技术决定。Plugin
-Data 是宿主为单个 Plugin 隔离的本地状态目录，不属于业务仓库。
+### 1.1 核心术语速查
+
+| 英文术语 | 中文解释 |
+| --- | --- |
+| Plugin（插件） | 可被宿主独立安装、升级和卸载的能力包，是本报告的分发单元 |
+| Skill（技能） | 模型按用户目标加载的领域方法、判断边界和产物约定，不是后台常驻流程 |
+| Agent（智能体） | 拥有独立身份或上下文的模型执行单元，只在隔离价值明确时使用 |
+| Main Session（主会话） | 用户当前直接交互的编码会话，负责普通编码、通用推理和能力组合 |
+| MCP（模型上下文协议） | Model Context Protocol，将外部系统能力注册为有类型约束的工具 |
+| Runtime（确定性运行程序） | 用代码完成路径选择、结构校验等可重复检查，不依赖模型临场判断 |
+| PRD（产品需求文档） | Product Requirements Document，说明做什么、为什么以及如何验收 |
+| SSOT（单一事实来源） | Single Source of Truth，同类事实只由一个权威位置维护 |
+| HANDOFF（结构化交接） | 保存根 PRD、子 PRD 与 Story 对应关系的交接文件 |
+| Spec（当前系统规约） | 描述系统现在必须保持的责任、接口、不变量和失败方式 |
+| ADR（架构决策记录） | Architecture Decision Record，保存会约束后续工作的持久技术决定 |
+| Change package（变更包） | 非平凡变更的边界、设计、计划、研究和证据集合，按风险创建 |
+| Plugin Data（插件数据） | 宿主为单个 Plugin 隔离的本地运行状态目录，不属于业务仓库 |
+| Artifact / contract（产物 / 契约） | Artifact 是交付文件；contract 是其结构、字段和引用必须满足的规则 |
+| prepare / execute / status | 分别表示执行前准备、经确认写入、独立查询结果，三者不能合并为一次盲写 |
+| Idempotency（幂等） | 同一请求被重放时不产生第二份远端对象或重复副作用 |
+| Checkpoint / read-back（检查点 / 回读） | 保存执行进度，并从远端重新读取结果验证真实状态 |
+| Mock / E2E / eval | 分别是模拟测试、端到端真实旅程、模型行为评测，证据强度和覆盖范围不同 |
+| Release candidate（候选发布状态） | 已具备发布候选质量，但仍有门禁未关闭，不能称为正式发布 |
 
 Product、Engineering 和 Common 是模型侧领域能力；E3 和 Pipeline 是平台侧受控执行能力。Product
-通过原生 dependency 使用完整 E3 Plugin。Engineering 不强依赖任何平台，主 Session 根据具体目标
-按需组合 E3 或 Pipeline。普通编码始终由主 Session 负责，Engineering 不安装一个默认接管研发过程
-的总控 Agent，也不向所有会话注入 SessionStart 上下文。
+通过原生依赖使用完整 E3 Plugin。Engineering 不强依赖任何平台，主 Session 根据具体目标按需组合
+E3 或 Pipeline。普通编码始终由主 Session 负责，Engineering 不安装一个默认接管研发过程的总控
+Agent，也不向所有会话注入 SessionStart（会话启动）上下文。
 
 当前可以确认的事实包括：117 项自动测试全部通过；Marketplace 与五个 Plugin 通过固定 Claude Code
-版本的 strict validation；Git archive 和隔离安装验证了五个 Plugin、十三个 Skills、四个 Agents
-以及两个 MCP Server；E3 和 Pipeline MCP 均能独立启动并显示 Connected。
+环境的严格结构校验；Git 归档包和隔离安装验证了五个 Plugin、十三个 Skills、四个 Agents 以及两个
+MCP Server；E3 和 Pipeline MCP 均能独立启动并显示 Connected（已连接）。
 
-当前仍不能称为正式发布。LICENSE/notice 的 Owner 决策、E3 `1.0.1` 账号 owner 真实复验、Pipeline
-`1.0.1` 单 POST 真实复验以及受 early-access 限制的 LLM eval evidence 仍是明确缺口。本报告将
-“源码存在”“自动测试通过”“隔离安装成功”“MCP Connected”和“真实非生产验收”作为不同证据等级，
-不互相替代。
+当前仍不能称为正式发布。LICENSE/notice 的 Owner（责任人）决策、E3 账号 owner 真实复验、Pipeline
+单 POST（一次提交）真实复验，以及受 early access（早期开放）限制的 LLM eval（大模型行为评测）
+证据仍是明确缺口。本报告将“源码存在”“自动测试通过”“隔离安装成功”“MCP Connected”和“真实
+非生产验收”作为不同证据等级，不互相替代。
 
 ## 2. 原 OEC-infra 的真实结构与问题
 
@@ -150,9 +169,9 @@ PlainOEC 保留这些业务知识与安全思想，但不再以“向每个项�
 | Skill | 领域方法、判断边界、产物语义 | OAuth、远端状态、任意重试 |
 | Runtime | 本地解析、选择和结构校验 | 产品、架构或风险决策 |
 | MCP | 外部平台读取与受控副作用 | 领域工作流判断 |
-| Plugin | 同生命周期能力的安装和版本 | 跨领域总控路由 |
+| Plugin | 同生命周期能力的安装和升级 | 跨领域总控路由 |
 | 项目文档 | 当前事实、ADR、变更上下文和证据 | Plugin 工作流副本 |
-| Marketplace | 发现、依赖和版本分发 | 业务运行状态 |
+| Marketplace | 发现、依赖、发布和升级管理 | 业务运行状态 |
 
 ### 3.3 模型约束与代码约束的分界
 
@@ -173,11 +192,11 @@ Human 负责无法从仓库读取的产品选择、风险承受、不可逆操�
 
 | Plugin | Agent | Skill | MCP Server | Tools | 责任 |
 | --- | ---: | ---: | ---: | ---: | --- |
-| `oec-product@3.0.2` | 1 | 3 | 0 | 0 | PRD 编写、评审和发布语义 |
-| `oec-engineering@1.5.1` | 3 | 9 | 0 | 0 | 团队工程知识和聚焦工程方法 |
-| `oec-e3@1.0.1` | 0 | 0 | 1 | 10 | PRD 发布和研发任务平台操作 |
-| `oec-pipeline@1.0.1` | 0 | 0 | 1 | 4 | 既有 dev/test 流水线运行 |
-| `oec-common@0.2.1` | 0 | 1 | 0 | 0 | HTML-first 幻灯片 |
+| `oec-product` | 1 | 3 | 0 | 0 | PRD 编写、评审和发布语义 |
+| `oec-engineering` | 3 | 9 | 0 | 0 | 团队工程知识和聚焦工程方法 |
+| `oec-e3` | 0 | 0 | 1 | 10 | PRD 发布和研发任务平台操作 |
+| `oec-pipeline` | 0 | 0 | 1 | 4 | 既有 dev/test 流水线运行 |
+| `oec-common` | 0 | 1 | 0 | 0 | HTML-first 幻灯片 |
 
 ![PlainOEC Marketplace 分发 Product、Engineering、Common、E3 和 Pipeline 五个 Plugin 的总体架构](assets/plainoec-infra-management-report/02-five-plugin-architecture.png)
 
@@ -191,7 +210,7 @@ Engineering ──按场景组合──> E3 / Pipeline
 Common ──独立安装
 ```
 
-Product 明确向用户承诺 E3 发布，因此通过 `oec-e3@~1.0.0` dependency 获得平台工具。Engineering
+Product 明确向用户承诺 E3 发布，因此通过对 `oec-e3` 的必需依赖获得平台工具。Engineering
 的完成条件不以 E3 或 Pipeline 为前提，因此不声明强依赖。主 Session 可以在用户目标需要时组合这些
 Plugin，但组合不会产生新的 `oec-delivery` 状态或包装层。
 
@@ -203,13 +222,13 @@ Plugin 会复制认证和状态边界。只有权限模型、Owner 或发布周�
 
 ### 5.1 模块目标
 
-Marketplace 为 OEC 组织级能力提供统一发现、版本、依赖解析、安装、升级和卸载入口。它管理能力包，
+Marketplace 为 OEC 组织级能力提供统一发现、依赖解析、安装、升级和卸载入口。它管理能力包，
 但不保存业务项目状态或平台运行状态。
 
 ### 5.2 当前组成
 
-Marketplace `3.0.1` 分发 `oec-product`、`oec-engineering`、`oec-e3`、`oec-pipeline` 和
-`oec-common`。每个 entry 都指向同仓库内独立 Plugin 目录，并与 Plugin manifest 版本严格一致。
+Marketplace 分发 `oec-product`、`oec-engineering`、`oec-e3`、`oec-pipeline` 和 `oec-common`。
+每个 entry（市场入口）都指向同仓库内独立 Plugin 目录，并与 Plugin manifest（插件清单）保持一致。
 
 ### 5.3 分发机制
 
@@ -219,7 +238,7 @@ Marketplace `3.0.1` 分发 `oec-product`、`oec-engineering`、`oec-e3`、`oec-p
 - Product 安装时由宿主自动解析 E3 dependency。
 - user scope 不向业务仓库写 Plugin 文件。
 - project scope 只由宿主管理 Marketplace 和 Plugin 启用声明。
-- Plugin Data 与 Plugin 版本、workspace 和宿主生命周期隔离。
+- Plugin Data 与 Plugin、workspace（工作区）和宿主生命周期隔离。
 
 ### 5.4 管理价值
 
@@ -227,7 +246,7 @@ Marketplace `3.0.1` 分发 `oec-product`、`oec-engineering`、`oec-e3`、`oec-p
 - 平台权限和领域知识不再共用发布周期。
 - Plugin cache 成为安装 payload 的单一真相源。
 - 业务仓库只保存项目真正拥有的 PRD、mapping、Specs、ADR 和 change evidence。
-- 版本变化通过 Marketplace entry 和 Plugin manifest 双向校验。
+- 发布与升级通过 Marketplace entry 和 Plugin manifest 双向校验。
 
 ### 5.5 非目标
 
@@ -240,7 +259,7 @@ Marketplace `3.0.1` 分发 `oec-product`、`oec-engineering`、`oec-e3`、`oec-p
 ### 5.6 当前证据和风险
 
 五个 Plugin 已通过 strict validation。Git archive 不包含 `node_modules`，隔离配置安装得到五个启用
-Plugin，Product 自动带入 E3，两个 MCP Server 均成功启动。五个候选版本的 tag dry-run 已通过，
+Plugin，Product 自动带入 E3，两个 MCP Server 均成功启动。发布标签预检已通过，
 但没有创建实际 tag。Marketplace 本身不解决许可证问题；LICENSE/notice 决策仍阻塞正式发布。
 
 ## 6. Product 模块
@@ -279,6 +298,11 @@ API、数据库 schema、部署和代码架构属于 Engineering，除非它们�
 
 `publishing-prds-to-e3` 是 manual-only Skill。它验证 finalized artifacts、子 PRD 与 HANDOFF，展示
 准备结果并等待 Human 确认，然后调用 E3 工具。普通写作或评审不能自动产生远端副作用。
+
+![PM 以显式身份按目标调用写作、评审和发布三个 Product Skills，并保持产物、人工门禁和远端状态边界](assets/plainoec-infra-management-report/07-pm-skills-map.png)
+
+*图：`oec-pm` 提供产品经理身份，但不把三个 Skill 串成强制流程。`writing-prds` 维护需求单一事实
+来源，`reviewing-prds` 只读找问题，`publishing-prds-to-e3` 仅在用户明确发布并确认后调用 E3。*
 
 ### 6.5 输入、输出与状态归属
 
@@ -320,8 +344,8 @@ status、远端 ID、父子关系、checkpoint 和漂移验证。Engineering 通
 ### 6.9 当前证据与缺口
 
 Product 组件结构、触发边界、artifact contract、checker bundle 和隔离安装已经自动验证。PRD 发布
-主链有 `oec-e3@1.0.0` 的历史真实非生产证据。该证据不能自动证明 `1.0.1` 新身份边界；配置/认证
-账号与真实 owner 一致性仍需在唯一授权非生产对象上复验。
+主链有历史真实非生产证据。该证据不能自动证明当前身份边界；配置/认证账号与真实 owner 一致性仍需
+在唯一授权非生产对象上复验。
 
 ## 7. Engineering 模块
 
@@ -444,6 +468,12 @@ ADR：为什么选择一个长期约束
 Change package：本次非平凡变更的边界、决定和证据
 ```
 
+![Dev 按代码路径选择相关 Specs，在实现和验证后只把稳定事实、持久决定与真实证据分别写回 Spec、ADR 和 change package](assets/plainoec-infra-management-report/08-dev-spec-governance.png)
+
+*图：Dev 开始工作时用 `oec-spec select` 按路径读取当前约束；实现中以代码、配置和测试为事实依据；
+用户显式收口时再区分稳定系统事实、持久技术决定和单次变更证据。临时计划、产品需求和未验证判断不
+写入 Spec。*
+
 ### 7.5 `oec-spec` 确定性 runtime
 
 Engineering Plugin 提供一个自足的 `oec-spec` bundle，包含三个只读或确定性命令：
@@ -508,6 +538,11 @@ finding 必须给出紧凑位置、触发输入、系统后果和最小修正方
 `closing-engineering-changes` 是 manual-only Skill。它只在用户明确要求结束工程工作时检查最终 diff、
 实际测试证据、相关 Specs、ADRs 和残余风险。只有稳定责任或决定变化时才更新团队知识。用户确认后
 可以 exact-path commit；它不部署、不创建 release、不更新 E3、SAE、UTP 或远端 Git 状态。
+
+![Dev 由主 Session 承担普通编码，并按团队知识、决策规划、实现诊断、评审收口四类目标选择九个 Engineering Skills](assets/plainoec-infra-management-report/09-dev-skills-map.png)
+
+*图：九个 Skill 是按目标调用的工程增量，不是 Dev 总控流程。团队知识、决策规划、实现诊断、评审
+收口四类能力彼此独立；`oec-spec` runtime 和三个可选 Agent 是辅助组件，不属于九个 Skill。*
 
 ### 7.7 Skill 选择边界
 
@@ -697,12 +732,12 @@ status。任务 identity 一旦写入 mapping 就不能静默替换。进度计�
 
 ### 8.9 当前证据与风险
 
-`oec-e3@1.0.0` 已在授权非生产空间完成 PRD 创建/复用、status、研发任务创建/复用、start、worklog、
-complete 和 read-back。该证据证明当时主链，不证明生产可用、全部错误分支或 `1.0.1` 新身份逻辑。
+E3 已在授权非生产空间完成 PRD 创建/复用、status、研发任务创建/复用、start、worklog、complete 和
+read-back。该证据证明当时主链，不证明生产可用、全部错误分支或当前身份逻辑。
 
-`1.0.1` 已增加账号来源、opaque token、多空间、JWT claim、未知 2xx、malformed JSON 和无写入阻断
-测试。publication 现在按 canonical workspace/version 获取独占 Plugin Data 锁，development task creation
-和 progress 按 canonical workspace/change ID 使用同一资源锁；共享同一 Plugin Data 的跨 Server
+当前实现已增加账号来源、opaque token、多空间、JWT claim、未知 2xx、malformed JSON 和无写入阻断
+测试。publication 现在按 canonical workspace/version 获取独占 Plugin Data 锁，development task
+creation 和 progress 按 canonical workspace/change ID 使用同一资源锁；共享同一 Plugin Data 的跨 Server
 实例并发测试证明竞争计划不会重复创建 requirement、研发任务或 worklog。这不声称协调使用不同
 Plugin Data 的独立安装。正式发布前仍需在唯一授权非生产对象上验证远端 owner 等于配置或认证账号。
 
@@ -795,7 +830,7 @@ Pipeline 的 OAuth、dev/test 隔离、Git snapshot、候选选择、状态机�
 申领和 executing 超过 prepared TTL 后的 marker recovery 已通过自动测试。隔离安装显示 Pipeline MCP
 Connected。
 
-当前尚未在明确授权的真实 dev/test pipeline 上执行 `1.0.1`。正式发布前需要执行一个唯一非生产 run，
+当前尚未在明确授权的真实 dev/test pipeline 上执行当前实现。正式发布前需要执行一个唯一非生产 run，
 并以同一 plan token 重放，确认没有第二个 run。mock、bundle 和 Connected 不能替代这一证据。
 
 ## 10. Common 模块
@@ -871,7 +906,7 @@ grader 与 with/without 消融；在该证据形成前，不以 Skill 数量或 
 GitHub Actions 对 Node 20 和 24 执行 `npm ci --ignore-scripts` 与 `npm run verify`。构建后执行
 `git diff --exit-code`，阻止 committed bundle 与源码漂移；同时执行 `git diff --check`。
 
-独立 validation job 固定 Claude Code `2.1.243`，严格验证 Marketplace 和五个 Plugin。现有 Git
+独立 validation job（校验任务）使用固定 Claude Code 环境，严格验证 Marketplace 和五个 Plugin。现有 Git
 archive 测试证明 Plugin payload 自足且不包含 `node_modules`。
 
 ### 11.5 管理价值与限制
@@ -962,8 +997,8 @@ Product、Engineering、E3 和 Pipeline 有不同事实来源、权限、状态�
 | Marketplace | 完成 | 完成 | 完成 | 不适用 | 不适用 |
 | Product | 完成 | 完成 | 完成 | 通过 E3 | 历史 PRD 主链 |
 | Engineering | 完成 | 完成 | 完成 | 不适用 | 不涉及外部写 |
-| E3 `1.0.1` | 完成 | 完成 | 完成 | 完成 | 补丁复验待完成 |
-| Pipeline `1.0.1` | 完成 | 完成 | 完成 | 完成 | 待完成 |
+| E3 | 完成 | 完成 | 完成 | 完成 | 当前补丁复验待完成 |
+| Pipeline | 完成 | 完成 | 完成 | 完成 | 待完成 |
 | Common | 完成 | 完成 | 完成 | 不适用 | 浏览器 smoke |
 | Skill eval | corpus 完成 | 结构验证 | 不适用 | 不适用 | LLM runs 待账号能力 |
 
@@ -1002,9 +1037,9 @@ Product、Engineering、E3 和 Pipeline 有不同事实来源、权限、状态�
 
 ### 15.2 当前不能声明
 
-- 候选版本已经正式发布。
-- E3 `1.0.1` 真实 owner 复验通过。
-- Pipeline `1.0.1` 真实单 POST 复验通过。
+- 候选方案已经正式发布。
+- E3 当前实现的真实 owner 复验通过。
+- Pipeline 当前实现的真实单 POST 复验通过。
 - 十三个 Skills 的真实 LLM eval 全部通过。
 - Codex Agents 已完成真实宿主验收。
 - Testing、UTP 或 SAE 已进入 Marketplace。
@@ -1013,8 +1048,8 @@ Product、Engineering、E3 和 Pipeline 有不同事实来源、权限、状态�
 ### 15.3 正式发布阻塞
 
 1. LICENSE/notice Owner 决策。
-2. E3 `1.0.1` 在唯一授权非生产对象上的 owner 复验。
-3. Pipeline `1.0.1` 单次 dev/test run 与同 plan replay 复验。
+2. E3 在唯一授权非生产对象上的 owner 复验。
+3. Pipeline 单次 dev/test run 与同 plan replay 复验。
 4. release evidence 所需 LLM eval，或 Owner 明确批准其作为记录性 gap。
 
 两项真实外部复验均需要用户另行授权。本地修复完成不依赖远端写入，但正式发布声明必须保留这些缺口。

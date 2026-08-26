@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1672" height="941" viewBox="0 0 1672 941" role="img" aria-labelledby="title desc">
+  <title id="title">PM 能力地图</title>
+  <desc id="desc">oec-pm 作为显式产品经理身份，根据写作、评审或发布目标分别调用三个 Product Skills。</desc>
+  <defs>
+    <linearGradient id="navy" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#09264f"/>
+      <stop offset="1" stop-color="#134a76"/>
+    </linearGradient>
+    <linearGradient id="teal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f7d89"/>
+      <stop offset="1" stop-color="#0b5f72"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1767bd"/>
+      <stop offset="1" stop-color="#174b94"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f1ad16"/>
+      <stop offset="1" stop-color="#d78300"/>
+    </linearGradient>
+    <filter id="shadow" x="-15%" y="-15%" width="130%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#17324d" flood-opacity="0.13"/>
+    </filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#33546f"/>
+    </marker>
+    <style>
+      text { font-family: "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", Arial, sans-serif; }
+      .navy { fill: #0b2d57; }
+      .muted { fill: #617384; }
+      .white { fill: #fff; }
+      .code { font-family: "SFMono-Regular", Menlo, Consolas, monospace; }
+    </style>
+  </defs>
+
+  <rect width="1672" height="941" fill="#fbfaf6"/>
+  <circle cx="1570" cy="52" r="220" fill="#e8f4f2" opacity="0.75"/>
+  <circle cx="80" cy="920" r="240" fill="#eef3fb" opacity="0.9"/>
+
+  <text x="70" y="86" class="navy" font-size="46" font-weight="800">PM 能力地图</text>
+  <text x="70" y="126" class="muted" font-size="23">一个显式身份，三个按目标调用的 Skill；写作、评审和发布可以分别结束</text>
+
+  <g filter="url(#shadow)">
+    <rect x="70" y="188" width="360" height="570" rx="28" fill="url(#navy)"/>
+  </g>
+  <rect x="102" y="224" width="146" height="38" rx="19" fill="#fff" opacity="0.14"/>
+  <text x="175" y="250" class="white" font-size="20" font-weight="700" text-anchor="middle">显式身份</text>
+  <text x="102" y="316" class="white code" font-size="34" font-weight="800">oec-pm</text>
+  <text x="102" y="353" fill="#bfe8eb" font-size="23" font-weight="600">Product Agent</text>
+  <line x1="102" y1="390" x2="398" y2="390" stroke="#fff" opacity="0.2"/>
+  <text x="102" y="432" class="white" font-size="22" font-weight="700">负责</text>
+  <text x="102" y="470" fill="#e7f3fb" font-size="21">用户行为 · 范围 · 优先级</text>
+  <text x="102" y="504" fill="#e7f3fb" font-size="21">用户故事 · 验收条件</text>
+  <text x="102" y="538" fill="#e7f3fb" font-size="21">未决产品决定</text>
+  <text x="102" y="592" class="white" font-size="22" font-weight="700">不负责</text>
+  <text x="102" y="630" fill="#e7f3fb" font-size="21">代码架构 · 平台认证</text>
+  <text x="102" y="664" fill="#e7f3fb" font-size="21">自动发布 · 虚构业务规则</text>
+  <rect x="102" y="702" width="294" height="1" fill="#fff" opacity="0.2"/>
+  <text x="102" y="736" fill="#bfe8eb" font-size="18">用户明确要求 PM 身份时使用</text>
+
+  <path d="M430 474 H494" fill="none" stroke="#33546f" stroke-width="4" marker-end="url(#arrow)"/>
+  <text x="462" y="448" class="muted" font-size="18" text-anchor="middle">按目标</text>
+
+  <g filter="url(#shadow)">
+    <rect x="512" y="176" width="760" height="178" rx="24" fill="#fff" stroke="#117b88" stroke-width="3"/>
+  </g>
+  <rect x="512" y="176" width="16" height="178" rx="8" fill="url(#teal)"/>
+  <text x="560" y="225" class="navy code" font-size="28" font-weight="800">writing-prds</text>
+  <text x="560" y="261" fill="#0f7d89" font-size="22" font-weight="700">写需求：建立产品需求的单一事实来源</text>
+  <text x="560" y="298" class="muted" font-size="20">根 PRD · 子 PRD · Story · HANDOFF · 验收条件</text>
+  <rect x="1050" y="211" width="176" height="42" rx="21" fill="#e5f5f3"/>
+  <text x="1138" y="239" fill="#0b6f76" font-size="19" font-weight="700" text-anchor="middle">创建 / 维护产物</text>
+
+  <g filter="url(#shadow)">
+    <rect x="512" y="382" width="760" height="178" rx="24" fill="#fff" stroke="#2a6eb2" stroke-width="3"/>
+  </g>
+  <rect x="512" y="382" width="16" height="178" rx="8" fill="url(#blue)"/>
+  <text x="560" y="431" class="navy code" font-size="28" font-weight="800">reviewing-prds</text>
+  <text x="560" y="467" fill="#1c63a6" font-size="22" font-weight="700">审需求：只读红队评审，不直接改文件</text>
+  <text x="560" y="504" class="muted" font-size="20">发现歧义 · 冲突 · 不可测试验收 · 越权技术设计</text>
+  <rect x="1050" y="417" width="176" height="42" rx="21" fill="#eaf1fb"/>
+  <text x="1138" y="445" fill="#245f9e" font-size="19" font-weight="700" text-anchor="middle">输出评审发现</text>
+
+  <g filter="url(#shadow)">
+    <rect x="512" y="588" width="760" height="178" rx="24" fill="#fff" stroke="#dd9107" stroke-width="3"/>
+  </g>
+  <rect x="512" y="588" width="16" height="178" rx="8" fill="url(#amber)"/>
+  <text x="560" y="637" class="navy code" font-size="26" font-weight="800">publishing-prds-to-e3</text>
+  <text x="560" y="673" fill="#bd7400" font-size="22" font-weight="700">发需求：校验产物，经人工确认后受控写入 E3</text>
+  <text x="560" y="710" class="muted" font-size="20">prepare → Human confirm → execute → status</text>
+  <rect x="1050" y="623" width="176" height="42" rx="21" fill="#fff1d5"/>
+  <text x="1138" y="651" fill="#a96600" font-size="19" font-weight="700" text-anchor="middle">仅手动触发</text>
+
+  <path d="M1272 265 H1340" fill="none" stroke="#117b88" stroke-width="4" marker-end="url(#arrow)"/>
+  <path d="M1272 471 H1340" fill="none" stroke="#2a6eb2" stroke-width="4" marker-end="url(#arrow)"/>
+  <path d="M1272 677 H1340" fill="none" stroke="#dd9107" stroke-width="4" marker-end="url(#arrow)"/>
+
+  <g filter="url(#shadow)">
+    <rect x="1352" y="194" width="250" height="142" rx="22" fill="#edf8f6" stroke="#9acdc8" stroke-width="2"/>
+    <rect x="1352" y="400" width="250" height="142" rx="22" fill="#eef4fb" stroke="#a9c1dd" stroke-width="2"/>
+    <rect x="1352" y="606" width="250" height="142" rx="22" fill="#fff6e5" stroke="#ebc477" stroke-width="2"/>
+  </g>
+  <text x="1477" y="244" class="navy" font-size="21" font-weight="800" text-anchor="middle">项目仓库</text>
+  <text x="1477" y="281" class="muted" font-size="19" text-anchor="middle">PRD / HANDOFF</text>
+  <text x="1477" y="309" class="muted" font-size="19" text-anchor="middle">Changelog</text>
+  <text x="1477" y="450" class="navy" font-size="21" font-weight="800" text-anchor="middle">评审结果</text>
+  <text x="1477" y="487" class="muted" font-size="19" text-anchor="middle">问题清单</text>
+  <text x="1477" y="515" class="muted" font-size="19" text-anchor="middle">不产生远端写入</text>
+  <text x="1477" y="656" class="navy" font-size="21" font-weight="800" text-anchor="middle">受控发布</text>
+  <text x="1477" y="693" class="muted" font-size="19" text-anchor="middle">E3 对象 / mapping</text>
+  <text x="1477" y="721" class="muted" font-size="19" text-anchor="middle">status 回读</text>
+
+  <rect x="70" y="826" width="1532" height="66" rx="18" fill="#f0f3f5" stroke="#d8e0e5"/>
+  <text x="836" y="868" class="navy" font-size="21" font-weight="700" text-anchor="middle">边界：写作或评审可以独立完成；“PRD 已完成”不会自动触发发布</text>
+</svg>
