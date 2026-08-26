@@ -1,173 +1,112 @@
 # plainOEC-infra
 
-`plainOEC-infra` 是面向 Claude Code 的 OEC 组织级 Marketplace，按领域能力和平台原子能力的
-独立生命周期分发：
+`plainOEC-infra` 是面向 Claude Code 的 OEC 组织级 Marketplace：领域 Plugin 提供 Product、
+Engineering 和内容交付能力，平台 Plugin 用确定性 MCP 处理 E3 与 Pipeline 的认证、远端副作用、
+幂等、恢复和状态回读。
 
-- `oec-product`：PRD 编写、只读评审和经确认的 E3 发布；原生依赖 `oec-e3`。
-- `oec-engineering`：团队工程 Specs、技术规划、显式 TDD、困难故障诊断、只读代码评审和工程收口。
-- `oec-e3`：PRD 发布与研发任务创建、进度和状态验证的 10 个类型化工具。
-- `oec-pipeline`：现有 dev/test 流水线的受控发现、执行和状态验证。
-- `oec-common`：零运行时依赖的 HTML-first 演示幻灯片。
+> **当前状态：release candidate，尚未正式发布。**
+>
+> 第一次使用请从 [QUICKSTART](QUICKSTART.md) 开始。先认识全部五个 Plugin，再按产品、研发或其他角色
+> 选择安装；不提供一键安装全部 Plugin 的推荐路径。
 
-当前修复分支的 release candidate 为 Marketplace `3.0.1`、Product `3.0.2`、Engineering `1.5.1`、
-E3 `1.0.1`、Pipeline `1.0.1` 和 Common `0.2.1`；这些版本尚未发布。
+## 五个 Plugin
 
-## 原生层级
+| Plugin | 作用 | 组件 | 外部副作用 | 依赖 |
+| --- | --- | --- | --- | --- |
+| `oec-product` | PRD 写作、只读评审和显式发布 | 1 Agent + 3 Skills | 显式发布时写 E3 | 自动依赖 `oec-e3` |
+| `oec-engineering` | 团队 Specs、规划、诊断、review 和 closing | 9 Skills + 3 Agents + `oec-spec` | 无默认外部写入 | 无平台强依赖 |
+| `oec-e3` | PRD 发布、研发任务、进度和状态 | 1 MCP Server / 10 Tools | 受控写 E3 | 可独立安装，也被 Product 依赖 |
+| `oec-pipeline` | 发现并运行已有 dev/test 流水线 | 1 MCP Server / 4 Tools | 受控启动流水线 | 独立安装 |
+| `oec-common` | 可演讲、概览和打印的 HTML Slides | 1 Skill | 无远端业务写入 | 独立安装 |
 
-```text
-Marketplace: plainOEC-infra
-├── Plugin: oec-product
-│   ├── Agent: oec-pm
-│   ├── Skills: writing / reviewing / publishing PRDs
-│   └── dependency: oec-e3@~1.0.0
-├── Plugin: oec-engineering
-│   ├── Skills: team Specs / explicit legacy migration / planning / TDD / diagnosis / review / closing
-│   ├── Agents: implement / check / research（显式使用）
-│   └── Runtime: oec-spec
-├── Plugin: oec-e3
-│   └── MCP Server: e3 (10 tools)
-├── Plugin: oec-pipeline
-│   └── MCP Server: pipeline (4 tools)
-└── Plugin: oec-common
-    └── Skill: html-slides
-```
+Marketplace 只负责发现和分发。Plugin 可独立安装、升级和卸载；Skill 提供按需领域方法；Agent 只在
+用户明确选择时提供身份、隔离上下文或 fresh-eyes；MCP Server 负责模型不应自行解释的外部平台
+不变量。
 
-- Marketplace 只负责组织级发现和分发。
-- Plugin 是可独立安装、升级和卸载的产品域能力包。
-- Agent 只用于用户明确要求或 OEC Skill 显式委派的独立上下文任务；不会默认接管普通编码。
-- Skills 承载可发现、可组合的领域能力及其渐进披露资源。
-- MCP Server 确定性实现平台认证、类型化工具、计划门禁、幂等、映射和恢复。
-- `oec-spec` 确定性选择和校验项目团队 Specs，并只读审计旧 Dev 安装。
+当前候选版本：
 
-仓库不使用 legacy Commands、Hooks、默认 Agent settings，也不建立插件根公共
-`references/assets/lib` 层。Skill 的 supporting files 必须归属于对应 Skill。
+| 模块 | 版本 |
+| --- | --- |
+| Marketplace | `3.0.1` |
+| Product | `3.0.2` |
+| Engineering | `1.5.1` |
+| E3 | `1.0.1` |
+| Pipeline | `1.0.1` |
+| Common | `0.2.1` |
 
-## 安装
+## 按角色选择
 
-前提是 Claude Code 2.1.110 或更高版本、PATH 中存在 Node.js 20 或更高版本，并且当前 Git 环境
-有权读取 Marketplace 仓库。
-使用 user scope 安装时，产品仓库不需要创建 `.claude/`：
+| 角色 | 首选 | 可选 | 受控 |
+| --- | --- | --- | --- |
+| 产品 | `oec-product` | `oec-common` | 通过 Product 显式使用 E3 发布 |
+| 研发 | `oec-engineering` | `oec-common`、Team Specs、可选 Agents | 按任务安装 `oec-e3` 或 `oec-pipeline` |
+| 其他 | 有演示交付时使用 `oec-common` | 承担产品或工程责任时再选择对应 Plugin | 只有平台 Owner/授权操作人才使用 E3/Pipeline |
 
-```bash
-claude plugin marketplace add quanxinwang18-a11y/plainOEC-infra --scope user
-claude plugin install oec-product@plainOEC-infra --scope user
-claude plugin install oec-engineering@plainOEC-infra --scope user
-claude plugin install oec-pipeline@plainOEC-infra --scope user
-claude plugin install oec-common@plainOEC-infra --scope user
-```
+安装、首个使用场景、验证和回退命令见 [QUICKSTART](QUICKSTART.md)。每个 Plugin 的完整能力与边界见
+[文档地图](docs/README.md)。
 
-插件从 Git 仓库分发，运行时依赖已经打入 bundle。安装不需要 `npm login`、`npm install`、
-GitHub Packages 或 SessionStart 安装 Hook。
+## 核心设计
 
-安装 Product 时 Claude Code 会自动解析同一 Marketplace 中的 `oec-e3@~1.0.0`。工程用户也可以
-按需单独安装 `oec-e3`；Pipeline 和 Common 不会被 Product 或 Engineering 自动安装。团队需要在仓库中共享插件声明时，将相关命令改为
-`--scope project`。Claude Code 会自动生成只
-包含 Marketplace 和插件启用状态的 `.claude/settings.json`，不需要手工编写。完整能力和 E3
-边界见 [oec-product/README.md](oec-product/README.md)，工程能力见
-[oec-engineering/README.md](oec-engineering/README.md)。
+1. **通用编码留给主 Session。** 不建立总控 Dev Agent、全局路由器或统一任务状态机。
+2. **模型处理语义，代码处理不变量。** PRD/Spec 内容由模型与 Human 判断，schema、路径、身份和
+   幂等由确定性代码验证。
+3. **外部写入进入 typed MCP。** E3/Pipeline 写入必须经过明确目标、计划、Human confirmation 和
+   status/read-back。
+4. **三类事实分开。** 项目事实进入 Git，OAuth/plan/lock 等私有状态进入 Plugin Data，最终对象由
+   远端平台拥有。
+5. **按风险展开。** 小改动保持最短路径；高风险工作才增加 Specs、change、独立 review 和 evidence。
+6. **证据等级不可互换。** 源码、静态测试、bundle、Connected、真实非生产验收和生产可用是不同声明。
 
-## 按角色使用
+## 安装边界
 
-### 产品
+- user scope 安装不会要求业务仓库安装 npm 依赖，也不会手工复制 Plugin payload。
+- 安装 `oec-engineering` 本身不会创建项目 `.claude`、`.codex` 或 `ai-docs`。
+- Product 会由宿主解析 `oec-e3@~1.0.0` 依赖；普通 PRD 写作不会因此自动发布。
+- E3 与 Pipeline 包含远端权限，只应由明确 Owner 在授权对象上使用。
+- 团队需要共享 Plugin 启用声明时才选择 project scope，并让 Claude Code 管理项目 settings。
 
-一次性 PRD 写作或评审直接用自然语言描述目标。只有需要持续 PM 工作身份时才启动 Agent；E3
-发布仍必须显式调用：
+## 当前证据与限制
 
-```text
-@oec-product:oec-pm
-/oec-product:writing-prds
-/oec-product:reviewing-prds
-/oec-product:publishing-prds-to-e3 v1.2.3
-```
+当前本地证据包括：
 
-完整 PM 会话使用：
+- `117/117` 自动测试通过；
+- Marketplace 与五个 Plugin strict validation 通过；
+- committed bundles 可在没有 Plugin 内 `node_modules` 的隔离环境运行；
+- E3/Pipeline 的路径、身份、并发、幂等和失败恢复具有自动测试；
+- Product、Engineering 与 Common 共有 26 个正负 eval cases。
 
-```bash
-claude --agent oec-product:oec-pm
-```
+仍不能声明：
 
-`oec-pm` 不会默认接管普通 Claude 主线程，也不会预加载具有外部副作用的 E3 发布 Skill。
-E3 发布必须由用户显式调用，并经过 prepare、计划确认、宿主确认、execute 和 status 验证。
+- 当前候选版本已经正式发布；
+- E3 `1.0.1` 的账号 Owner 逻辑已完成真实补丁复验；
+- Pipeline `1.0.1` 已在授权非生产流水线上完成 single-POST 真实验收；
+- 13个 Skills 已通过真实 LLM outcome eval；当前 grader 只验证路由和抑制；
+- MCP Connected 等于真实业务验收或生产可用；
+- Codex Agents 已完成完整宿主验收。
 
-### 研发
+LICENSE/notice 的组织 Owner 决策、E3/Pipeline 当前补丁的真实非生产证据，以及 LLM eval 或明确的
+Owner gap 决策仍阻塞正式发布。
 
-普通工程请求直接用自然语言描述目标；六个 model-invoked Skills 按场景发现。旧 `ai-docs` 迁移、
-工程决策挑战和工程收口必须显式调用：
+## 维护与验证
 
-```text
-/oec-engineering:managing-team-specs init
-/oec-engineering:migrating-legacy-ai-docs
-/oec-engineering:planning-engineering-changes
-/oec-engineering:challenging-engineering-decisions
-/oec-engineering:prototyping-decisions
-/oec-engineering:test-driven-development
-/oec-engineering:diagnosing-failures
-/oec-engineering:reviewing-code-changes
-/oec-engineering:closing-engineering-changes
-```
-
-团队需要仓库内共享工程事实时，才运行 `/oec-engineering:managing-team-specs init`。需要独立上下文
-时，可以要求 Claude 使用 `oec-implement`、`oec-check` 或 `oec-research`，并通过 `@` Agent picker
-保证派发。安装工程 Plugin 不会创建项目 `.claude`、`.codex` 或 `ai-docs`。
-
-### 公共工具
-
-安装 Common 后直接说“把这份材料做成 HTML 幻灯片”。`html-slides` 交付可浏览器演讲、概览和
-打印的多文件 HTML deck，不生成 `.pptx`、视频或 GIF。
-
-产品仓库可以在根 `CLAUDE.md` 中记录产品定位、目标用户、业务词汇、已确认规则和资料入口；
-不要复制 Skill 工作流、PRD 模板、E3 API 或权限配置。
-
-## 开发与验证
+在 Marketplace 根执行：
 
 ```bash
 npm ci --ignore-scripts
-npm run build
-npm test
+npm run verify
 claude plugin validate --strict .
-claude plugin validate --strict ./oec-product
-claude plugin validate --strict ./oec-engineering
-claude plugin validate --strict ./oec-e3
-claude plugin validate --strict ./oec-pipeline
-claude plugin validate --strict ./oec-common
-claude --plugin-dir ./oec-product plugin details oec-product
-claude --plugin-dir ./oec-engineering plugin details oec-engineering
-claude --plugin-dir ./oec-common plugin details oec-common
+git diff --check
 ```
 
-`package.json` 和 lockfile 位于 Marketplace 根，仅供维护和构建使用，不会随 Plugin 复制到缓存。
-发布前重新构建 bundles，并确认没有未提交差异。
+贡献规则见 [CLAUDE.md](CLAUDE.md)。不要创建或推送 release tag，除非发布门禁和 Owner 决策均已完成。
 
-Product、Engineering 和 Common 的 13 个 Skills 各有一条正向和一条近邻负向原生 eval。小成本本地
-smoke 可分别对三个 Plugin 运行。当前 grader 只验证 Skill 路由和抑制，不证明任务结果净收益；结果
-质量仍需固定真实任务集上的 outcome grader 与 with/without 消融。
+## 文档入口
 
-```bash
-claude plugin eval ./oec-product --runs 1 --ablation with-without --max-cost-usd 2 --no-publish
-claude plugin eval ./oec-engineering --runs 1 --ablation with-without --max-cost-usd 4 --no-publish
-claude plugin eval ./oec-common --runs 1 --ablation with-without --max-cost-usd 1 --no-publish
-```
-
-正式 release evidence 使用 `--runs 3`。eval 仍是 Claude Code early-access 能力：账号不可用时，场景
-完整性只能由静态测试证明，不能据此宣称真实模型行为已通过。
-
-当前 Marketplace `3.0.1` 与五个 Plugin 版本仅构成 release candidate。仓库 LICENSE/notice 的 Owner
-决定以及 E3/Pipeline 明确授权的真实非生产写入验收完成前，不创建或推送 release tag，也不宣称正式
-发布。
-
-贡献规则见 [CLAUDE.md](CLAUDE.md)。版本变化记录见
-[oec-product/CHANGELOG.md](oec-product/CHANGELOG.md) 和
-[oec-engineering/CHANGELOG.md](oec-engineering/CHANGELOG.md)、
-[oec-e3/CHANGELOG.md](oec-e3/CHANGELOG.md) 和
-[oec-pipeline/CHANGELOG.md](oec-pipeline/CHANGELOG.md)、
-[oec-common/CHANGELOG.md](oec-common/CHANGELOG.md)。旧 PM 与 Dev 的迁移证据分别见
-[migration.md](migration.md) 和 [dev-migration.md](dev-migration.md)。
-
-## 设计与评审文档
-
-- [PlainOEC-infra 完整架构与能力管理报告](docs/strategy/plainoec-infra-management-report.md)：面向 OEC 项目管理者，完整说明当前五个模块、Dev 设计、跨模块协作、证据等级和发布阻塞。
-- [OEC-infra 下一步完整优化思路](docs/strategy/oec-infra-next-optimization.md)：面向技术与管理决策者，说明旧 PM、研发、测试真实流程、配置问题、组件边界与下一阶段路线。
-- [PM 实现迁移 Review](docs/reviews/pm-implementation-review.md)：对比旧真实分发结构与当前原生实现。
-- [平台 Plugin 层级与 MCP 迁移设计](docs/architecture/platform-plugin-hierarchy.md)：记录已实现的领域/平台分层、分发关系与验收边界。
-- [SAE 与 UTP 平台能力准入审计](docs/audits/sae-utp-admission-audit.md)：定义尚未进入 Marketplace 的平台能力分类和证据门槛。
-- [E3 平台 Plugin 3.0.0 真实验收](docs/evidence/e3-platform-3.0.0-real-acceptance.md)：记录 PRD 发布与研发任务主链的真实非生产证据和未覆盖边界。
+- [QUICKSTART](QUICKSTART.md)：全部 Plugin 介绍、角色安装建议、首次使用和回退。
+- [PlainOEC 文档地图](docs/README.md)：架构、策略、迁移、评审、审计和证据分类。
+- [PlainOEC-infra 完整架构与能力管理报告](docs/strategy/plainoec-infra-management-report.md)：面向
+  管理者的完整组件、协作、证据与发布状态。
+- [Product 能力迁移分析](docs/migrations/product-capability-migration.md)：旧 PM 能力到当前 Product/E3
+  分层的证据。
+- [Engineering 能力迁移分析](docs/migrations/engineering-capability-migration.md)：旧 Dev/Test 能力到
+  主 Session、Engineering 与平台 Plugin 的迁移证据。

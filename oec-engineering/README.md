@@ -109,7 +109,8 @@ oec-spec legacy-audit --workspace "$PWD"
 计划，并在确认后只写 `ai-docs/engineering/`。Product PRD、E3 mapping、历史记录和全部旧文件保持
 原位；`.oec-ai`、旧项目 Skills 和 Agents 的清理是另一个需要精确确认的破坏性操作。
 
-迁移依据和旧分发实测见 [../dev-migration.md](../dev-migration.md)。
+迁移依据和旧分发实测见
+[Engineering 能力迁移分析](../docs/migrations/engineering-capability-migration.md)。
 
 ## 边界
 

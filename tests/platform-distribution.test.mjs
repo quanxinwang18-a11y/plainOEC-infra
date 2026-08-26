@@ -73,6 +73,8 @@ test('only platform Plugins own MCP Servers and tool counts remain bounded', asy
 test('current-facing documentation stays aligned with Marketplace components', async () => {
   const marketplace = JSON.parse(await readFile(resolve(repositoryRoot, '.claude-plugin', 'marketplace.json'), 'utf8'));
   const rootReadme = await readFile(resolve(repositoryRoot, 'README.md'), 'utf8');
+  const quickstart = await readFile(resolve(repositoryRoot, 'QUICKSTART.md'), 'utf8');
+  const docsIndex = await readFile(resolve(repositoryRoot, 'docs/README.md'), 'utf8');
   const hierarchy = await readFile(resolve(repositoryRoot, 'docs/architecture/platform-plugin-hierarchy.md'), 'utf8');
   const reportPath = resolve(repositoryRoot, 'docs/strategy/plainoec-infra-management-report.md');
   const report = await readFile(reportPath, 'utf8');
@@ -81,9 +83,13 @@ test('current-facing documentation stays aligned with Marketplace components', a
     'docs/strategy/assets/oec-infra-next-optimization/05-current-architecture.svg',
   ), 'utf8');
   assert.match(rootReadme, /\[PlainOEC-infra 完整架构与能力管理报告\]\(docs\/strategy\/plainoec-infra-management-report\.md\)/);
+  assert.match(rootReadme, /\[QUICKSTART\]\(QUICKSTART\.md\)/);
+  assert.match(rootReadme, /\[PlainOEC 文档地图\]\(docs\/README\.md\)/);
+  assert.match(docsIndex, /\[QUICKSTART\]\(\.\.\/QUICKSTART\.md\)/);
   assert.match(report, new RegExp(`Marketplace.*${marketplace.version.replaceAll('.', '\\.')}`));
   for (const plugin of marketplace.plugins) {
     assert.match(rootReadme, new RegExp(`\\b${plugin.name}\\b`), `${plugin.name} missing from root README`);
+    assert.match(quickstart, new RegExp(`\\b${plugin.name}\\b`), `${plugin.name} missing from QUICKSTART`);
     for (const [label, document] of [['management report', report], ['hierarchy', hierarchy]]) {
       assert.match(document, new RegExp(`${plugin.name.replace('-', '\\-')}@${plugin.version.replaceAll('.', '\\.')}\\b`),
         `${label} must include ${plugin.name}@${plugin.version}`);
@@ -91,6 +97,27 @@ test('current-facing documentation stays aligned with Marketplace components', a
     assert.match(architectureSvg, new RegExp(`>${plugin.name}<`), `${plugin.name} missing from current architecture SVG`);
     assert.match(architectureSvg, new RegExp(`>${plugin.version}(?: |<)`), `${plugin.version} missing from current architecture SVG`);
   }
+
+  for (const role of ['产品角色', '研发角色', '其他角色']) assert.match(quickstart, new RegExp(`### ${role}`));
+  for (const tier of ['首选', '可选', '受控']) {
+    assert.match(quickstart, new RegExp(`#### ${tier}`), `${tier} installation tier missing from QUICKSTART`);
+  }
+  assert.match(quickstart, /安装 `oec-product` 时[\s\S]{0,120}`oec-e3@~1\.0\.0` 依赖/);
+  assert.doesNotMatch(quickstart, /\bexecute_(?:prd|development|task|pipeline)/,
+    'QUICKSTART must not provide real E3 or Pipeline execution walkthroughs');
+
+  const productMigration = await readFile(resolve(
+    repositoryRoot,
+    'docs/migrations/product-capability-migration.md',
+  ), 'utf8');
+  const engineeringMigration = await readFile(resolve(
+    repositoryRoot,
+    'docs/migrations/engineering-capability-migration.md',
+  ), 'utf8');
+  assert.match(productMigration, /# OEC PM 能力迁移分析/);
+  assert.match(engineeringMigration, /# OEC Dev 能力原生化迁移/);
+  await assert.rejects(readFile(resolve(repositoryRoot, 'migration.md')), /ENOENT/);
+  await assert.rejects(readFile(resolve(repositoryRoot, 'dev-migration.md')), /ENOENT/);
 
   for (const [component, count] of [
     ['Plugin', 5], ['Agent', 4], ['Skill', 13], ['MCP Server', 2], ['MCP Tool', 14], ['Hook', 0], ['Command', 0],
@@ -159,6 +186,7 @@ test('current-facing documentation stays aligned with Marketplace components', a
 
   const currentUsage = [
     rootReadme,
+    quickstart,
     await readFile(resolve(repositoryRoot, 'oec-engineering', 'README.md'), 'utf8'),
     await readFile(resolve(repositoryRoot, 'oec-common', 'README.md'), 'utf8'),
   ].join('\n');

@@ -3,7 +3,7 @@
 > 事实基线：旧实现取自 `oec-ai-infra` commit
 > `79356008b9961c3e8a70c57e2fe5c9cf0c7ce424`。当前实现为 Marketplace `3.0.0`、
 > `oec-product@3.0.0` 与 `oec-e3@1.0.0`；旧分发结构的完整还原见
-> [PM 迁移分析](../../migration.md)。
+> [Product 能力迁移分析](../migrations/product-capability-migration.md)。
 
 ## 1. 结论
 

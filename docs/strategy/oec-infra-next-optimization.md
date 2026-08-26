@@ -966,8 +966,8 @@ OEC-infra 后续不应继续做“更多 Prompt、更多角色路由、更多统
 
 ## 附录 A：事实来源
 
-- 旧 OEC PM 分发与运行分析：[migration.md](../../migration.md)。
-- 旧 Dev/Test 分发与运行分析：[dev-migration.md](../../dev-migration.md)。
+- 旧 OEC PM 分发与运行分析：[Product 能力迁移分析](../migrations/product-capability-migration.md)。
+- 旧 Dev/Test 分发与运行分析：[Engineering 能力迁移分析](../migrations/engineering-capability-migration.md)。
 - 当前平台层级：[platform-plugin-hierarchy.md](../architecture/platform-plugin-hierarchy.md)。
 - E3 真实验收：[e3-platform-3.0.0-real-acceptance.md](../evidence/e3-platform-3.0.0-real-acceptance.md)。
 - SAE/UTP 准入：[sae-utp-admission-audit.md](../audits/sae-utp-admission-audit.md)。
@@ -1010,8 +1010,9 @@ OEC-infra 后续不应继续做“更多 Prompt、更多角色路由、更多统
 | E3 真实非生产旅程 | [脱敏验收记录](../evidence/e3-platform-3.0.0-real-acceptance.md) | 授权空间、唯一标识、execute/status/read-back 和明确未覆盖边界 |
 | 当前宿主版本 | 2026-08-21 执行 `claude --version` 返回 `2.1.237 (Claude Code)` | 当时验证使用的 Claude Code 版本，不代表未来版本行为 |
 
-旧 PM/Dev/Test 的文件数、行数和物化结构还可以分别通过 [migration.md](../../migration.md) 与
-[dev-migration.md](../../dev-migration.md) 中记录的固定基线和临时初始化方法复算。这些结果仍以原始
+旧 PM/Dev/Test 的文件数、行数和物化结构还可以分别通过
+[Product 能力迁移分析](../migrations/product-capability-migration.md) 与
+[Engineering 能力迁移分析](../migrations/engineering-capability-migration.md) 中记录的固定基线和临时初始化方法复算。这些结果仍以原始
 初始化和固定 commit 为证据，不把文档二次转述当成新的独立证据。
 
 ## 附录 D：术语表
