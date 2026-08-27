@@ -38,8 +38,8 @@ await Promise.all([
   build({
     ...common,
     absWorkingDir: productRoot,
-    entryPoints: ['skills/writing-prds/scripts/check-artifacts-cli.mjs'],
-    outfile: 'skills/writing-prds/runtime/check-artifacts.mjs',
+    entryPoints: ['skills/write-prd/scripts/check-artifacts-cli.mjs'],
+    outfile: 'skills/write-prd/runtime/check-artifacts.mjs',
   }),
   build({
     ...common,

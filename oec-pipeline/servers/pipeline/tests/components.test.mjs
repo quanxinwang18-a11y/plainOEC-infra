@@ -15,9 +15,9 @@ test('Pipeline is a registered MCP-only Plugin', async () => {
   const mcp = JSON.parse(await readFile(resolve(pluginRoot, '.mcp.json'), 'utf8'));
   const marketplace = JSON.parse(await readFile(resolve(repositoryRoot, '.claude-plugin', 'marketplace.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-pipeline');
-  assert.equal(manifest.version, '1.0.1');
+  assert.equal(manifest.version, '1.0.2');
   assert.deepEqual(Object.keys(mcp.mcpServers), ['pipeline']);
-  assert.equal(marketplace.version, '3.0.1');
+  assert.equal(marketplace.version, '3.0.2');
   const entry = marketplace.plugins.find((plugin) => plugin.name === 'oec-pipeline');
   assert.equal(entry.version, manifest.version);
   assert.equal(entry.source, './oec-pipeline');

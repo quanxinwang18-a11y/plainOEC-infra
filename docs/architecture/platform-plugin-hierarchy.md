@@ -1,7 +1,7 @@
 # 平台 Plugin 层级与 MCP 迁移设计
 
-> 当前候选实现：Marketplace `3.0.1`、`oec-product@3.0.2`、`oec-engineering@1.7.0`、
-> `oec-e3@1.0.1`、`oec-pipeline@1.0.1`、`oec-common@0.2.1`。本文区分“代码和自动验证已完成”与“真实外部平台已验收”；
+> 当前候选实现：Marketplace `3.0.2`、`oec-product@3.0.3`、`oec-engineering@1.8.0`、
+> `oec-e3@1.0.2`、`oec-pipeline@1.0.2`、`oec-common@0.3.0`。本文区分“代码和自动验证已完成”与“真实外部平台已验收”；
 > SAE、UTP 和 `oec-testing` 仍未进入 Marketplace。
 
 ## 1. 设计结论
@@ -72,11 +72,11 @@ flowchart TB
 
 | Plugin | Agent | Skills | MCP | 责任 |
 | --- | ---: | ---: | ---: | --- |
-| `oec-product@3.0.2` | 1 | 3 | 0 | PRD 领域知识和发布语义 |
-| `oec-engineering@1.7.0` | 4 | 11 | 0 | 团队 Specs、聚焦工程方法、显式 Agent 委派和按需长时 Web 编码 |
-| `oec-e3@1.0.1` | 0 | 0 | 1 | E3 PRD 发布与研发任务执行 |
-| `oec-pipeline@1.0.1` | 0 | 0 | 1 | 既有 dev/test 流水线受控执行 |
-| `oec-common@0.2.1` | 0 | 1 | 0 | 零依赖 HTML-first 幻灯片 |
+| `oec-product@3.0.3` | 1 | 3 | 0 | PRD 领域知识和发布语义 |
+| `oec-engineering@1.8.0` | 4 | 11 | 0 | 团队 Specs、聚焦工程方法、显式 Agent 委派和按需长时 Web 编码 |
+| `oec-e3@1.0.2` | 0 | 0 | 1 | E3 PRD 发布与研发任务执行 |
+| `oec-pipeline@1.0.2` | 0 | 0 | 1 | 既有 dev/test 流水线受控执行 |
+| `oec-common@0.3.0` | 0 | 1 | 0 | 零依赖 HTML-first 幻灯片 |
 
 SAE、UTP 和 `oec-testing` 不创建空目录，也不进入 Marketplace，直到各自准入条件满足。
 
@@ -87,7 +87,7 @@ plainOEC-infra/
 ├── .claude-plugin/marketplace.json
 ├── packages/prd-artifact-contract/       # 构建期共享确定性契约
 ├── oec-product/
-│   ├── agents/oec-pm.md
+│   ├── agents/product-manager.md
 │   └── skills/{writing,reviewing,publishing}-prds*/
 ├── oec-engineering/
 │   ├── skills/
@@ -105,7 +105,7 @@ plainOEC-infra/
     ├── servers/pipeline/
 │   └── dist/pipeline-server.mjs
 └── oec-common/
-    └── skills/html-slides/
+    └── skills/create-slides/
 ```
 
 共享 artifact contract 不是 Claude 组件、公共 references 层或运行时 npm 包。Product checker 和
@@ -117,12 +117,12 @@ E3 Server 在构建时导入同一实现，再分别生成无外部依赖的 bun
 ### Product
 
 ```text
-oec-pm Agent
-├── 预加载 writing-prds
-├── 预加载 reviewing-prds
-└── 不预加载 publishing-prds-to-e3
+product-manager Agent
+├── 预加载 write-prd
+├── 预加载 review-prd
+└── 不预加载 publish-prd-to-e3
 
-publishing-prds-to-e3
+publish-prd-to-e3
 └── 显式调用 oec-e3 MCP
 ```
 
@@ -272,12 +272,12 @@ Token、空间选择、plan 和 Pipeline 运行时状态不得进入 Git。旧 P
 
 ## 9. 分发和版本
 
-`oec-product@3.0.2` 声明同 Marketplace 依赖：
+`oec-product@3.0.3` 声明同 Marketplace 依赖：
 
 ```json
 {
   "name": "oec-product",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "dependencies": [
     { "name": "oec-e3", "version": "~1.0.0" }
   ]
@@ -307,6 +307,6 @@ Server 并存期。
 [E3 平台 3.0.0 真实验收记录](../evidence/e3-platform-3.0.0-real-acceptance.md)。Pipeline 的实现状态不因
 E3 验收而改变，仍需另行获得目标仓库、流水线和授权后才能形成真实证据。
 
-当前 patch 只形成 release candidate：`oec-e3@1.0.1` 的账号归属和 `oec-pipeline@1.0.1` 的单 POST
+当前 patch 只形成 release candidate：`oec-e3@1.0.2` 的账号归属和 `oec-pipeline@1.0.2` 的单 POST
 不变量都已有自动测试，但尚未完成明确授权的真实非生产复验。仓库 LICENSE/notice 的 Owner 决定也是
 正式发布前置，因此本轮不创建或推送新 tag。

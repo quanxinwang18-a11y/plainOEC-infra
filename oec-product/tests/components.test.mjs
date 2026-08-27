@@ -13,19 +13,19 @@ function frontmatter(relativePath) {
   return { metadata: YAML.parse(match[1]), body: text.slice(match[0].length) };
 }
 
-test('PM agent is explicit, inherits the model, and preloads only writing and review skills', () => {
-  const { metadata, body } = frontmatter('agents/oec-pm.md');
-  assert.equal(metadata.name, 'oec-pm');
+test('product manager is explicit, inherits the model, and preloads only write and review skills', () => {
+  const { metadata, body } = frontmatter('agents/product-manager.md');
+  assert.equal(metadata.name, 'product-manager');
   assert.equal(metadata.model, 'inherit');
   assert.match(metadata.description, /explicitly asks/);
-  assert.deepEqual(metadata.skills, ['writing-prds', 'reviewing-prds']);
+  assert.deepEqual(metadata.skills, ['write-prd', 'review-prd']);
   assert.doesNotMatch(body, /SKILL\.md|\.mcp\.json|OAuth|HTTP API|retry loop/i);
 });
 
 test('skills have distinct positive triggers and E3 publishing is manual-only', () => {
-  const writing = frontmatter('skills/writing-prds/SKILL.md');
-  const reviewing = frontmatter('skills/reviewing-prds/SKILL.md');
-  const publishing = frontmatter('skills/publishing-prds-to-e3/SKILL.md');
+  const writing = frontmatter('skills/write-prd/SKILL.md');
+  const reviewing = frontmatter('skills/review-prd/SKILL.md');
+  const publishing = frontmatter('skills/publish-prd-to-e3/SKILL.md');
   for (const item of [writing, reviewing, publishing]) {
     assert.match(item.metadata.description, /Do not use/i);
   }
@@ -50,7 +50,7 @@ test('skills have distinct positive triggers and E3 publishing is manual-only', 
 
 test('each Product Skill carries executable positive and negative eval cases', () => {
   const prompts = [];
-  for (const name of ['writing-prds', 'reviewing-prds', 'publishing-prds-to-e3']) {
+  for (const name of ['write-prd', 'review-prd', 'publish-prd-to-e3']) {
     for (const polarity of ['positive', 'negative']) {
       const directory = `evals/${name}-${polarity}`;
       const prompt = frontmatter(`${directory}/prompt.md`);
@@ -74,22 +74,22 @@ test('each Product Skill carries executable positive and negative eval cases', (
 
 test('model-facing capability text does not depend on the OEC label', () => {
   const paths = [
-    'agents/oec-pm.md',
-    'skills/writing-prds/SKILL.md',
-    'skills/writing-prds/references/artifact-contract.md',
-    'skills/writing-prds/references/product-language.md',
-    'skills/writing-prds/references/versioning.md',
-    'skills/reviewing-prds/SKILL.md',
-    'skills/reviewing-prds/references/review-rubric.md',
-    'skills/publishing-prds-to-e3/SKILL.md',
-    'skills/publishing-prds-to-e3/references/publish-contract.md',
+    'agents/product-manager.md',
+    'skills/write-prd/SKILL.md',
+    'skills/write-prd/references/artifact-contract.md',
+    'skills/write-prd/references/product-language.md',
+    'skills/write-prd/references/versioning.md',
+    'skills/review-prd/SKILL.md',
+    'skills/review-prd/references/review-rubric.md',
+    'skills/publish-prd-to-e3/SKILL.md',
+    'skills/publish-prd-to-e3/references/publish-contract.md',
   ];
   for (const path of paths) {
     const content = readFileSync(resolve(pluginRoot, path), 'utf8');
     assert.doesNotMatch(content, /\bOEC\b/, `${path} must describe the capability without an OEC label`);
   }
 
-  const writing = frontmatter('skills/writing-prds/SKILL.md');
+  const writing = frontmatter('skills/write-prd/SKILL.md');
   assert.match(writing.metadata.description, /versioned PRDs/);
   assert.match(writing.metadata.description, /child PRDs/);
   assert.match(writing.metadata.description, /HANDOFF artifacts/);
@@ -97,10 +97,10 @@ test('model-facing capability text does not depend on the OEC label', () => {
 
 test('writing assets cover the product SSOT and use safe exact-path commit syntax', () => {
   for (const path of [
-    'skills/writing-prds/assets/root-prd.md',
-    'skills/writing-prds/assets/root-prd-changelog.md',
+    'skills/write-prd/assets/root-prd.md',
+    'skills/write-prd/assets/root-prd-changelog.md',
   ]) assert.equal(existsSync(resolve(pluginRoot, path)), true, `${path} must exist`);
-  const contract = readFileSync(resolve(pluginRoot, 'skills/writing-prds/references/artifact-contract.md'), 'utf8');
+  const contract = readFileSync(resolve(pluginRoot, 'skills/write-prd/references/artifact-contract.md'), 'utf8');
   assert.match(contract, /git add -- <explicit PRD and HANDOFF paths>/);
   assert.match(contract, /git commit -m "docs\(prd\): \.\.\." -- <same explicit paths>/);
   assert.doesNotMatch(contract, /git commit -- .* -m/);
@@ -109,16 +109,16 @@ test('writing assets cover the product SSOT and use safe exact-path commit synta
 test('plugin relies on native discovery and has no forbidden root component framework', () => {
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-product');
-  assert.equal(manifest.version, '3.0.2');
+  assert.equal(manifest.version, '3.0.3');
   assert.deepEqual(manifest.dependencies, [{ name: 'oec-e3', version: '~1.0.0' }]);
   const packageManifest = JSON.parse(readFileSync(resolve(pluginRoot, '..', 'package.json'), 'utf8'));
-  assert.equal(packageManifest.version, '3.0.1');
+  assert.equal(packageManifest.version, '3.0.2');
   assert.equal('dependencies' in packageManifest, false);
   assert.equal(packageManifest.devDependencies.esbuild, '0.28.2');
   assert.equal(existsSync(resolve(pluginRoot, 'package.json')), false);
   assert.equal(existsSync(resolve(pluginRoot, 'package-lock.json')), false);
   const marketplace = JSON.parse(readFileSync(resolve(pluginRoot, '..', '.claude-plugin', 'marketplace.json'), 'utf8'));
-  assert.equal(marketplace.version, '3.0.1');
+  assert.equal(marketplace.version, '3.0.2');
   const productEntry = marketplace.plugins.find((plugin) => plugin.name === manifest.name);
   assert.equal(productEntry.version, manifest.version);
   assert.equal(productEntry.source, './oec-product');
@@ -128,5 +128,10 @@ test('plugin relies on native discovery and has no forbidden root component fram
   }
   assert.equal(existsSync(resolve(pluginRoot, '.mcp.json')), false);
   assert.equal(existsSync(resolve(pluginRoot, 'dist/e3-server.mjs')), false);
-  assert.equal(existsSync(resolve(pluginRoot, 'skills/writing-prds/runtime/check-artifacts.mjs')), true);
+  assert.equal(existsSync(resolve(pluginRoot, 'skills/write-prd/runtime/check-artifacts.mjs')), true);
+});
+
+test('public Product identifiers use concise scoped names without an oec prefix', () => {
+  for (const name of ['write-prd', 'review-prd', 'publish-prd-to-e3']) assert.doesNotMatch(name, /^oec-/);
+  assert.equal(frontmatter('agents/product-manager.md').metadata.name, 'product-manager');
 });

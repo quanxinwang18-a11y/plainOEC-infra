@@ -41,7 +41,7 @@ flowchart LR
 | 项目级 Skills | 25 |
 | 项目级 PM Agent | 1 |
 | PM Agent 正文 | 803 行 |
-| `oec-pm` 内部 `SKILL.md` | 根入口 1 个 + 嵌套文件 6 个 |
+| `product-manager` 内部 `SKILL.md` | 根入口 1 个 + 嵌套文件 6 个 |
 | Plugin 原生组件 | 1 Skill、0 Agent、1 Hook、0 MCP |
 
 因此，安装 Plugin 并不等于 PM 能力可用；还要在每个业务仓库执行初始化，将 payload 再复制为
@@ -53,11 +53,11 @@ flowchart LR
 
 ```text
 oec-product
-├── Agent: oec-pm                         19 行
+├── Agent: product-manager                         19 行
 ├── Skills
-│   ├── writing-prds
-│   ├── reviewing-prds
-│   └── publishing-prds-to-e3             三个正文合计 105 行
+│   ├── write-prd
+│   ├── review-prd
+│   └── publish-prd-to-e3             三个正文合计 105 行
 └── dependency: oec-e3@~1.0.0
 
 oec-e3
@@ -77,7 +77,7 @@ oec-e3
 ```mermaid
 flowchart TD
     A["803 行 PM Agent"] --> D["25 个 Skill descriptions"]
-    D --> M["oec-pm Mega Skill 再次路由"]
+    D --> M["product-manager Mega Skill 再次路由"]
     M --> R["Read 嵌套 SKILL.md / reference"]
     R --> S["Bash / Python scripts"]
     S --> E["E3 HTTP API"]
@@ -91,9 +91,9 @@ frontmatter `skills:` 预加载 PM 能力。模型必须自己完成意图路由
 
 ```mermaid
 flowchart TD
-    A["显式 oec-pm Agent"] --> W["原生预加载 writing-prds"]
-    A --> R["原生预加载 reviewing-prds"]
-    U["用户显式发布"] --> P["publishing-prds-to-e3"]
+    A["显式 product-manager Agent"] --> W["原生预加载 write-prd"]
+    A --> R["原生预加载 review-prd"]
+    U["用户显式发布"] --> P["publish-prd-to-e3"]
     P --> M["oec-e3 类型化 MCP"]
 ```
 
@@ -117,8 +117,8 @@ schema、服务端校验、不可变计划、workspace 绑定、远端身份验�
 
 | 旧能力 | 当前决定 | 原因 |
 | --- | --- | --- |
-| PRD 编写、修订、拆分 | 合并为 `writing-prds` | 同一稳定产物目标 |
-| PRD 红队评审 | `reviewing-prds` | 只读且判断边界独立 |
+| PRD 编写、修订、拆分 | 合并为 `write-prd` | 同一稳定产物目标 |
+| PRD 红队评审 | `review-prd` | 只读且判断边界独立 |
 | PRD 发布 E3 | Product Skill + E3 MCP | 产品语义与平台执行分离 |
 | 原型设计 | 未迁移 | 不是当前 PRD 主链必需能力 |
 | 通用产品/系统需求 CRUD | 未迁移 | 会扩大为平台管理 SDK |

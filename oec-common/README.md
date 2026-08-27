@@ -6,7 +6,7 @@ OEC 公共能力包，提供跨项目复用的 HTML 幻灯片能力。
 
 | Skill | 用途 |
 |-------|------|
-| `html-slides` | 创建可在浏览器演讲、概览和打印的 16:9 HTML deck |
+| `create-slides` | 创建可在浏览器演讲、概览和打印的 16:9 HTML deck |
 
 Skill 按需独立触发，不要求项目初始化，也没有 Plugin 运行时依赖。默认交付多文件 HTML：
 

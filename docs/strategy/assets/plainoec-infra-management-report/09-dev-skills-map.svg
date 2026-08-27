@@ -54,57 +54,57 @@
   <text x="1412" y="323" fill="#a96500" font-size="25" font-weight="800" text-anchor="middle">评审与收口</text>
 
   <rect x="94" y="378" width="310" height="138" rx="18" fill="#f4fbfa" stroke="#bfddda"/>
-  <text x="112" y="411" class="navy code" font-size="18" font-weight="800">managing-team-specs</text>
+  <text x="112" y="411" class="navy code" font-size="18" font-weight="800">manage-specs</text>
   <text x="112" y="445" fill="#0b6f76" font-size="19" font-weight="700">管理团队工程事实</text>
   <text x="112" y="477" class="muted" font-size="17">创建 / 更新 Specs、ADRs</text>
   <text x="112" y="501" class="muted" font-size="17">及必要 change context</text>
 
   <rect x="94" y="540" width="310" height="154" rx="18" fill="#f4fbfa" stroke="#bfddda"/>
-  <text x="112" y="573" class="navy code" font-size="17" font-weight="800">migrating-legacy-ai-docs</text>
+  <text x="112" y="573" class="navy code" font-size="17" font-weight="800">migrate-legacy-ai-docs</text>
   <text x="112" y="607" fill="#0b6f76" font-size="19" font-weight="700">迁移仍被代码证明的旧事实</text>
   <text x="112" y="639" class="muted" font-size="17">不复制旧目录树，不清理状态</text>
   <rect x="112" y="656" width="86" height="25" rx="13" fill="#def0ed"/>
   <text x="155" y="674" fill="#0b6f76" font-size="14" font-weight="800" text-anchor="middle">仅手动</text>
 
   <rect x="478" y="368" width="310" height="106" rx="18" fill="#f5f8fc" stroke="#c7d6e8"/>
-  <text x="496" y="400" class="navy code" font-size="16" font-weight="800">challenging-engineering-decisions</text>
+  <text x="496" y="400" class="navy code" font-size="16" font-weight="800">challenge-decision</text>
   <text x="496" y="433" fill="#245f9e" font-size="18" font-weight="700">压力测试技术决定</text>
   <rect x="684" y="440" width="84" height="24" rx="12" fill="#e3ecf7"/>
   <text x="726" y="457" fill="#245f9e" font-size="13" font-weight="800" text-anchor="middle">仅手动</text>
 
   <rect x="478" y="492" width="310" height="100" rx="18" fill="#f5f8fc" stroke="#c7d6e8"/>
-  <text x="496" y="525" class="navy code" font-size="17" font-weight="800">prototyping-decisions</text>
+  <text x="496" y="525" class="navy code" font-size="17" font-weight="800">prototype-decision</text>
   <text x="496" y="558" fill="#245f9e" font-size="18" font-weight="700">用最小原型回答设计问题</text>
 
   <rect x="478" y="610" width="310" height="106" rx="18" fill="#f5f8fc" stroke="#c7d6e8"/>
-  <text x="496" y="643" class="navy code" font-size="17" font-weight="800">planning-engineering-changes</text>
+  <text x="496" y="643" class="navy code" font-size="17" font-weight="800">plan-change</text>
   <text x="496" y="676" fill="#245f9e" font-size="18" font-weight="700">规划非平凡、跨模块变更</text>
   <text x="496" y="701" class="muted" font-size="16">高风险时才持久化计划</text>
 
   <rect x="862" y="368" width="310" height="76" rx="18" fill="#f6fbf4" stroke="#c6ddc2"/>
-  <text x="880" y="400" class="navy code" font-size="17" font-weight="800">test-driven-development</text>
+  <text x="880" y="400" class="navy code" font-size="17" font-weight="800">develop-test-first</text>
   <text x="880" y="430" fill="#39753b" font-size="17" font-weight="700">明确要求时执行 TDD</text>
 
   <rect x="862" y="458" width="310" height="76" rx="18" fill="#f6fbf4" stroke="#c6ddc2"/>
-  <text x="880" y="490" class="navy code" font-size="17" font-weight="800">diagnosing-failures</text>
+  <text x="880" y="490" class="navy code" font-size="17" font-weight="800">diagnose-failure</text>
   <text x="880" y="520" fill="#39753b" font-size="17" font-weight="700">诊断难复现或根因不清故障</text>
 
   <rect x="862" y="548" width="310" height="76" rx="18" fill="#f6fbf4" stroke="#c6ddc2"/>
-  <text x="880" y="580" class="navy code" font-size="15" font-weight="800">delegating-engineering-agents</text>
+  <text x="880" y="580" class="navy code" font-size="15" font-weight="800">delegate-agents</text>
   <text x="880" y="610" fill="#39753b" font-size="17" font-weight="700">显式串行委派可选 Agent</text>
 
   <rect x="862" y="638" width="310" height="88" rx="18" fill="#f6fbf4" stroke="#c6ddc2"/>
-  <text x="880" y="670" class="navy code" font-size="14" font-weight="800">orchestrating-long-running-coding</text>
+  <text x="880" y="670" class="navy code" font-size="14" font-weight="800">run-long-coding</text>
   <text x="880" y="700" fill="#39753b" font-size="17" font-weight="700">长时 Build / QA</text>
 
   <rect x="1246" y="378" width="332" height="138" rx="18" fill="#fffaf1" stroke="#ead4aa"/>
-  <text x="1264" y="411" class="navy code" font-size="17" font-weight="800">reviewing-code-changes</text>
+  <text x="1264" y="411" class="navy code" font-size="17" font-weight="800">review-code</text>
   <text x="1264" y="445" fill="#a96500" font-size="19" font-weight="700">只读、风险优先评审 diff</text>
   <text x="1264" y="477" class="muted" font-size="17">给位置、触发输入、后果</text>
   <text x="1264" y="501" class="muted" font-size="17">和最小修正方向</text>
 
   <rect x="1246" y="540" width="332" height="154" rx="18" fill="#fffaf1" stroke="#ead4aa"/>
-  <text x="1264" y="573" class="navy code" font-size="17" font-weight="800">closing-engineering-changes</text>
+  <text x="1264" y="573" class="navy code" font-size="17" font-weight="800">close-change</text>
   <text x="1264" y="607" fill="#a96500" font-size="19" font-weight="700">核对证据、知识与残余风险</text>
   <text x="1264" y="639" class="muted" font-size="17">用户确认后可精确路径提交</text>
   <rect x="1264" y="656" width="86" height="25" rx="13" fill="#fff0d3"/>
@@ -116,9 +116,9 @@
   <text x="96" y="876" class="muted" font-size="17">按路径选取与确定性校验工程文档</text>
   <rect x="616" y="816" width="986" height="76" rx="18" fill="#eef3fa" stroke="#aec4df"/>
   <text x="642" y="849" fill="#245f9e" font-size="20" font-weight="800">可选 Agents</text>
-  <text x="786" y="849" class="navy code" font-size="18" font-weight="700">oec-implement</text>
-  <text x="972" y="849" class="navy code" font-size="18" font-weight="700">oec-evaluate</text>
-  <text x="1150" y="849" class="navy code" font-size="18" font-weight="700">oec-check</text>
-  <text x="1292" y="849" class="navy code" font-size="18" font-weight="700">oec-research</text>
+  <text x="786" y="849" class="navy code" font-size="18" font-weight="700">implementer</text>
+  <text x="972" y="849" class="navy code" font-size="18" font-weight="700">evaluator</text>
+  <text x="1150" y="849" class="navy code" font-size="18" font-weight="700">checker</text>
+  <text x="1292" y="849" class="navy code" font-size="18" font-weight="700">researcher</text>
   <text x="642" y="876" class="muted" font-size="17">仅在独立上下文、fresh-eyes 或边界研究确有价值时显式使用</text>
 </svg>

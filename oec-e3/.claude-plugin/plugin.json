@@ -1,7 +1,7 @@
 {
   "name": "oec-e3",
-  "version": "1.0.1",
-  "description": "E3 平台集成：提供类型化、受门禁保护的 PRD 发布和研发任务工具。",
+  "version": "1.0.2",
+  "description": "PRD 发布与研发任务的受控准备、执行和状态查询。",
   "author": {
     "name": "OEC"
   },

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.2
+
+- Add natural-language examples for pipeline discovery and status without teaching direct execute
+  calls; runtime tools and remote-write contracts are unchanged.
+
 ## 1.0.1
 
 - Persist `prepared`, `executing`, `executed`, and `failed` plan states with stable run markers before

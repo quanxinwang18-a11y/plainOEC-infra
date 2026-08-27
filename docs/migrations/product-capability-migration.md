@@ -1,8 +1,8 @@
 # OEC PM 能力迁移分析
 
 > 本文基于旧仓库 `oec-ai-infra` 的 commit
-> `79356008b9961c3e8a70c57e2fe5c9cf0c7ce424` 和当前 release candidate Marketplace `3.0.1`。分析对象分别是旧
-> `oec-ai@0.2.2`，以及当前 `oec-product@3.0.2` 与其平台依赖 `oec-e3@1.0.1`。旧结构的数据来自
+> `79356008b9961c3e8a70c57e2fe5c9cf0c7ce424` 和当前 release candidate Marketplace `3.0.2`。分析对象分别是旧
+> `oec-ai@0.2.2`，以及当前 `oec-product@3.0.3` 与其平台依赖 `oec-e3@1.0.2`。旧结构的数据来自
 > 实际构建产物以及一次隔离临时目录中的
 > `role=designer + tool=claude-code` 初始化，不把编辑源码目录误认为 PM 最终加载的配置。
 
@@ -48,7 +48,7 @@ Pipeline 是独立平台 Plugin，不属于 PM 能力本身。
 ```text
 oec-infra/
 ├── agents/oec-product/
-│   └── oec-pm-agent.md
+│   └── product-manager-agent.md
 └── skills/
     ├── product/
     │   ├── oec-prd-generate/
@@ -57,7 +57,7 @@ oec-infra/
     │   ├── oec-prd-split/
     │   └── ...
     └── tools/
-        ├── oec-pm/
+        ├── product-manager/
         ├── oec-manage-task/
         └── ...
 ```
@@ -131,7 +131,7 @@ PM 最终获得的真实目录是：
 业务仓库/
 ├── .claude/
 │   ├── agents/
-│   │   └── oec-pm-agent.md
+│   │   └── product-manager-agent.md
 │   └── skills/                    # 25 个项目级 Skills
 ├── .oec-ai/
 │   ├── installation.json
@@ -148,7 +148,7 @@ PM 最终获得的真实目录是：
 
 | 内容 | 数量 | 所有权语义 |
 |---|---:|---|
-| `.claude/agents/oec-pm-agent.md` | 1 | 同步器管理的项目级 Agent |
+| `.claude/agents/product-manager-agent.md` | 1 | 同步器管理的项目级 Agent |
 | `.claude/skills/*` | 610 个文件、25 个 Skill 根目录 | 同步器管理的项目级 Skills |
 | `.oec-ai/bin/*` | 2 | 同步器管理的项目运行时 |
 | `ai-docs/*` | 8 | 仅文件缺失时 seed，后续视为业务内容 |
@@ -162,7 +162,7 @@ PM 最终获得的真实目录是：
 | `iflytek-feishu-api` | 304 | 通用飞书 17 个模块、267 个 API |
 | `oec-git-devops` | 114 | 仓库、流水线和 DevOps 管理 |
 | `oec-manage-task` | 92 | 任务、提测和缺陷管理 |
-| `oec-pm` | 67 | PM Mega Skill、嵌套规范和 E3 脚本 |
+| `product-manager` | 67 | PM Mega Skill、嵌套规范和 E3 脚本 |
 
 前三个相邻工具共 510 个 managed files，占全部受管文件约 83%。它们随 designer role 一次下发，
 但与“写 PRD、评审、发布”并不共享稳定生命周期。这说明旧分发边界首先按组织角色聚合，而不是按
@@ -220,20 +220,20 @@ flowchart TD
 ```
 
 Claude Code 可以根据这些 Skill 的 description 发现并调用它们。但是旧
-旧仓库 `oec-infra/agents/oec-product/oec-pm-agent.md` 的 frontmatter 没有
+旧仓库 `oec-infra/agents/oec-product/product-manager-agent.md` 的 frontmatter 没有
 `skills:` 字段，因此 Agent 启动时没有任何 PM Skill 被原生预加载。Agent 的 803 行正文自己保存
 入口判断、阶段编排、文件路径、Git 规则、失败处理和发布流程，再依靠模型从所有项目 Skills 中选择。
 
-与此同时，旧 payload 顶层 `plugins/oec-ai/payload/skills/oec-pm/SKILL.md`
+与此同时，旧 payload 顶层 `plugins/oec-ai/payload/skills/product-manager/SKILL.md`
 又明确要求：
 
 > 执行任何操作前，必须先根据路由表 Read 对应子目录的 `SKILL.md`；这些文件不作为独立顶层
 > Skill 调用。
 
-`oec-pm` 目录下实际有 1 个根 `SKILL.md` 和 6 个嵌套 `SKILL.md`，合计约 2064 行：
+`product-manager` 目录下实际有 1 个根 `SKILL.md` 和 6 个嵌套 `SKILL.md`，合计约 2064 行：
 
 ```text
-oec-pm/
+product-manager/
 ├── SKILL.md                       # 唯一项目级 Skill 入口
 ├── requirements-analysis/SKILL.md
 ├── generate-prd-document/SKILL.md
@@ -250,10 +250,10 @@ oec-pm/
 
 ```mermaid
 flowchart TD
-    U["PM 请求"] --> A["项目级 oec-pm-agent<br/>做需求 / 改需求 / 发布需求路由"]
+    U["PM 请求"] --> A["项目级 product-manager-agent<br/>做需求 / 改需求 / 发布需求路由"]
     A --> D["25 个项目 Skill descriptions<br/>Claude Code 原生发现"]
     D --> T["阶段 Skill<br/>generate / review / finalize / split 等"]
-    D --> M["oec-pm Mega Skill"]
+    D --> M["product-manager Mega Skill"]
     M -.->|普通 Read，不是 Skill preload| C["嵌套子 SKILL.md"]
     C -.->|普通 Read| R["references"]
     R --> B["模型组装 Bash / Python 参数"]
@@ -267,10 +267,10 @@ flowchart TD
 |---|---|---|
 | PM Agent | 做需求、改需求、发布需求及内部状态机 | “写 PRD”“上 E3” |
 | 顶层阶段 Skills | generate、review、revise、finalize、split 等 | `oec-prd-generate` 本身就能匹配 PRD 写作 |
-| `oec-pm` Mega Skill | 需求分析、PRD、原型、产品需求和系统需求 | description 同时匹配写 PRD、原型和 E3 |
+| `product-manager` Mega Skill | 需求分析、PRD、原型、产品需求和系统需求 | description 同时匹配写 PRD、原型和 E3 |
 
 例如“根据需求写个 PRD”既可能命中 Agent 的 build flow，又直接符合 `oec-prd-generate`，也符合
-`oec-pm` 的 `generate-prd-document` 路由。更多文字不会自动消除这种重叠，反而要求模型先判断
+`product-manager` 的 `generate-prd-document` 路由。更多文字不会自动消除这种重叠，反而要求模型先判断
 “应该服从哪一层路由”，再处理产品问题。
 
 ### 3.3 构建扁平化已经造成失效路径索引
@@ -308,7 +308,7 @@ Skill 位于 `<plugin>/skills/<name>/SKILL.md`；Agent 的 `skills:` 字段会�
 ```text
 PM Agent
 → oec-prd-quality-gate
-→ oec-pm Mega Skill
+→ product-manager Mega Skill
 → decompose-prd-to-requirements/SKILL.md
 → CRT/QRY/EDT/DEL reference
 → 模型选择 Python script 并拼参数
@@ -319,7 +319,7 @@ PM Agent
 
 由此产生的风险包括：
 
-- 系统需求和任务实现分散在 `oec-pm`、`oec-manage-task` 等不同包，Agent 又禁止某些跨包调用，
+- 系统需求和任务实现分散在 `product-manager`、`oec-manage-task` 等不同包，Agent 又禁止某些跨包调用，
   所有权不完整。
 - 部分字段候选把 `options[0]` 当默认值，列表顺序被误当成业务决策。
 - quality gate 曾使用正则模拟 YAML parser，难以稳定验证嵌套 schema 和安全路径。
@@ -381,9 +381,9 @@ ideate、generate、revise、finalize 和 split 是可能采用的内部工作�
 
 | Skill | 用户目标 | 副作用边界 |
 |---|---|---|
-| [writing-prds](../../oec-product/skills/writing-prds/SKILL.md) | 创建、修订、收口和拆分 PRD | 只写本地 PRD；提交前确认 |
-| [reviewing-prds](../../oec-product/skills/reviewing-prds/SKILL.md) | 对 PRD 做只读红队评审 | 不修改文件 |
-| [publishing-prds-to-e3](../../oec-product/skills/publishing-prds-to-e3/SKILL.md) | 显式发布最终产物 | 展示计划并确认后写 E3 |
+| [write-prd](../../oec-product/skills/write-prd/SKILL.md) | 创建、修订、收口和拆分 PRD | 只写本地 PRD；提交前确认 |
+| [review-prd](../../oec-product/skills/review-prd/SKILL.md) | 对 PRD 做只读红队评审 | 不修改文件 |
+| [publish-prd-to-e3](../../oec-product/skills/publish-prd-to-e3/SKILL.md) | 显式发布最终产物 | 展示计划并确认后写 E3 |
 
 ### 5.2 Agent、Skill、MCP 各自只有一个主要职责
 
@@ -399,7 +399,7 @@ flowchart TB
     M1["roots / token / fingerprint<br/>mapping / remote identity"] -.->|约束| M
 ```
 
-当前 [oec-pm Agent](../../oec-product/agents/oec-pm.md) 通过 frontmatter 原生预加载 writing 和
+当前 [product-manager Agent](../../oec-product/agents/product-manager.md) 通过 frontmatter 原生预加载 writing 和
 reviewing，完整 Skill 内容在 Agent 启动时注入，不需要记住 `SKILL.md` 文件路径。带外部副作用的
 publishing 不预加载，并设置为只能由用户显式调用。
 
@@ -450,13 +450,13 @@ publishing 不预加载，并设置为只能由用户显式调用。
 
 ```text
 Marketplace: plainOEC-infra
-├── Plugin: oec-product@3.0.2
-│   ├── agents/oec-pm.md
-│   ├── skills/writing-prds/
-│   ├── skills/reviewing-prds/
-│   ├── skills/publishing-prds-to-e3/
+├── Plugin: oec-product@3.0.3
+│   ├── agents/product-manager.md
+│   ├── skills/write-prd/
+│   ├── skills/review-prd/
+│   ├── skills/publish-prd-to-e3/
 │   └── dependency: oec-e3@~1.0.0
-└── Plugin: oec-e3@1.0.1
+└── Plugin: oec-e3@1.0.2
     ├── .mcp.json
     ├── servers/e3/
     └── dist/e3-server.mjs
@@ -466,8 +466,8 @@ Marketplace: plainOEC-infra
 
 | Plugin | Skills | Agents | MCP servers | Commands | Hooks |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `oec-product@3.0.2` | 3 | 1 | 0 | 0 | 0 |
-| `oec-e3@1.0.1` | 0 | 0 | 1 | 0 | 0 |
+| `oec-product@3.0.3` | 3 | 1 | 0 | 0 | 0 |
+| `oec-e3@1.0.2` | 0 | 0 | 1 | 0 | 0 |
 
 Product 通过 Marketplace 复制进 Claude Code plugin cache，Claude Code 自动解析 E3 dependency。安装
 过程不会在产品仓库创建 `.claude`、`.oec-ai` 或模板；只有用户真正执行 writing Skill 时，才按业务
@@ -478,15 +478,15 @@ Plugin cache 中运行。
 
 - [Marketplace](../../.claude-plugin/marketplace.json)
 - [Product manifest](../../oec-product/.claude-plugin/plugin.json)
-- [PM Agent](../../oec-product/agents/oec-pm.md)
+- [PM Agent](../../oec-product/agents/product-manager.md)
 - [E3 manifest](../../oec-e3/.claude-plugin/plugin.json)
 - [E3 MCP 注册](../../oec-e3/.mcp.json)
 
 ### 6.2 Supporting files 回到所属 Skill
 
 Writing 的 artifact contract、versioning、product language、templates 和 checker 都位于
-`writing-prds/` 内；Review rubric 位于 `reviewing-prds/`；E3 publish contract 位于
-`publishing-prds-to-e3/`。没有 Plugin 根公共 `references/assets/lib`，也没有另一个 Mega Skill
+`write-prd/` 内；Review rubric 位于 `review-prd/`；E3 publish contract 位于
+`publish-prd-to-e3/`。没有 Plugin 根公共 `references/assets/lib`，也没有另一个 Mega Skill
 负责告诉模型去哪里找文件。
 
 Skill description 直接描述能力和触发边界，不再依赖无定义的品牌词帮助模型判断。Reference 只在
@@ -655,7 +655,7 @@ flowchart LR
 | PM Agent 行数 | 803 | 19 | 身份与工作流解耦 |
 | PM 项目级 Skills | 25 | 0 | 不再复制项目配置 |
 | Plugin 原生 PM Skills | 0；仅 1 个 init Skill | 3 | 原生发现和 namespace |
-| 核心 Skill 正文 | 产品阶段 2412 行 + `oec-pm` 树 2064 行 | 3 个 Skill 共 105 行 | 从阶段粒度收敛到用户目标 |
+| 核心 Skill 正文 | 产品阶段 2412 行 + `product-manager` 树 2064 行 | 3 个 Skill 共 105 行 | 从阶段粒度收敛到用户目标 |
 | Plugin 原生 PM Agents | 0 | 1 | Agent 与 Plugin 同生命周期 |
 | Product Plugin MCP Servers | 0 | 0 | 产品知识不再持有平台运行时 |
 | E3 Plugin MCP Servers | 0 | 1（10 tools） | E3 从 Prompt/Bash 迁到独立类型化平台工具 |
@@ -669,7 +669,7 @@ flowchart LR
 
 ### 8.2 自动验证
 
-Marketplace `3.0.1` 当前自动验证命令：
+Marketplace `3.0.2` 当前自动验证命令：
 
 ```text
 npm run build
@@ -772,7 +772,7 @@ Prompt 驱动的 Bash/Python E3 链路。
 - Plugin cache 承载配置，业务仓库只承载用户确认后产生的产品文档和 mapping。
 
 如果评价“PRD 编写、评审、发布”主链，当前实现已经完成迁移并强化旧方案；如果评价旧
-`oec-pm`、`oec-manage-task`、飞书、设计和 Codex 适配的全部能力，当前只是主动收窄后的子集，不能
+`product-manager`、`oec-manage-task`、飞书、设计和 Codex 适配的全部能力，当前只是主动收窄后的子集，不能
 称为完整复刻。
 
 后续扩展应继续遵守相同原则：只有真实平台能力缺口才扩展 MCP 或增加独立 Plugin，不把认证、API、

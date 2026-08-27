@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.0.3
+
+**BREAKING RC CHANGE:** normalize public capability names before the first stable release.
+
+- Rename `writing-prds` to `write-prd`, `reviewing-prds` to `review-prd`, and
+  `publishing-prds-to-e3` to `publish-prd-to-e3`.
+- Rename the `oec-pm` Agent to `product-manager` and update its preloaded Skills.
+- Simplify the Marketplace and Plugin descriptions, correct picker/CLI examples, and replace
+  cross-Plugin README links with stable repository URLs.
+
 ## 3.0.2
 
 - Replace per-Skill prose-only case lists with native executable routing evals.

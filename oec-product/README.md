@@ -2,25 +2,22 @@
 
 `oec-product` 是通过 plainOEC-infra Marketplace 分发的 Claude Code 产品管理插件。
 
-## 组件
+## 使用
 
-- Agent：`@oec-product:oec-pm`，只在用户显式选择时提供 PM 工作身份。
-- Skills：`writing-prds`、`reviewing-prds`、`publishing-prds-to-e3`。
-- Platform dependency：`oec-e3@~1.0.0`，提供 E3 MCP 原子工具；Product 自身没有 MCP Server。
-
-一次性 PRD 写作或评审可以直接用自然语言描述目标，由对应 Skill 按场景发现。只有需要持续的
-产品经理工作身份时，才启动完整 PM Agent 会话。
+一次性 PRD 写作或评审可以直接描述目标，分别使用 `/oec-product:write-prd` 和
+`/oec-product:review-prd`。需要持续的产品经理工作身份时，在 `@` picker 中选择
+`oec-product:product-manager`，或启动完整 Agent 会话：
 
 Agent 只预加载 PRD 写作与评审能力。完整 PM 会话通过显式 Agent 启动：
 
 ```bash
-claude --agent oec-product:oec-pm
+claude --agent oec-product:product-manager
 ```
 
 E3 发布必须由用户显式调用：
 
 ```text
-/oec-product:publishing-prds-to-e3 v1.2.3
+/oec-product:publish-prd-to-e3 v1.2.3
 ```
 
 发布采用 prepare/confirm/execute/status 四段边界。prepare 不创建远端对象；execute 只接受
@@ -35,12 +32,10 @@ workspace 隔离；OAuth token 仍由插件实例安全复用。Status 以 schem
 新版本；远端对象 ID、标题或任务父子关系发生漂移时，插件会阻断而不会自动创建替代对象。
 POMP 和系统需求元数据只在存在唯一候选或唯一默认值时自动选择。
 
-## 分发
+## 能力边界
 
-插件目录只包含自足的 artifact checker bundle。Claude Code 2.1.110 或更高版本会自动解析并
-安装同一 Marketplace 中的 `oec-e3` 依赖。Product 与 E3 分别拥有 Plugin Data；升级到 3.0 后
-首次发布需要重新 OAuth 和选择空间，项目仓库中的 mapping 保持兼容。安装不需要 npm registry、
-`node_modules` 或运行时依赖安装。
+Product 定义 PRD、Story 和 HANDOFF 的产品语义；`oec-e3` 负责认证、远端对象、幂等和状态查询。
+安装 Product 会加载 `oec-e3@~1.0.0`，但普通 PRD 写作和评审不会触发远端发布。
 
 ## 本地验证
 
@@ -56,30 +51,10 @@ claude plugin validate ./oec-product
 真实 E3 写入必须使用获得授权的非生产空间。没有完成该验证时，不应把 mock 测试描述为真实
 E3 E2E。
 
-## 3.0.0 平台依赖验收
+## 当前证据
 
-2026-08-21，隔离 Git Marketplace 安装验证了 Product 会自动解析 `oec-e3@~1.0.0`，Product cache
-自身不再包含 MCP 或 E3 runtime。随后在“OBU-AI提效组”使用新的 E3 Plugin Data 完成真实 PRD
-发布、status 和重复复用，并完成研发任务的创建/复用、开始、工时日志、完成和最终状态回读。
+隔离 Marketplace 安装、artifact checker 和 E3 非生产主链均已有验证。当前补丁版本仍需在授权的
+唯一非生产对象上复验账号归属；mock、MCP Connected 和历史版本证据不能替代该复验。
 
 详细对象标识、结果与未覆盖边界见
-[E3 平台 Plugin 3.0.0 真实验收记录](../docs/evidence/e3-platform-3.0.0-real-acceptance.md)。
-
-## 2.2.0 真实 E3 验收
-
-2026-08-20，`2.2.0` 在获得明确授权的非生产 E3 空间“OBU-AI提效组”完成了真实发布验收：
-
-- 干净 Git archive 通过 Claude CLI 安装，插件缓存没有 `node_modules`，bundled MCP 注册四个工具。
-- `claude --agent oec-pm` 成功进入显式 PM 工作身份。
-- 完整 fixture 通过 pre-publish artifact gate。
-- prepare 计划创建一条系统需求和一条 Story 任务，execute 返回 `published`。
-- status 通过真实 E3 详情和列表响应验证 ID、标题、任务父子关系和详情链接，两项对象均为
-  `verified`。
-- 再次 prepare 的创建数为 0，系统需求和 Story 任务各复用 1 条。
-- 修改包含既有 mapping 的 fixture 副本后，prepare 返回 `published-version-changed`，mapping
-  内容保持不变。
-- 临时 token、产品空间配置、计划文件和 fixture 已在验收后清理；远端验收对象未删除。
-
-这次流程没有进入“多个 POMP 候选且无唯一默认值”的分支，该交互仍由自动测试覆盖。人为制造
-partial 远端写入也没有作为真实验收执行，partial resume 的证据仍来自 mock 测试。验收记录
-不包含内部空间 ID、对象 ID、凭证或原始 E3 响应。
+[E3 平台真实验收记录](https://github.com/quanxinwang18-a11y/plainOEC-infra/blob/master/docs/evidence/e3-platform-3.0.0-real-acceptance.md)。

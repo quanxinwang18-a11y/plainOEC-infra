@@ -1,8 +1,7 @@
 # oec-engineering
 
-`oec-engineering` 提供十一个聚焦的软件工程 Skills、四个显式使用的可选 Agent，以及项目自有的团队
-Spec 契约。它不会替代 Claude Code 主 Coding Agent，不安装研发状态机，也不向所有会话注入
-SessionStart 上下文。
+`oec-engineering` 提供团队 Specs、技术方案、诊断、代码评审、可选 Agent、长时 Web/全栈开发和工程
+收口能力。普通编码仍由主 Session 完成。
 
 ## 安装
 
@@ -31,21 +30,21 @@ bundle 需要 PATH 中存在 Node.js 20 或更新版本。
 普通请求直接用自然语言描述目标，Skills 按场景发现：
 
 ```text
-/oec-engineering:managing-team-specs
-/oec-engineering:migrating-legacy-ai-docs
-/oec-engineering:planning-engineering-changes
-/oec-engineering:challenging-engineering-decisions
-/oec-engineering:prototyping-decisions
-/oec-engineering:test-driven-development
-/oec-engineering:diagnosing-failures
-/oec-engineering:reviewing-code-changes
-/oec-engineering:delegating-engineering-agents
-/oec-engineering:orchestrating-long-running-coding
-/oec-engineering:closing-engineering-changes
+/oec-engineering:manage-specs
+/oec-engineering:migrate-legacy-ai-docs
+/oec-engineering:plan-change
+/oec-engineering:challenge-decision
+/oec-engineering:prototype-decision
+/oec-engineering:develop-test-first
+/oec-engineering:diagnose-failure
+/oec-engineering:review-code
+/oec-engineering:delegate-agents
+/oec-engineering:run-long-coding
+/oec-engineering:close-change
 ```
 
-`migrating-legacy-ai-docs`、`challenging-engineering-decisions`、`closing-engineering-changes`、
-`delegating-engineering-agents` 和 `orchestrating-long-running-coding` 只在用户显式调用时使用。
+`migrate-legacy-ai-docs`、`challenge-decision`、`close-change`、
+`delegate-agents` 和 `run-long-coding` 只在用户显式调用时使用。
 决策挑战只压力测试一个技术决定，不自动进入规划或实现；Agent 委派只协调已有 change 或当前 diff，
 不创建工作流状态；长时 Coding 只处理已有 change 的非平凡 Web/full-stack 任务，并在当前主 Session
 内复用实现与运行态评估 Agent。决策原型只在用户明确要求用 throwaway artifact 回答交互或状态问题时
@@ -55,49 +54,55 @@ bundle 需要 PATH 中存在 Node.js 20 或更新版本。
 
 需要独立上下文时，可以要求 Claude 使用：
 
-- `oec-implement`：接收已有 change ID，在已声明的 boundary 内隔离实现并运行相关测试；
-- `oec-check`：通过 status 与 `diff HEAD` 覆盖 staged、unstaged、untracked 变更，运行相关测试后做
-  fresh-eyes 检查；
-- `oec-research`：接收已有 change ID，把有边界的研究结果写入对应 change 目录。
-- `oec-evaluate`：接收已有 change ID、当前会话完成条件和内部非生产目标，使用预配置的 Playwright
+- `implementer`：接收已有 change ID，在已声明的 boundary 内隔离实现并运行相关测试；
+- `checker`：通过 status 与 `diff HEAD` 覆盖 staged、unstaged、untracked 变更，运行相关测试，并可能
+  直接修复类型、lint 或明显 Spec 违规等无歧义机械问题；
+- `researcher`：接收已有 change ID，把有边界的研究结果写入对应 change 目录。
+- `evaluator`：接收已有 change ID、当前会话完成条件和内部非生产目标，使用预配置的 Playwright
   MCP 操作运行中的 Web 应用，按产品深度、功能、视觉与代码质量返回独立证据，不修改项目文件或 Git。
 
-`oec-implement`、`oec-research` 和 `oec-evaluate` 缺少 change ID 或对应 `change.md` 时会停止并请求
+`implementer`、`researcher` 和 `evaluator` 缺少 change ID 或对应 `change.md` 时会停止并请求
 主会话补充，不会创建或猜测 change package。任何相关测试或运行态验收未执行、失败或证据不完整时，
 Agent 只报告 partial/failed/incomplete，不会输出完成结论。
 
-通过 Claude Code 的 `@` Agent picker 可以保证派发。它们不是 slash commands，只在用户明确请求，
-或显式调用的 OEC Skill 委派有边界任务时使用；普通实现、评审和研究仍可由主会话完成。
+通过 Claude Code 的 `@` Agent picker 可以保证派发。它们不是 slash commands；普通实现、评审和研究
+仍可由主 Session 完成。
 
-需要统一入口时，显式调用 `delegating-engineering-agents` 并选择 `research`、`implement`、`check`
-或 `full`。`full` 只按 `research → implement → check` 串行推进，任何 Agent 未报告 complete 或研究
+需要统一入口时，调用 `delegate-agents` 并选择 `research`、`implement`、`check`
+或 `sequence`。`sequence` 只按 `researcher → implementer → checker` 串行推进，任何 Agent 未报告 complete 或研究
 要求修改设计时立即停止；该 Skill 不自动重试、不维护阶段状态，也不提交或关闭 change。
 
-需要在明确的非平凡 Web/full-stack change 上长时间构建并进行运行态验收时，用户可以显式调用：
+需要在明确的非平凡 Web/full-stack change 上长时间构建并进行运行态验收时，调用：
 
 ```text
-/oec-engineering:orchestrating-long-running-coding [已确认目标或输入引用]
+/oec-engineering:run-long-coding [已有或当前已确认的 change]
 ```
 
-主 Session 只读取用户明确选择的 PRD、Task、Change、Spec、Plan 或其他参考文件，分别创建一次
-`oec-implement` 与 `oec-evaluate`，随后按 Agent ID 在最多五个 build/evaluate cycle 中恢复同一对
+PRD、Story、Task 或 Issue 先通过 `plan-change` 形成 change。主 Session 再读取该 change、相关 Specs、
+ADRs、Design、Plan 和用户明确选择的参考文件，分别创建一次
+`implementer` 与 `evaluator`，随后按 Agent ID 在最多五个 build/evaluate cycle 中恢复同一对
 Agent。第五次仍未通过时必须停止；用户明确继续后绝对上限为十次。Runtime 通过后再创建 fresh
-`oec-check`。该流程不引入 Sprint、backlog、项目级运行文件、框架 adapter、snapshot、commit 或
-closing，也不接管普通 Coding。
+`checker`。普通编码仍由主 Session 完成；长时流程只在当前 Session 保留 implementer 与 evaluator
+上下文，不创建项目状态文件，也不接管普通 Coding。
 
-`oec-evaluate` 要求团队或用户预先配置并连接名为 `playwright` 的 MCP Server。Plugin 不安装、不
+三种检查能力的区别：
+
+| 能力 | 是否修改工作树 | 适用目标 |
+| --- | --- | --- |
+| `review-code` | 否 | 只读、风险优先的代码 findings |
+| `checker` | 可能 | fresh-eyes 检查并修复无歧义机械问题 |
+| `evaluator` | 不修改源码 | 操作内部测试应用并提供运行态证据 |
+
+`evaluator` 要求团队或用户预先配置并连接名为 `playwright` 的 MCP Server。Plugin 不安装、不
 内联启动也不声明该 MCP；缺失时长时流程 fail closed，不以静态测试替代运行态验收。第一版只支持
 本地或明确授权的内部非生产目标。
-
-仓库同时保留实验性 Codex manifest 和 TOML Agent。由于本轮没有完成真实 Codex 安装、Agent 发现和
-`oec-spec` PATH 验收，不把这些文件描述为已验证的 Codex 支持。
 
 ## 团队 Specs
 
 只有团队需要 repository-owned 工程事实时才初始化：
 
 ```text
-/oec-engineering:managing-team-specs init
+/oec-engineering:manage-specs init
 ```
 
 Skill 会先检查仓库证据并展示拟创建的路径，只生成真实事实支持的 current-state Specs 和 ADRs：
@@ -128,7 +133,7 @@ oec-spec legacy-audit --workspace "$PWD"
 显式调用迁移 Skill：
 
 ```text
-/oec-engineering:migrating-legacy-ai-docs
+/oec-engineering:migrate-legacy-ai-docs
 ```
 
 它会运行只读 legacy audit、枚举旧 `ai-docs`、提出“源路径 → 分类 → 目标路径 → 证据”的精确
@@ -136,7 +141,7 @@ oec-spec legacy-audit --workspace "$PWD"
 原位；`.oec-ai`、旧项目 Skills 和 Agents 的清理是另一个需要精确确认的破坏性操作。
 
 迁移依据和旧分发实测见
-[Engineering 能力迁移分析](../docs/migrations/engineering-capability-migration.md)。
+[Engineering 能力迁移分析](https://github.com/quanxinwang18-a11y/plainOEC-infra/blob/master/docs/migrations/engineering-capability-migration.md)。
 
 ## 边界
 
@@ -160,3 +165,8 @@ git diff --check
 ```
 
 `dist/oec-spec.mjs` 随 Git 提交，因此 Marketplace 安装不依赖 Plugin 内的 `node_modules`。
+
+## 兼容性
+
+Claude Plugin 的 Skill 与 Agent 已通过结构和分发校验。仓库中的 Codex Agent 镜像仍需单独完成真实
+Agent 发现、工具可用性和完整运行旅程验收，不能由指令文件存在直接推导支持状态。

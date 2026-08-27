@@ -1,0 +1,6 @@
+interface:
+  display_name: "Run Long Coding"
+  short_description: "Run bounded implementation and runtime QA cycles"
+  default_prompt: "Use $run-long-coding to complete this existing Web or full-stack change with runtime evaluation."
+policy:
+  allow_implicit_invocation: false

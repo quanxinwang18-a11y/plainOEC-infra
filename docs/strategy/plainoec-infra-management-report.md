@@ -64,7 +64,7 @@ Product、Engineering 和 Common 是模型侧领域能力；E3 和 Pipeline 是�
 E3 或 Pipeline。普通编码始终由主 Session 负责，Engineering 不安装一个默认接管研发过程的总控
 Agent，也不向所有会话注入 SessionStart（会话启动）上下文。
 
-当前可以确认的事实包括：117 项自动测试全部通过；Marketplace 与五个 Plugin 通过固定 Claude Code
+当前可以确认的事实包括：119 项自动测试全部通过；Marketplace 与五个 Plugin 通过固定 Claude Code
 环境的严格结构校验；Git 归档包和隔离安装验证了五个 Plugin、十五个 Skills、五个 Agents 以及两个
 MCP Server；E3 和 Pipeline MCP 均能独立启动并显示 Connected（已连接）。
 
@@ -273,16 +273,16 @@ Product 管理产品需求从编写、评审到经确认发布 E3 的语义闭�
 
 | 类型 | 名称 | 责任 |
 | --- | --- | --- |
-| Agent | `oec-pm` | 显式 PM 身份 |
-| Skill | `writing-prds` | 创建产品需求 SSOT |
-| Skill | `reviewing-prds` | 只读红队评审 |
-| Skill | `publishing-prds-to-e3` | 显式发布到 E3 |
+| Agent | `product-manager` | 显式 PM 身份 |
+| Skill | `write-prd` | 创建产品需求 SSOT |
+| Skill | `review-prd` | 只读红队评审 |
+| Skill | `publish-prd-to-e3` | 显式发布到 E3 |
 | Runtime | artifact checker | 确定性检查 PRD/HANDOFF 结构 |
 
-### 6.3 `oec-pm` Agent
+### 6.3 `product-manager` Agent
 
-`oec-pm` 只在用户明确要求产品经理身份时使用。它预加载 writing 和 reviewing，不预加载
-publishing。Agent 负责产品行为、用户故事、验收条件、范围、优先级、pending decisions、版本产物
+`product-manager` 只在用户明确要求产品经理身份时使用。它预加载 `write-prd` 和 `review-prd`，不
+预加载 `publish-prd-to-e3`。Agent 负责产品行为、用户故事、验收条件、范围、优先级、pending decisions、版本产物
 和 changelog。
 
 API、数据库 schema、部署和代码架构属于 Engineering，除非它们直接构成产品可见约束。Agent 不会
@@ -290,19 +290,19 @@ API、数据库 schema、部署和代码架构属于 Engineering，除非它们�
 
 ### 6.4 三个 Product Skills
 
-`writing-prds` 创建和维护根 PRD、子 PRD、Story、acceptance criteria、HANDOFF、版本和 changelog。
+`write-prd` 创建和维护根 PRD、子 PRD、Story、acceptance criteria、HANDOFF、版本和 changelog。
 它将产品需求作为 SSOT，不把工程设计写成产品事实。
 
-`reviewing-prds` 对现有产物执行只读红队评审，重点检查歧义、冲突、不可测试验收条件、越权技术设计
+`review-prd` 对现有产物执行只读红队评审，重点检查歧义、冲突、不可测试验收条件、越权技术设计
 和未决业务决定。它不修改文件，也不发布 E3。
 
-`publishing-prds-to-e3` 是 manual-only Skill。它验证 finalized artifacts、子 PRD 与 HANDOFF，展示
+`publish-prd-to-e3` 是 manual-only Skill。它验证 finalized artifacts、子 PRD 与 HANDOFF，展示
 准备结果并等待 Human 确认，然后调用 E3 工具。普通写作或评审不能自动产生远端副作用。
 
 ![PM 以显式身份按目标调用写作、评审和发布三个 Product Skills，并保持产物、人工门禁和远端状态边界](assets/plainoec-infra-management-report/07-pm-skills-map.png)
 
-*图：`oec-pm` 提供产品经理身份，但不把三个 Skill 串成强制流程。`writing-prds` 维护需求单一事实
-来源，`reviewing-prds` 只读找问题，`publishing-prds-to-e3` 仅在用户明确发布并确认后调用 E3。*
+*图：`product-manager` 提供产品经理身份，但不把三个 Skill 串成强制流程。`write-prd` 维护需求单一事实
+来源，`review-prd` 只读找问题，`publish-prd-to-e3` 仅在用户明确发布并确认后调用 E3。*
 
 ### 6.5 输入、输出与状态归属
 
@@ -497,56 +497,56 @@ Specs，并拒绝 workspace 外路径。它减少无关上下文，但不会替�
 
 #### 7.6.1 团队知识类
 
-`managing-team-specs` 在用户要求初始化、更新或协调团队工程知识时创建 current-state Specs、ADRs 和
+`manage-specs` 在用户要求初始化、更新或协调团队工程知识时创建 current-state Specs、ADRs 和
 必要 change context。它先检查代码、配置、测试和正式决定，只写有证据的事实。缺少真实内容时不创建
 空模板，也不将普通实现计划写成团队 Spec。
 
-`migrating-legacy-ai-docs` 是 manual-only Skill。它从旧 `ai-docs` 抽取仍被当前代码证明的事实和仍
+`migrate-legacy-ai-docs` 是 manual-only Skill。它从旧 `ai-docs` 抽取仍被当前代码证明的事实和仍
 有效的决定，而不是复制目录树。旧文件保持原位；Product PRD、E3 mapping、历史 workflow state、
 生成评分和 managed configuration 不在此 Skill 中清理或迁移。
 
 #### 7.6.2 决策与规划类
 
-`challenging-engineering-decisions` 是 manual-only Skill，用于用户明确要求压力测试一个技术决定。
+`challenge-decision` 是 manual-only Skill，用于用户明确要求压力测试一个技术决定。
 它先从仓库获取可发现事实，再将假设、Human choices 和依赖选择分开，只询问当前 decision frontier。
 结果是支持、拒绝、延期或阻塞的决定记录，不会自动创建任务、计划或代码。
 
-`prototyping-decisions` 创建最小 throwaway artifact，回答一个交互、行为或状态设计问题。Human 通过
+`prototype-decision` 创建最小 throwaway artifact，回答一个交互、行为或状态设计问题。Human 通过
 真实观察选择方案。如果测试、benchmark、命令或源码读取能更直接回答，就不创建原型。原型不自动
 升级为生产实现，也不默认写入生产路径。
 
-`planning-engineering-changes` 用于非平凡技术方案和跨模块工作。它先确认当前行为、期望行为、边界、
+`plan-change` 用于非平凡技术方案和跨模块工作。它先确认当前行为、期望行为、边界、
 约束和是否存在多种合理方案；多方案或边界不清时先让用户选择。小改动只在对话中规划，高风险工作才
 创建持久 change package。planning 本身不修改业务代码、外部平台或 Git 历史。
 
 #### 7.6.3 实现方法与诊断类
 
-`test-driven-development` 只在用户明确要求 TDD、test-first 或 red-green-refactor 时使用。它按窄纵向
+`develop-test-first` 只在用户明确要求 TDD、test-first 或 red-green-refactor 时使用。它按窄纵向
 slice 工作，确认测试因缺失行为而失败，再实现最小代码并回归。它不替代仓库现有测试策略，不要求先写
 完所有测试，也不因为普通变更“需要测试”而自动触发。
 
-`diagnosing-failures` 用于难复现、flaky、性能回退、重复修复失败或根因不清的故障。第一产物是可重复
+`diagnose-failure` 用于难复现、flaky、性能回退、重复修复失败或根因不清的故障。第一产物是可重复
 区分成功与失败的信号，然后用最便宜观察区分可证伪假设。三个不同修复尝试仍失败时停止堆叠补丁，
 重新检查架构或假设。明显的局部错误不需要该 Skill。
 
-`delegating-engineering-agents` 是 manual-only Skill，为已有 change 或当前 diff 提供统一的 Agent
-委派入口。`research`、`implement` 和 `check` 只派发对应 Agent；用户明确选择 `full` 时才按
-`research → implement → check` 串行推进。任一 Agent 未报告 complete、研究要求修改设计或检查发现
+`delegate-agents` 为已有 change 或当前 diff 提供统一的 Agent 委派入口。`research`、`implement`
+和 `check` 只派发对应 Agent；用户选择 `sequence` 时才按 `researcher → implementer → checker`
+串行推进。任一 Agent 未报告 complete、研究要求修改设计或检查发现
 判断性问题时停止。它不保存阶段状态、不自动重试，也不提交、关闭 change 或写外部平台。
 
-`orchestrating-long-running-coding` 只在用户明确要求完成非平凡 Web/full-stack
+`run-long-coding` 只在用户明确要求完成非平凡 Web/full-stack
 change，且本地或内部非生产应用可以通过预配置 Playwright MCP 运行验收时使用。主 Session 分别创建
-一次 `oec-implement` 和 `oec-evaluate`，随后按 Agent ID 复用同一对 Agent，在默认最多五次、用户明确
-继续后绝对上限十次的 build/evaluate cycle 中原样传递运行态 finding。它不创建 Sprint、backlog、
-项目状态文件、框架 adapter、snapshot、commit 或 closing，也不替代普通主 Session Coding。
+一次 `implementer` 和 `evaluator`，随后按 Agent ID 复用同一对 Agent，在默认最多五次、用户明确
+继续后绝对上限十次的 build/evaluate cycle 中原样传递运行态 finding。普通 Coding 仍走主 Session；
+长时流程不创建项目状态文件，也不自动 commit 或 closing。
 
 #### 7.6.4 评审与收口类
 
-`reviewing-code-changes` 对 working-tree diff、commit、branch 或 PR 执行只读、风险优先评审。每个
+`review-code` 对 working-tree diff、commit、branch 或 PR 执行只读、风险优先评审。每个
 finding 必须给出紧凑位置、触发输入、系统后果和最小修正方向。没有实质问题时不生成 filler，也不
 修改代码、创建 review artifact、stage 或 commit。
 
-`closing-engineering-changes` 是 manual-only Skill。它只在用户明确要求结束工程工作时检查最终 diff、
+`close-change` 是 manual-only Skill。它只在用户明确要求结束工程工作时检查最终 diff、
 实际测试证据、相关 Specs、ADRs 和残余风险。只有稳定责任或决定变化时才更新团队知识。用户确认后
 可以 exact-path commit；它不部署、不创建 release、不更新 E3、SAE、UTP 或远端 Git 状态。
 
@@ -567,53 +567,52 @@ finding 必须给出紧凑位置、触发输入、系统后果和最小修正方
 | 难复现或反复失败 | diagnosing | 简单局部错误 |
 | 审查代码 diff | reviewing | PRD review |
 | 显式委派已有 change 或当前 diff | delegating | 普通主 Session 编码 |
-| 显式长时完成可运行 Web/full-stack change | long-running coding | 小型修改、非 Web 或生产操作 |
+| 长时完成可运行 Web/full-stack change | `run-long-coding` | 小型修改、非 Web 或生产操作 |
 | 显式完成工程变更 | closing | 未完成实现 |
 
 ### 7.8 四个 Engineering Agents
 
-Engineering 保留 `oec-implement`、`oec-evaluate`、`oec-check` 和 `oec-research`。它们是宿主原生可选 Agent，不是
+Engineering 保留 `implementer`、`evaluator`、`checker` 和 `researcher`。它们是宿主原生可选 Agent，不是
 slash commands。用户可以通过自然语言、`@` picker 或显式 Skill 委派使用。description 表达
 explicit-use 设计意图，但不能被描述成宿主级绝对硬保证。
 
-`delegating-engineering-agents` 只在用户显式调用时为 Research/Implement/Check 三个 Agent 提供统一入口。
-`orchestrating-long-running-coding` 只在用户显式调用时组合 Implement/Evaluate 并最终派发 fresh Check。
-二者都不改变 Agent
-权限，也不允许 Agent 派生其他 Agent；`full` 是当前会话中的有门禁串行调用，不是可恢复工作流。
+`delegate-agents` 为 researcher、implementer、checker 提供统一入口。`run-long-coding` 组合
+implementer、evaluator 并最终派发 fresh checker。二者都不改变 Agent 权限，也不允许 Agent 派生
+其他 Agent；`sequence` 是当前会话中的一次有门禁串行调用。
 
 四个 Agent 都禁止 commit、push、merge、Git staging 和继续派生 Agent。它们不会自动成为普通编码
 必经阶段。
 
-#### `oec-implement`
+#### `implementer`
 
-`oec-implement` 接受已有 change ID，并从 `change.md`、可选 `design.md`、`plan.md` 和路径相关 Specs
+`implementer` 接受已有 change ID，并从 `change.md`、可选 `design.md`、`plan.md` 和路径相关 Specs
 加载干净上下文。change ID 或 `change.md` 缺失时必须 blocked，不能自行创建或猜测 change package。
 
 Agent 只在声明 boundary 内修改代码。如果真实范围扩大，停止并返回主 Session 决定。它运行 change
 plan 指定的测试；未指定时发现最小相关测试，并运行适用 typecheck 和 lint。相关测试未运行、跳过或
 失败时只能报告 partial/failed，不能输出 implementation complete。
 
-#### `oec-check`
+#### `checker`
 
-`oec-check` 使用 `git status --short`、`git diff HEAD --` 和 relevant untracked files 覆盖 staged、
+`checker` 使用 `git status --short`、`git diff HEAD --` 和 relevant untracked files 覆盖 staged、
 unstaged 与 untracked 变更。它读取可选 change package、路径相关 Specs，并运行相关测试、typecheck
 和 lint。
 
 Agent 可以修复缺失类型、lint 违规等明确机械问题；架构选择、权衡和不清晰的 Spec 解释只报告给主
 Session。它不修改 `ai-docs/engineering/`，不将 Agent 观点写成持久团队事实。
 
-#### `oec-evaluate`
+#### `evaluator`
 
-`oec-evaluate` 接受已有 change ID、当前 Session 的完成条件和本地或明确授权的内部非生产目标。它只
+`evaluator` 接受已有 change ID、当前 Session 的完成条件和本地或明确授权的内部非生产目标。它只
 使用用户或团队预先连接的 Playwright MCP，实际操作运行中的 Web 应用，并分别对产品深度、功能、视觉
 和代码质量给出 `PASS`、`FAIL` 或 `NOT_APPLICABLE`。完整 finding 必须包含复现步骤、预期、实际、
 Playwright/API/状态证据以及是否仍在 change boundary 内。Agent 可以改变隔离的测试应用状态，但不
 修改源码、测试代码、Product/Engineering 文档或 Git；Playwright 缺失时必须 blocked，不能用静态测试
 替代运行态验收。
 
-#### `oec-research`
+#### `researcher`
 
-`oec-research` 必须获得已有 change ID 和 `change.md`，只写：
+`researcher` 必须获得已有 change ID 和 `change.md`，只写：
 
 ```text
 ai-docs/engineering/changes/<change-id>/research/*.md
@@ -868,9 +867,9 @@ Connected。
 Common 提供不属于 Product、Engineering 或平台生命周期的公共内容交付能力。它独立安装，避免为了
 一个通用输出能力引入 PM、工程 Specs 或外部平台权限。
 
-### 10.2 当前能力：`html-slides`
+### 10.2 当前能力：`create-slides`
 
-`html-slides` 将现有材料制作成可在浏览器演讲、overview 和打印的多文件 HTML deck。输出包含入口、
+`create-slides` 将现有材料制作成可在浏览器演讲、overview 和打印的多文件 HTML deck。输出包含入口、
 独立 slides、共享 tokens 和必要本地资产。页面按 1920×1080 设计，shell 提供 hash、键盘导航、缩放、
 letterbox、计数、overview 和 print styles。
 
@@ -918,9 +917,9 @@ grader 与 with/without 消融；在该证据形成前，不以 Skill 数量或 
 - small fix 不应触发 planning、TDD 或 closing。
 - manual-only Skills 不应由模型自动调用。
 
-当前 manual-only Skills 是 Product 的 `publishing-prds-to-e3`，以及 Engineering 的
-`migrating-legacy-ai-docs`、`challenging-engineering-decisions`、`delegating-engineering-agents` 和
-`orchestrating-long-running-coding`、`closing-engineering-changes`。
+当前 manual-only Skills 是 Product 的 `publish-prd-to-e3`，以及 Engineering 的
+`migrate-legacy-ai-docs`、`challenge-decision`、`delegate-agents` 和
+`run-long-coding`、`close-change`。
 
 ### 11.3 Eval 运行边界
 
@@ -1057,7 +1056,7 @@ Product、Engineering、E3 和 Pipeline 有不同事实来源、权限、状态�
 ### 15.1 当前可以声明
 
 - 本地完整修复已形成 release candidate。
-- 117/117 自动测试通过。
+- 119/119 自动测试通过。
 - Marketplace 和五个 Plugin strict validation 通过。
 - Git archive 与隔离安装通过。
 - 隔离安装结果包含 5 Plugins、15 Skills 和 5 Agents。

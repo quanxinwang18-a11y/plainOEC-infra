@@ -1,7 +1,7 @@
 {
   "name": "oec-common",
-  "version": "0.2.1",
-  "description": "OEC 公共能力：创建可在浏览器演讲、概览和打印的 HTML 幻灯片。",
+  "version": "0.3.0",
+  "description": "创建可在浏览器演讲、概览和打印的 HTML 幻灯片。",
   "author": {
     "name": "OEC"
   },

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Delegate Agents"
+  short_description: "Route bounded change work to focused agents"
+  default_prompt: "Use $delegate-agents to route this bounded change to the appropriate agent."
+policy:
+  allow_implicit_invocation: false

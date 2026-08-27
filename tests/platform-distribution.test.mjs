@@ -33,7 +33,7 @@ async function skillCount(plugin) {
 test('Marketplace versions and native Plugin boundaries are internally consistent', async () => {
   const marketplace = JSON.parse(await readFile(resolve(repositoryRoot, '.claude-plugin', 'marketplace.json'), 'utf8'));
   const packageManifest = JSON.parse(await readFile(resolve(repositoryRoot, 'package.json'), 'utf8'));
-  assert.equal(marketplace.version, '3.0.1');
+  assert.equal(marketplace.version, '3.0.2');
   assert.equal(packageManifest.version, marketplace.version);
   assert.deepEqual(marketplace.plugins.map((plugin) => plugin.name), [
     'oec-product', 'oec-engineering', 'oec-e3', 'oec-pipeline', 'oec-common',
@@ -44,6 +44,10 @@ test('Marketplace versions and native Plugin boundaries are internally consisten
     assert.match(pluginManifest.description, /[\u4e00-\u9fff]/, `${entry.name} Plugin description must be Chinese`);
     assert.match(entry.description, /[\u4e00-\u9fff]/, `${entry.name} Marketplace description must be Chinese`);
     assert.equal(entry.source, `./${entry.name}`);
+    assert.doesNotMatch(pluginManifest.description, /subagent|\bSkill\b|\bAgent\b|Codex|显式迁移|显式 Agent/i,
+      `${entry.name} Plugin description must state user outcomes, not component design`);
+    assert.doesNotMatch(entry.description, /subagent|\bSkill\b|\bAgent\b|Codex|显式迁移|显式 Agent/i,
+      `${entry.name} Marketplace description must state user outcomes, not component design`);
   }
   assert.deepEqual((await manifest('oec-product')).dependencies, [{ name: 'oec-e3', version: '~1.0.0' }]);
   assert.equal(await skillCount('oec-product'), 3);
@@ -82,6 +86,11 @@ test('current-facing documentation stays aligned with Marketplace components', a
     repositoryRoot,
     'docs/strategy/assets/oec-infra-next-optimization/05-current-architecture.svg',
   ), 'utf8');
+  const productReadme = await readFile(resolve(repositoryRoot, 'oec-product', 'README.md'), 'utf8');
+  const engineeringReadme = await readFile(resolve(repositoryRoot, 'oec-engineering', 'README.md'), 'utf8');
+  const e3Readme = await readFile(resolve(repositoryRoot, 'oec-e3', 'README.md'), 'utf8');
+  const pipelineReadme = await readFile(resolve(repositoryRoot, 'oec-pipeline', 'README.md'), 'utf8');
+  const commonReadme = await readFile(resolve(repositoryRoot, 'oec-common', 'README.md'), 'utf8');
   assert.match(rootReadme, /\[PlainOEC-infra 完整架构与能力管理报告\]\(docs\/strategy\/plainoec-infra-management-report\.md\)/);
   assert.match(rootReadme, /\[QUICKSTART\]\(QUICKSTART\.md\)/);
   assert.match(rootReadme, /\[PlainOEC 文档地图\]\(docs\/README\.md\)/);
@@ -104,6 +113,17 @@ test('current-facing documentation stays aligned with Marketplace components', a
   assert.match(quickstart, /安装 `oec-product` 时[\s\S]{0,120}`oec-e3@~1\.0\.0` 依赖/);
   assert.doesNotMatch(quickstart, /\bexecute_(?:prd|development|task|pipeline)/,
     'QUICKSTART must not provide real E3 or Pipeline execution walkthroughs');
+  for (const [plugin, readme] of [
+    ['product', productReadme], ['engineering', engineeringReadme], ['e3', e3Readme],
+    ['pipeline', pipelineReadme], ['common', commonReadme],
+  ]) assert.doesNotMatch(readme, /\]\(\.\.\/docs\//, `${plugin} README must not escape its installed Plugin root`);
+  assert.doesNotMatch(productReadme, /@oec-product:product-manager/);
+  assert.match(productReadme, /`@` picker 中选择\s+`oec-product:product-manager`/);
+  assert.match(e3Readme, /检查当前 PRD 的 E3 发布状态，不要更新任何对象/);
+  assert.match(e3Readme, /准备研发任务计划[\s\S]{0,80}不要执行/);
+  assert.match(pipelineReadme, /发现当前仓库可用的 test 流水线[\s\S]{0,80}不要运行/);
+  assert.match(pipelineReadme, /查询当前计划对应的流水线运行状态，不要重新执行/);
+  assert.match(engineeringReadme, /`review-code`[\s\S]{0,240}`checker`[\s\S]{0,240}`evaluator`/);
 
   const productMigration = await readFile(resolve(
     repositoryRoot,
@@ -125,15 +145,15 @@ test('current-facing documentation stays aligned with Marketplace components', a
   }
 
   for (const name of [
-    'writing-prds', 'reviewing-prds', 'publishing-prds-to-e3',
-    'managing-team-specs', 'migrating-legacy-ai-docs', 'challenging-engineering-decisions',
-    'prototyping-decisions', 'planning-engineering-changes', 'test-driven-development',
-    'diagnosing-failures', 'reviewing-code-changes', 'delegating-engineering-agents',
-    'orchestrating-long-running-coding',
-    'closing-engineering-changes', 'html-slides',
+    'write-prd', 'review-prd', 'publish-prd-to-e3',
+    'manage-specs', 'migrate-legacy-ai-docs', 'challenge-decision',
+    'prototype-decision', 'plan-change', 'develop-test-first',
+    'diagnose-failure', 'review-code', 'delegate-agents',
+    'run-long-coding',
+    'close-change', 'create-slides',
   ]) assert.match(report, new RegExp(`\\b${name}\\b`), `${name} missing from report`);
 
-  for (const name of ['oec-pm', 'oec-implement', 'oec-evaluate', 'oec-check', 'oec-research']) {
+  for (const name of ['product-manager', 'implementer', 'evaluator', 'checker', 'researcher']) {
     assert.match(report, new RegExp(`\\b${name}\\b`), `${name} missing from report`);
   }
 
@@ -150,11 +170,12 @@ test('current-facing documentation stays aligned with Marketplace components', a
   assert.match(report, /简单、局部、低风险改动/);
   assert.match(report, /非平凡、高风险或需跨会话保存上下文的改动/);
   for (const name of [
-    'publishing-prds-to-e3', 'migrating-legacy-ai-docs',
-    'challenging-engineering-decisions', 'delegating-engineering-agents',
-    'closing-engineering-changes',
+    'publish-prd-to-e3', 'migrate-legacy-ai-docs',
+    'challenge-decision',
+    'close-change',
   ]) assert.match(report, new RegExp(`${name}[\\s\\S]{0,180}manual-only`), `${name} manual-only boundary missing`);
-  assert.match(report, /orchestrating-long-running-coding[\s\S]{0,180}用户明确要求/);
+  assert.match(report, /delegate-agents[\s\S]{0,220}用户选择 `sequence`/);
+  assert.match(report, /run-long-coding[\s\S]{0,180}用户明确要求/);
   assert.match(report, /prepared → executing → executed/);
   assert.match(report, /同一个 plan token 最多[\s\S]{0,80}一次 `runPipeline` POST/);
   assert.match(report, /无法确定账号时[\s\S]{0,100}prepare[\s\S]{0,100}失败/);
@@ -201,6 +222,14 @@ test('current-facing documentation stays aligned with Marketplace components', a
   assert.equal(currentUsage.includes(forbiddenAgentSlash), false);
   assert.doesNotMatch(currentUsage, /SessionStart Hook/);
   assert.equal(currentUsage.includes(removedGifSkill), false);
+  for (const oldName of [
+    'writing-prds', 'reviewing-prds', 'publishing-prds-to-e3', 'managing-team-specs',
+    'migrating-legacy-ai-docs', 'planning-engineering-changes', 'challenging-engineering-decisions',
+    'prototyping-decisions', 'test-driven-development', 'diagnosing-failures',
+    'reviewing-code-changes', 'delegating-engineering-agents', 'orchestrating-long-running-coding',
+    'closing-engineering-changes', 'html-slides', 'oec-pm', 'oec-research', 'oec-implement',
+    'oec-evaluate', 'oec-check',
+  ]) assert.equal(currentUsage.includes(oldName), false, `current usage still contains ${oldName}`);
 
   const contributionRules = await readFile(resolve(repositoryRoot, 'CLAUDE.md'), 'utf8');
   assert.match(contributionRules, /Marketplace、Plugin description.*README 使用中文/);
@@ -217,37 +246,37 @@ test('a Git archive contains self-contained Plugin payloads without node_modules
   await execFileAsync('tar', ['-xf', archive, '-C', extracted]);
   const files = (await execFileAsync('find', [extracted, '-type', 'd', '-name', 'node_modules'])).stdout.trim();
   assert.equal(files, '');
-  assert.ok((await readFile(resolve(extracted, 'oec-product', 'skills/writing-prds/runtime/check-artifacts.mjs'))).length > 0);
+  assert.ok((await readFile(resolve(extracted, 'oec-product', 'skills/write-prd/runtime/check-artifacts.mjs'))).length > 0);
   assert.ok((await readFile(resolve(extracted, 'oec-e3', 'dist/e3-server.mjs'))).length > 0);
   assert.ok((await readFile(resolve(extracted, 'oec-pipeline', 'dist/pipeline-server.mjs'))).length > 0);
   // Engineering components are self-contained without node_modules.
   assert.ok((await readFile(resolve(extracted, 'oec-engineering', 'dist/oec-spec.mjs'))).length > 0);
-  assert.ok((await readFile(resolve(extracted, 'oec-engineering', 'agents/oec-implement.md'))).length > 0);
+  assert.ok((await readFile(resolve(extracted, 'oec-engineering', 'agents/implementer.md'))).length > 0);
   assert.ok((await readFile(resolve(
     extracted,
     'oec-engineering',
-    'skills/migrating-legacy-ai-docs/SKILL.md',
+    'skills/migrate-legacy-ai-docs/SKILL.md',
   ))).length > 0);
   assert.ok((await readFile(resolve(
     extracted,
     'oec-engineering',
-    'skills/migrating-legacy-ai-docs/agents/openai.yaml',
+    'skills/migrate-legacy-ai-docs/agents/openai.yaml',
   ))).length > 0);
   assert.ok((await readFile(resolve(
     extracted,
     'oec-engineering',
-    'skills/challenging-engineering-decisions/agents/openai.yaml',
+    'skills/challenge-decision/agents/openai.yaml',
   ))).length > 0);
   assert.ok((await readFile(resolve(
     extracted,
     'oec-engineering',
-    'skills/closing-engineering-changes/agents/openai.yaml',
+    'skills/close-change/agents/openai.yaml',
   ))).length > 0);
   assert.ok((await readFile(resolve(
     extracted,
     'oec-engineering',
-    'skills/prototyping-decisions/SKILL.md',
+    'skills/prototype-decision/SKILL.md',
   ))).length > 0);
-  assert.ok((await readFile(resolve(extracted, 'oec-common', 'skills/html-slides/assets/deck-index.html'))).length > 0);
-  assert.ok((await readFile(resolve(extracted, 'oec-common', 'skills/html-slides/LICENSE.huashu-design'))).length > 0);
+  assert.ok((await readFile(resolve(extracted, 'oec-common', 'skills/create-slides/assets/deck-index.html'))).length > 0);
+  assert.ok((await readFile(resolve(extracted, 'oec-common', 'skills/create-slides/LICENSE.huashu-design'))).length > 0);
 });

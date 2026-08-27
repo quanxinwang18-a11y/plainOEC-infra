@@ -1,7 +1,7 @@
 {
   "name": "oec-pipeline",
-  "version": "1.0.1",
-  "description": "现有非生产流水线的受控发现、执行和状态验证。",
+  "version": "1.0.2",
+  "description": "发现、准备、执行和查询已有 dev/test 流水线。",
   "author": {
     "name": "OEC"
   },

@@ -21,7 +21,7 @@
 
 ### 1.2 已完成的迁移
 
-当前 release candidate `plainOEC-infra@3.0.1` 已经完成第一阶段原生化：
+当前 release candidate `plainOEC-infra@3.0.2` 已经完成第一阶段原生化：
 
 - Product：显式 PM Agent + 三个以用户目标划分并带跨域负向边界的 PRD Skills。
 - Engineering：十一个聚焦工程 Skills + 四个显式使用的可选 Agent；旧 `ai-docs` 迁移、工程决策挑战、
@@ -111,7 +111,7 @@ Skill，认证、远端选择、写入、幂等和状态验证则进入 MCP；�
 ```text
 产品业务仓库/
 ├── .claude/
-│   ├── agents/oec-pm-agent.md
+│   ├── agents/product-manager-agent.md
 │   └── skills/                    # 25 个顶层项目 Skills
 ├── .oec-ai/
 │   ├── installation.json
@@ -124,14 +124,14 @@ Skill，认证、远端选择、写入、幂等和状态验证则进入 MCP；�
 ```text
 803 行 PM Agent
 → 25 个 Skill descriptions
-→ oec-pm Mega Skill 再路由
+→ product-manager Mega Skill 再路由
 → Read 6 个内部 SKILL.md
 → Read references
 → Bash/Python
 → E3 HTTP API
 ```
 
-例如，PRD 生成、review、revise、finalize、split 分别存在顶层 Skill；`oec-pm` 又根据阶段和路径做
+例如，PRD 生成、review、revise、finalize、split 分别存在顶层 Skill；`product-manager` 又根据阶段和路径做
 二次路由；Agent 还保存入口表和流程规则。相同的“补充并发布这个需求”会在 Agent、阶段 Skill 和
 Mega Skill 三处被重新解释。
 
@@ -236,7 +236,7 @@ Claude Code 原生 Skill 的关键关系是：宿主发现 `<name>/SKILL.md` 的
 
 具体例子：
 
-- PM：`oec-pm` 根入口把 6 个内部 `SKILL.md` 声明为执行规范。
+- PM：`product-manager` 根入口把 6 个内部 `SKILL.md` 声明为执行规范。
 - Dev：`oec-dev-task` 要求动作前读取内部 `STAGE.md`，这些文件自身声明不是可注册 Skill。
 - Test：Dispatcher 明确说明 71 个子 Skill 不被平台发现，只能由根入口按路径 Read。
 - Test Agent：`AGENT.md` 要求 Read 目标 Agent Markdown 后“按文件指令执行”，不是原生 Agent 调用。
@@ -520,7 +520,7 @@ Claude Code 官方将这些能力放在不同扩展位置：[扩展模型](https
 
 | 旧能力集合 | 拆分判断 | 当前或目标落点 |
 | --- | --- | --- |
-| PM Agent + `oec-pm` Mega Skill + PRD 阶段 Skills | PM 身份、写作、评审和发布是不同职责；内部 `SKILL.md` 路由没有独立价值 | `oec-pm` Agent；writing/reviewing/publishing 三个 Skills；模板和契约归属各自 Skill |
+| PM Agent + `product-manager` Mega Skill + PRD 阶段 Skills | PM 身份、写作、评审和发布是不同职责；内部 `SKILL.md` 路由没有独立价值 | `product-manager` Agent；writing/reviewing/publishing 三个 Skills；模板和契约归属各自 Skill |
 | 产品原型设计 | 不属于当前 PRD 写作、评审和发布主链 | 不随 Product 核心能力迁移；Engineering 仅提供用于回答一个交互或状态问题的 throwaway 决策原型，不生成产品原型资产 |
 | 通用产品/系统需求 CRUD | 会把受控发布扩张为平台管理 SDK，权限与失败面明显增大 | 不迁移；只保留 PRD 发布所需的受限 E3 原子操作 |
 | 文件写入策略 | Claude Code 已有原生文件工具，旧 Prompt 规则不提供额外领域价值 | 交还主 Agent；Skill 只保留产物契约和精确提交边界 |
@@ -672,11 +672,11 @@ Plugin 的粒度则由生命周期决定：当外部事实来源、认证权限�
 
 | Plugin | Agent | Skills | MCP | 作用与边界 |
 | --- | ---: | ---: | ---: | --- |
-| `oec-product@3.0.2` | 1 | 3 | 0 | PRD 写作、只读评审和发布语义；依赖 E3 |
-| `oec-engineering@1.7.0` | 4 | 11 | 0 | 团队 Specs、显式迁移、规划、决策挑战、决策原型、TDD、诊断、Agent 委派、长时 Web 编码、review、close |
-| `oec-e3@1.0.1` | 0 | 0 | 1 | 4 个 PRD 发布工具 + 6 个研发任务工具 |
-| `oec-pipeline@1.0.1` | 0 | 0 | 1 | 既有 dev/test 流水线的受控 prepare/execute/status |
-| `oec-common@0.2.1` | 0 | 1 | 0 | 零依赖 HTML-first 幻灯片 |
+| `oec-product@3.0.3` | 1 | 3 | 0 | PRD 写作、只读评审和发布语义；依赖 E3 |
+| `oec-engineering@1.8.0` | 4 | 11 | 0 | 团队 Specs、显式迁移、规划、决策挑战、决策原型、TDD、诊断、Agent 委派、长时 Web 编码、review、close |
+| `oec-e3@1.0.2` | 0 | 0 | 1 | 4 个 PRD 发布工具 + 6 个研发任务工具 |
+| `oec-pipeline@1.0.2` | 0 | 0 | 1 | 既有 dev/test 流水线的受控 prepare/execute/status |
+| `oec-common@0.3.0` | 0 | 1 | 0 | 零依赖 HTML-first 幻灯片 |
 
 Product 明确向用户承诺 E3 发布，所以声明 `oec-e3@~1.0.0` dependency。Engineering 的十一个 Skills
 不以 E3 或 Pipeline 为完成前提，因此与平台 Plugin 是按场景组合关系，不作强依赖。
@@ -982,12 +982,12 @@ OEC-infra 后续不应继续做“更多 Prompt、更多角色路由、更多统
 
 | 项目 | 版本/状态 |
 | --- | --- |
-| Marketplace | `3.0.1` release candidate |
-| Product | `3.0.2` release candidate，未创建新 tag |
-| Engineering | `1.7.0` release candidate，未创建新 tag |
-| E3 | `1.0.1` release candidate，未创建新 tag |
-| Pipeline | `1.0.1` release candidate，未创建新 tag |
-| Common | `0.2.1` release candidate，未创建新 tag |
+| Marketplace | `3.0.2` release candidate |
+| Product | `3.0.3` release candidate，未创建新 tag |
+| Engineering | `1.8.0` release candidate，未创建新 tag |
+| E3 | `1.0.2` release candidate，未创建新 tag |
+| Pipeline | `1.0.2` release candidate，未创建新 tag |
+| Common | `0.3.0` release candidate，未创建新 tag |
 | 当前自动测试 | 全部通过；精确数量以 `npm test` 输出为准 |
 | Skill 行为 eval | 15 个 Skill 的正负场景已可执行；新增长时 Coding 的 Agent/Playwright outcome 仍待验收 |
 | 远端发布 | LICENSE/notice Owner 决定及外部写入证据完成前阻塞；不创建或推送新 tag |

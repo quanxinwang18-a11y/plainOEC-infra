@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const pluginRoot = resolve(import.meta.dirname, '..');
-const checkerBundle = resolve(pluginRoot, 'skills/writing-prds/runtime/check-artifacts.mjs');
+const checkerBundle = resolve(pluginRoot, 'skills/write-prd/runtime/check-artifacts.mjs');
 
 async function fixture() {
   const workspace = await mkdtemp(join(tmpdir(), 'oec-bundle-artifacts-'));
@@ -60,7 +60,7 @@ test('committed checker bundle has no development path or external runtime impor
 });
 
 test('bundled artifact checker works without node_modules for valid and invalid fixtures', async () => {
-  const isolated = await mkdtemp(join(tmpdir(), 'oec-checker-bundle-'));
+  const isolated = await mkdtemp(join(tmpdir(), 'prd-checker-bundle-'));
   const executable = join(isolated, 'check-artifacts.mjs');
   await copyFile(checkerBundle, executable);
   const value = await fixture();

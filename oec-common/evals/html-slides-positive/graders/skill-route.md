@@ -1,6 +1,0 @@
----
-type: tool_used
-tool: Skill
-input_match: '"skill"\\s*:\\s*"(?:[\\w-]+:)?html-slides"'
-min: 1
----

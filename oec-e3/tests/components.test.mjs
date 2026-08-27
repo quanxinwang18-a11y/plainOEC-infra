@@ -9,7 +9,7 @@ const marketplaceRoot = resolve(pluginRoot, '..');
 test('E3 is the registered MCP-only platform dependency', () => {
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-e3');
-  assert.equal(manifest.version, '1.0.1');
+  assert.equal(manifest.version, '1.0.2');
   for (const key of ['skills', 'agents', 'mcpServers', 'commands', 'hooks']) assert.equal(key in manifest, false);
   for (const path of ['skills', 'agents', 'commands', 'hooks', 'settings.json', 'references', 'assets', 'lib']) {
     assert.equal(existsSync(resolve(pluginRoot, path)), false, `${path} must not exist`);
@@ -19,7 +19,7 @@ test('E3 is the registered MCP-only platform dependency', () => {
   assert.deepEqual(mcp.mcpServers.e3.args, ['${CLAUDE_PLUGIN_ROOT}/dist/e3-server.mjs']);
   assert.equal(existsSync(resolve(pluginRoot, 'dist/e3-server.mjs')), true);
   const marketplace = JSON.parse(readFileSync(resolve(marketplaceRoot, '.claude-plugin/marketplace.json'), 'utf8'));
-  assert.equal(marketplace.version, '3.0.1');
+  assert.equal(marketplace.version, '3.0.2');
   const entry = marketplace.plugins.find((plugin) => plugin.name === 'oec-e3');
   assert.equal(entry.version, manifest.version);
   assert.equal(entry.source, './oec-e3');

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.0
+
+**BREAKING RC CHANGE:** rename `html-slides` to `create-slides`; deck behavior and artifacts are
+unchanged.
+
 ## 0.2.1
 
 - Replace the prose-only case list with native executable positive and adjacent-negative routing

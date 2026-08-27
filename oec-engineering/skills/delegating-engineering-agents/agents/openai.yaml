@@ -1,6 +1,0 @@
-interface:
-  display_name: "Delegate Engineering Agents"
-  short_description: "Explicitly route work to OEC engineering agents"
-  default_prompt: "Use $delegating-engineering-agents to route this bounded engineering change to the appropriate OEC Agent."
-policy:
-  allow_implicit_invocation: false

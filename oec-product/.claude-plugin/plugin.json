@@ -1,7 +1,7 @@
 {
   "name": "oec-product",
-  "version": "3.0.2",
-  "description": "OEC 产品管理插件，提供显式 PM Agent 与三个 PRD Skills。",
+  "version": "3.0.3",
+  "description": "PRD 编写、需求评审和 E3 发布。",
   "author": {
     "name": "OEC"
   },

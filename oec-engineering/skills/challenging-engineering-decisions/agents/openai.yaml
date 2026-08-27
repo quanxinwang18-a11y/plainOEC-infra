@@ -1,6 +1,0 @@
-interface:
-  display_name: "Challenge Engineering Decisions"
-  short_description: "Pressure-test a technical decision with evidence"
-  default_prompt: "Use $challenging-engineering-decisions to challenge this technical decision before planning or implementation."
-policy:
-  allow_implicit_invocation: false

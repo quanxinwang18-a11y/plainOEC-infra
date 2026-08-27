@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2
+
+- Add safe natural-language examples for read-only status and non-mutating plan preparation.
+- Replace version-by-version README narration with the current evidence boundary and a stable
+  repository link; tool names and remote-write contracts are unchanged.
+
 ## 1.0.1
 
 - Resolve the acting account only from explicit configuration, compatible environment variables, or

@@ -29,20 +29,26 @@ execute_task_progress
 get_development_task_status
 ```
 
+面向用户时优先描述目标，不直接调用 `execute_*`：
+
+```text
+检查当前 PRD 的 E3 发布状态，不要更新任何对象。
+```
+
+```text
+为当前 Change 准备研发任务计划，展示将创建或复用的对象，不要执行。
+```
+
 所有远端写入都来自短期不可变 plan，并要求宿主人类交互。Server 不提供通用 E3 CRUD、缺陷/测试
 请求工作流、任意字段编辑或任意 payload。在同一 Plugin Data 内，PRD publication 按 canonical
 workspace 与 version 串行，研发任务创建和 progress 按 canonical workspace 与 change ID 串行；并发
 竞争者返回 partial 并要求查询 status 后重试，不会同时创建对象或重复写 worklog。资源锁只存在于
 Plugin Data，不进入业务仓库，也不声称协调使用不同 Plugin Data 的独立安装。
 
-## 真实验收
+## 当前证据
 
-2026-08-21，授权非生产空间“OBU-AI提效组”使用新的 `oec-e3` Plugin Data 完成了 PRD 发布与
-status、精确重复复用、研发任务创建/复用、start、worklog、complete 和最终状态回读。最终任务
-read-back 为状态 `3`、进度 `100`、工时 `1.0h`。远端对象保留；没有人为制造真实 partial failure。
+PRD 发布、精确复用、研发任务创建/复用、进度和最终状态回读已有授权非生产主链证据。当前补丁版本
+仍需在唯一授权对象上复验账号归属；mock、Connected 和旧版本主链不能替代该复验。
 
 完整证据和未覆盖边界见
-[E3 platform 3.0.0 real acceptance](../docs/evidence/e3-platform-3.0.0-real-acceptance.md)。
-
-该记录证明 `1.0.0` 主链，不自动证明 `1.0.1` 的显式账号/认证账号一致性。补丁版本仍需在用户授权的
-唯一非生产对象上复验 owner，在此之前保留 real-E2E evidence gap。
+[E3 平台真实验收记录](https://github.com/quanxinwang18-a11y/plainOEC-infra/blob/master/docs/evidence/e3-platform-3.0.0-real-acceptance.md)。

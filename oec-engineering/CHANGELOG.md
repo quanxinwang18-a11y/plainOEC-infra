@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.8.0
+
+**BREAKING RC CHANGE:** normalize public capability names before the first stable release.
+
+- Rename Skills: `managing-team-specs` → `manage-specs`, `migrating-legacy-ai-docs` →
+  `migrate-legacy-ai-docs`, `planning-engineering-changes` → `plan-change`,
+  `challenging-engineering-decisions` → `challenge-decision`, `prototyping-decisions` →
+  `prototype-decision`, `test-driven-development` → `develop-test-first`,
+  `diagnosing-failures` → `diagnose-failure`, `reviewing-code-changes` → `review-code`,
+  `delegating-engineering-agents` → `delegate-agents`, `orchestrating-long-running-coding` →
+  `run-long-coding`, and `closing-engineering-changes` → `close-change`.
+- Rename Agents: `oec-research` → `researcher`, `oec-implement` → `implementer`,
+  `oec-evaluate` → `evaluator`, and `oec-check` → `checker`.
+- Replace delegation mode `full` with `sequence`; no compatibility alias is retained.
+- Clarify that `checker` may repair unambiguous mechanical issues, narrow long-running input to an
+  existing Change, and simplify user-facing descriptions without changing runtime boundaries.
+
 ## 1.7.0
 
 - Add `orchestrating-long-running-coding` for an explicitly requested,
