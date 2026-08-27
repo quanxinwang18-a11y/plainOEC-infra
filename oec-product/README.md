@@ -37,6 +37,9 @@ POMP 和系统需求元数据只在存在唯一候选或唯一默认值时自动
 Product 定义 PRD、Story 和 HANDOFF 的产品语义；`oec-e3` 负责认证、远端对象、幂等和状态查询。
 安装 Product 会加载 `oec-e3@~1.0.0`，但普通 PRD 写作和评审不会触发远端发布。
 
+当前 1.0.2 仍是未打 tag 的候选版本。验证当前候选组合时先显式安装 `oec-e3@plainOEC-infra`，再安装
+Product；Product 单独安装会按 semver 选择最近已发布的 E3 tag。
+
 ## 本地验证
 
 在 Marketplace 根执行，需要 Node.js 20 或更新版本：

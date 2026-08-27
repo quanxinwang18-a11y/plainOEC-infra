@@ -57,6 +57,9 @@ claude plugin install \
 
 Product 安装会自动带入 E3 依赖。第一次先做本地产品工作，例如：
 
+当前候选版本尚未创建 E3 1.0.2 release tag。验证本仓库列出的候选组合时，先显式安装
+`oec-e3@plainOEC-infra`，再安装 Product；只安装 Product 会按 semver 解析最近已发布的 E3 tag。
+
 ```text
 根据这份需求材料写一版 PRD，先不要发布到 E3。
 ```
