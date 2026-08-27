@@ -152,9 +152,9 @@ test('current-facing documentation stays aligned with Marketplace components', a
   for (const name of [
     'publishing-prds-to-e3', 'migrating-legacy-ai-docs',
     'challenging-engineering-decisions', 'delegating-engineering-agents',
-    'orchestrating-long-running-coding',
     'closing-engineering-changes',
   ]) assert.match(report, new RegExp(`${name}[\\s\\S]{0,180}manual-only`), `${name} manual-only boundary missing`);
+  assert.match(report, /orchestrating-long-running-coding[\s\S]{0,180}用户明确要求/);
   assert.match(report, /prepared → executing → executed/);
   assert.match(report, /同一个 plan token 最多[\s\S]{0,80}一次 `runPipeline` POST/);
   assert.match(report, /无法确定账号时[\s\S]{0,100}prepare[\s\S]{0,100}失败/);

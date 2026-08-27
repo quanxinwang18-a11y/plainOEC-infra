@@ -534,7 +534,7 @@ slice 工作，确认测试因缺失行为而失败，再实现最小代码并�
 `research → implement → check` 串行推进。任一 Agent 未报告 complete、研究要求修改设计或检查发现
 判断性问题时停止。它不保存阶段状态、不自动重试，也不提交、关闭 change 或写外部平台。
 
-`orchestrating-long-running-coding` 也是 manual-only Skill，只在用户明确要求完成非平凡 Web/full-stack
+`orchestrating-long-running-coding` 只在用户明确要求完成非平凡 Web/full-stack
 change，且本地或内部非生产应用可以通过预配置 Playwright MCP 运行验收时使用。主 Session 分别创建
 一次 `oec-implement` 和 `oec-evaluate`，随后按 Agent ID 复用同一对 Agent，在默认最多五次、用户明确
 继续后绝对上限十次的 build/evaluate cycle 中原样传递运行态 finding。它不创建 Sprint、backlog、

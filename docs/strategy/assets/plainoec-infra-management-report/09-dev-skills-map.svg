@@ -96,8 +96,6 @@
   <rect x="862" y="638" width="310" height="88" rx="18" fill="#f6fbf4" stroke="#c6ddc2"/>
   <text x="880" y="670" class="navy code" font-size="14" font-weight="800">orchestrating-long-running-coding</text>
   <text x="880" y="700" fill="#39753b" font-size="17" font-weight="700">长时 Build / QA</text>
-  <rect x="1064" y="686" width="86" height="24" rx="12" fill="#e4f1df"/>
-  <text x="1107" y="703" fill="#39753b" font-size="13" font-weight="800" text-anchor="middle">仅手动</text>
 
   <rect x="1246" y="378" width="332" height="138" rx="18" fill="#fffaf1" stroke="#ead4aa"/>
   <text x="1264" y="411" class="navy code" font-size="17" font-weight="800">reviewing-code-changes</text>

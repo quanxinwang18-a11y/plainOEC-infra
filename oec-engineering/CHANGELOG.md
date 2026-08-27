@@ -2,7 +2,7 @@
 
 ## 1.7.0
 
-- Add the manual-only `orchestrating-long-running-coding` Skill for an explicitly requested,
+- Add `orchestrating-long-running-coding` for an explicitly requested,
   bounded Web/full-stack `implement → runtime evaluate → repair` loop in the current main session.
 - Add `oec-evaluate`, a Playwright-based runtime evaluator that uses an already configured MCP,
   exercises local or authorized internal non-production applications, and never authors code or

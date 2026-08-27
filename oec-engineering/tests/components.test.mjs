@@ -145,7 +145,8 @@ test('skill descriptions make positive and negative judgment boundaries explicit
   assert.match(skill('challenging-engineering-decisions').metadata.description, /ordinary planning/);
   assert.match(skill('delegating-engineering-agents').metadata.description, /Explicitly routes/);
   assert.match(skill('delegating-engineering-agents').metadata.description, /ordinary coding/);
-  assert.match(skill('orchestrating-long-running-coding').metadata.description, /long-running high-quality coding/);
+  assert.match(skill('orchestrating-long-running-coding').metadata.description, /resumed implementation/);
+  assert.match(skill('orchestrating-long-running-coding').metadata.description, /Playwright runtime evaluation/);
   assert.match(skill('orchestrating-long-running-coding').metadata.description, /small fixes/);
   assert.match(skill('prototyping-decisions').metadata.description, /throwaway/);
   assert.match(skill('prototyping-decisions').metadata.description, /production features/);

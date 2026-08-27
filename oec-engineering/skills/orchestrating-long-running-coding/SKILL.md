@@ -1,6 +1,6 @@
 ---
 name: orchestrating-long-running-coding
-description: Manually coordinates a non-trivial Web or full-stack change through resumed implementation, Playwright runtime evaluation, bounded repair cycles, and a final fresh check. Use only when the user explicitly requests long-running high-quality coding. Do not use for small fixes, non-Web work, production operations, planning alone, review alone, or closing.
+description: Coordinates an explicitly requested non-trivial Web or full-stack change through resumed implementation, Playwright runtime evaluation, bounded repair cycles, and a final fresh check. Do not use for small fixes, non-Web work, production operations, planning alone, review alone, or closing.
 argument-hint: "[goal, PRD/story, task/issue, existing change, or explicit reference files]"
 disable-model-invocation: true
 ---

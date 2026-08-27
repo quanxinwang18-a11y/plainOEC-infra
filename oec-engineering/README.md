@@ -45,7 +45,7 @@ bundle 需要 PATH 中存在 Node.js 20 或更新版本。
 ```
 
 `migrating-legacy-ai-docs`、`challenging-engineering-decisions`、`closing-engineering-changes`、
-`delegating-engineering-agents` 和 `orchestrating-long-running-coding` 都是 user-invoked only。
+`delegating-engineering-agents` 和 `orchestrating-long-running-coding` 只在用户显式调用时使用。
 决策挑战只压力测试一个技术决定，不自动进入规划或实现；Agent 委派只协调已有 change 或当前 diff，
 不创建工作流状态；长时 Coding 只处理已有 change 的非平凡 Web/full-stack 任务，并在当前主 Session
 内复用实现与运行态评估 Agent。决策原型只在用户明确要求用 throwaway artifact 回答交互或状态问题时
