@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.7.0
+
+- Add the manual-only `orchestrating-long-running-coding` Skill for an explicitly requested,
+  bounded Web/full-stack `implement → runtime evaluate → repair` loop in the current main session.
+- Add `oec-evaluate`, a Playwright-based runtime evaluator that uses an already configured MCP,
+  exercises local or authorized internal non-production applications, and never authors code or
+  project documentation.
+- Reuse one implementation Agent ID and one evaluator Agent ID across at most five cycles by
+  default, with an explicit continuation capped at ten; keep final `oec-check`, closing, commits,
+  framework adapters, persistent workflow files, and external platform state outside the loop.
+
 ## 1.6.0
 
 - Add the manual-only `delegating-engineering-agents` Skill as a single explicit entry point for

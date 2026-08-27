@@ -19,8 +19,8 @@
     },
     {
       "name": "oec-engineering",
-      "version": "1.6.0",
-      "description": "OEC 软件工程能力：团队 Specs、显式迁移、技术规划、决策挑战、决策原型、TDD、诊断、评审、显式 Agent 委派和收口；含 3 个显式使用的 subagent，Codex 配置仍为实验性。",
+      "version": "1.7.0",
+      "description": "OEC 软件工程能力：团队 Specs、显式迁移、技术规划、决策挑战、决策原型、TDD、诊断、评审、显式 Agent 委派、长时 Web 编码和收口；含 4 个显式使用的 subagent，Codex 配置仍为实验性。",
       "source": "./oec-engineering",
       "category": "development"
     },

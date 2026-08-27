@@ -46,7 +46,7 @@
   <text x="275" y="700" class="note">只安装 Product 即可进入 PM 主链</text>
 
   <text x="800" y="350" class="title">研发</text>
-  <text x="800" y="450" class="plugin">oec-engineering</text><text x="800" y="482" class="body">9 个工程 Skills</text>
+  <text x="800" y="450" class="plugin">oec-engineering</text><text x="800" y="482" class="body">11 个工程 Skills</text>
   <text x="700" y="600" class="plugin">oec-e3</text><text x="700" y="632" class="body">任务同步</text>
   <text x="900" y="600" class="plugin">Pipeline</text><text x="900" y="632" class="body">按需运行</text>
   <text x="800" y="700" class="note">工程方法不强依赖内部平台</text>

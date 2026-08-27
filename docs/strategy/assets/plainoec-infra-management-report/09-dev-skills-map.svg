@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1672" height="941" viewBox="0 0 1672 941" role="img" aria-labelledby="title desc">
   <title id="title">Dev 与 Engineering Skill 能力地图</title>
-  <desc id="desc">主 Session 负责普通编码，十个 Engineering Skills 分为团队知识、决策规划、实现诊断、评审收口四类按需能力。</desc>
+  <desc id="desc">主 Session 负责普通编码，十一个 Engineering Skills 分为团队知识、决策规划、实现诊断、评审收口四类按需能力。</desc>
   <defs>
     <linearGradient id="navy" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#09264f"/>
@@ -22,7 +22,7 @@
   <circle cx="42" cy="920" r="230" fill="#eef3fb"/>
 
   <text x="70" y="82" class="navy" font-size="46" font-weight="800">Dev / Engineering Skill 能力地图</text>
-  <text x="70" y="122" class="muted" font-size="23">主 Session 承担普通编码；十个 Skill 只在目标匹配时补充团队特有方法</text>
+  <text x="70" y="122" class="muted" font-size="23">主 Session 承担普通编码；十一个 Skill 只在目标匹配时补充团队特有方法</text>
 
   <rect x="70" y="151" width="1532" height="92" rx="24" fill="url(#navy)"/>
   <text x="112" y="190" fill="#bfe8eb" font-size="18" font-weight="700">默认研发入口</text>
@@ -81,21 +81,23 @@
   <text x="496" y="676" fill="#245f9e" font-size="18" font-weight="700">规划非平凡、跨模块变更</text>
   <text x="496" y="701" class="muted" font-size="16">高风险时才持久化计划</text>
 
-  <rect x="862" y="368" width="310" height="100" rx="18" fill="#f6fbf4" stroke="#c6ddc2"/>
+  <rect x="862" y="368" width="310" height="76" rx="18" fill="#f6fbf4" stroke="#c6ddc2"/>
   <text x="880" y="400" class="navy code" font-size="17" font-weight="800">test-driven-development</text>
-  <text x="880" y="433" fill="#39753b" font-size="18" font-weight="700">明确要求时执行 TDD</text>
-  <text x="880" y="458" class="muted" font-size="16">red → green → refactor</text>
+  <text x="880" y="430" fill="#39753b" font-size="17" font-weight="700">明确要求时执行 TDD</text>
 
-  <rect x="862" y="486" width="310" height="100" rx="18" fill="#f6fbf4" stroke="#c6ddc2"/>
-  <text x="880" y="518" class="navy code" font-size="17" font-weight="800">diagnosing-failures</text>
-  <text x="880" y="551" fill="#39753b" font-size="18" font-weight="700">诊断难复现或根因不清故障</text>
-  <text x="880" y="576" class="muted" font-size="16">先建立信号，再证伪假设</text>
+  <rect x="862" y="458" width="310" height="76" rx="18" fill="#f6fbf4" stroke="#c6ddc2"/>
+  <text x="880" y="490" class="navy code" font-size="17" font-weight="800">diagnosing-failures</text>
+  <text x="880" y="520" fill="#39753b" font-size="17" font-weight="700">诊断难复现或根因不清故障</text>
 
-  <rect x="862" y="604" width="310" height="112" rx="18" fill="#f6fbf4" stroke="#c6ddc2"/>
-  <text x="880" y="636" class="navy code" font-size="15" font-weight="800">delegating-engineering-agents</text>
-  <text x="880" y="669" fill="#39753b" font-size="18" font-weight="700">串行委派三个可选 Agent</text>
-  <rect x="880" y="681" width="86" height="24" rx="12" fill="#e4f1df"/>
-  <text x="923" y="698" fill="#39753b" font-size="13" font-weight="800" text-anchor="middle">仅手动</text>
+  <rect x="862" y="548" width="310" height="76" rx="18" fill="#f6fbf4" stroke="#c6ddc2"/>
+  <text x="880" y="580" class="navy code" font-size="15" font-weight="800">delegating-engineering-agents</text>
+  <text x="880" y="610" fill="#39753b" font-size="17" font-weight="700">显式串行委派可选 Agent</text>
+
+  <rect x="862" y="638" width="310" height="88" rx="18" fill="#f6fbf4" stroke="#c6ddc2"/>
+  <text x="880" y="670" class="navy code" font-size="14" font-weight="800">orchestrating-long-running-coding</text>
+  <text x="880" y="700" fill="#39753b" font-size="17" font-weight="700">长时 Build / QA</text>
+  <rect x="1064" y="686" width="86" height="24" rx="12" fill="#e4f1df"/>
+  <text x="1107" y="703" fill="#39753b" font-size="13" font-weight="800" text-anchor="middle">仅手动</text>
 
   <rect x="1246" y="378" width="332" height="138" rx="18" fill="#fffaf1" stroke="#ead4aa"/>
   <text x="1264" y="411" class="navy code" font-size="17" font-weight="800">reviewing-code-changes</text>
@@ -110,14 +112,15 @@
   <rect x="1264" y="656" width="86" height="25" rx="13" fill="#fff0d3"/>
   <text x="1307" y="674" fill="#a96500" font-size="14" font-weight="800" text-anchor="middle">仅手动</text>
 
-  <text x="70" y="795" class="navy" font-size="22" font-weight="800">辅助组件（不是上述十个 Skill）</text>
+  <text x="70" y="795" class="navy" font-size="22" font-weight="800">辅助组件（不是上述十一个 Skill）</text>
   <rect x="70" y="816" width="520" height="76" rx="18" fill="#eef6f5" stroke="#a7d0cc"/>
   <text x="96" y="849" fill="#0b6f76" class="code" font-size="20" font-weight="800">oec-spec runtime</text>
   <text x="96" y="876" class="muted" font-size="17">按路径选取与确定性校验工程文档</text>
   <rect x="616" y="816" width="986" height="76" rx="18" fill="#eef3fa" stroke="#aec4df"/>
   <text x="642" y="849" fill="#245f9e" font-size="20" font-weight="800">可选 Agents</text>
-  <text x="786" y="849" class="navy code" font-size="19" font-weight="700">oec-implement</text>
-  <text x="1010" y="849" class="navy code" font-size="19" font-weight="700">oec-check</text>
-  <text x="1182" y="849" class="navy code" font-size="19" font-weight="700">oec-research</text>
+  <text x="786" y="849" class="navy code" font-size="18" font-weight="700">oec-implement</text>
+  <text x="972" y="849" class="navy code" font-size="18" font-weight="700">oec-evaluate</text>
+  <text x="1150" y="849" class="navy code" font-size="18" font-weight="700">oec-check</text>
+  <text x="1292" y="849" class="navy code" font-size="18" font-weight="700">oec-research</text>
   <text x="642" y="876" class="muted" font-size="17">仅在独立上下文、fresh-eyes 或边界研究确有价值时显式使用</text>
 </svg>

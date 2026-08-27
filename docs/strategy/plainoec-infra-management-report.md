@@ -28,8 +28,8 @@ PlainOEC-infra 不是将旧 OEC-infra 的 Prompt 缩短后重新打包，而是�
 | 类型 | 数量 |
 | --- | ---: |
 | Plugin | 5 |
-| Agent | 4 |
-| Skill | 14 |
+| Agent | 5 |
+| Skill | 15 |
 | MCP Server | 2 |
 | MCP Tool | 14 |
 | Hook | 0 |
@@ -65,7 +65,7 @@ E3 或 Pipeline。普通编码始终由主 Session 负责，Engineering 不安�
 Agent，也不向所有会话注入 SessionStart（会话启动）上下文。
 
 当前可以确认的事实包括：117 项自动测试全部通过；Marketplace 与五个 Plugin 通过固定 Claude Code
-环境的严格结构校验；Git 归档包和隔离安装验证了五个 Plugin、十四个 Skills、四个 Agents 以及两个
+环境的严格结构校验；Git 归档包和隔离安装验证了五个 Plugin、十五个 Skills、五个 Agents 以及两个
 MCP Server；E3 和 Pipeline MCP 均能独立启动并显示 Connected（已连接）。
 
 当前仍不能称为正式发布。LICENSE/notice 的 Owner（责任人）决策、E3 账号 owner 真实复验、Pipeline
@@ -193,7 +193,7 @@ Human 负责无法从仓库读取的产品选择、风险承受、不可逆操�
 | Plugin | Agent | Skill | MCP Server | Tools | 责任 |
 | --- | ---: | ---: | ---: | ---: | --- |
 | `oec-product` | 1 | 3 | 0 | 0 | PRD 编写、评审和发布语义 |
-| `oec-engineering` | 3 | 10 | 0 | 0 | 团队工程知识、聚焦工程方法和显式 Agent 委派 |
+| `oec-engineering` | 4 | 11 | 0 | 0 | 团队工程知识、聚焦工程方法、显式 Agent 委派和按需长时 Web 编码 |
 | `oec-e3` | 0 | 0 | 1 | 10 | PRD 发布和研发任务平台操作 |
 | `oec-pipeline` | 0 | 0 | 1 | 4 | 既有 dev/test 流水线运行 |
 | `oec-common` | 0 | 1 | 0 | 0 | HTML-first 幻灯片 |
@@ -493,7 +493,7 @@ Specs，并拒绝 workspace 外路径。它减少无关上下文，但不会替�
 `legacy-audit` 枚举旧 `ai-docs` 与 managed configuration，不修改源文件，不删除 `.oec-ai`、
 `.claude` 或 `.codex`，也不采用 E3 mapping。
 
-### 7.6 十个 Engineering Skills
+### 7.6 十一个 Engineering Skills
 
 #### 7.6.1 团队知识类
 
@@ -534,6 +534,12 @@ slice 工作，确认测试因缺失行为而失败，再实现最小代码并�
 `research → implement → check` 串行推进。任一 Agent 未报告 complete、研究要求修改设计或检查发现
 判断性问题时停止。它不保存阶段状态、不自动重试，也不提交、关闭 change 或写外部平台。
 
+`orchestrating-long-running-coding` 也是 manual-only Skill，只在用户明确要求完成非平凡 Web/full-stack
+change，且本地或内部非生产应用可以通过预配置 Playwright MCP 运行验收时使用。主 Session 分别创建
+一次 `oec-implement` 和 `oec-evaluate`，随后按 Agent ID 复用同一对 Agent，在默认最多五次、用户明确
+继续后绝对上限十次的 build/evaluate cycle 中原样传递运行态 finding。它不创建 Sprint、backlog、
+项目状态文件、框架 adapter、snapshot、commit 或 closing，也不替代普通主 Session Coding。
+
 #### 7.6.4 评审与收口类
 
 `reviewing-code-changes` 对 working-tree diff、commit、branch 或 PR 执行只读、风险优先评审。每个
@@ -544,10 +550,10 @@ finding 必须给出紧凑位置、触发输入、系统后果和最小修正方
 实际测试证据、相关 Specs、ADRs 和残余风险。只有稳定责任或决定变化时才更新团队知识。用户确认后
 可以 exact-path commit；它不部署、不创建 release、不更新 E3、SAE、UTP 或远端 Git 状态。
 
-![Dev 由主 Session 承担普通编码，并按团队知识、决策规划、实现诊断、评审收口四类目标选择十个 Engineering Skills](assets/plainoec-infra-management-report/09-dev-skills-map.png)
+![Dev 由主 Session 承担普通编码，并按团队知识、决策规划、实现诊断、评审收口四类目标选择十一个 Engineering Skills](assets/plainoec-infra-management-report/09-dev-skills-map.png)
 
-*图：十个 Skill 是按目标调用的工程增量，不是 Dev 总控流程。团队知识、决策规划、实现诊断、评审
-收口四类能力彼此独立；`oec-spec` runtime 和三个可选 Agent 是辅助组件，不属于十个 Skill。*
+*图：十一个 Skill 是按目标调用的工程增量，不是 Dev 总控流程。团队知识、决策规划、实现诊断、评审
+收口四类能力彼此独立；`oec-spec` runtime 和四个可选 Agent 是辅助组件，不属于十一个 Skill。*
 
 ### 7.7 Skill 选择边界
 
@@ -561,18 +567,21 @@ finding 必须给出紧凑位置、触发输入、系统后果和最小修正方
 | 难复现或反复失败 | diagnosing | 简单局部错误 |
 | 审查代码 diff | reviewing | PRD review |
 | 显式委派已有 change 或当前 diff | delegating | 普通主 Session 编码 |
+| 显式长时完成可运行 Web/full-stack change | long-running coding | 小型修改、非 Web 或生产操作 |
 | 显式完成工程变更 | closing | 未完成实现 |
 
-### 7.8 三个 Engineering Agents
+### 7.8 四个 Engineering Agents
 
-Engineering 保留 `oec-implement`、`oec-check` 和 `oec-research`。它们是宿主原生可选 Agent，不是
+Engineering 保留 `oec-implement`、`oec-evaluate`、`oec-check` 和 `oec-research`。它们是宿主原生可选 Agent，不是
 slash commands。用户可以通过自然语言、`@` picker 或显式 Skill 委派使用。description 表达
 explicit-use 设计意图，但不能被描述成宿主级绝对硬保证。
 
-`delegating-engineering-agents` 只在用户显式调用时为这三个 Agent 提供统一入口。它不改变 Agent
+`delegating-engineering-agents` 只在用户显式调用时为 Research/Implement/Check 三个 Agent 提供统一入口。
+`orchestrating-long-running-coding` 只在用户显式调用时组合 Implement/Evaluate 并最终派发 fresh Check。
+二者都不改变 Agent
 权限，也不允许 Agent 派生其他 Agent；`full` 是当前会话中的有门禁串行调用，不是可恢复工作流。
 
-三个 Agent 都禁止 commit、push、merge、Git staging 和继续派生 Agent。它们不会自动成为普通编码
+四个 Agent 都禁止 commit、push、merge、Git staging 和继续派生 Agent。它们不会自动成为普通编码
 必经阶段。
 
 #### `oec-implement`
@@ -592,6 +601,15 @@ unstaged 与 untracked 变更。它读取可选 change package、路径相关 Sp
 
 Agent 可以修复缺失类型、lint 违规等明确机械问题；架构选择、权衡和不清晰的 Spec 解释只报告给主
 Session。它不修改 `ai-docs/engineering/`，不将 Agent 观点写成持久团队事实。
+
+#### `oec-evaluate`
+
+`oec-evaluate` 接受已有 change ID、当前 Session 的完成条件和本地或明确授权的内部非生产目标。它只
+使用用户或团队预先连接的 Playwright MCP，实际操作运行中的 Web 应用，并分别对产品深度、功能、视觉
+和代码质量给出 `PASS`、`FAIL` 或 `NOT_APPLICABLE`。完整 finding 必须包含复现步骤、预期、实际、
+Playwright/API/状态证据以及是否仍在 change boundary 内。Agent 可以改变隔离的测试应用状态，但不
+修改源码、测试代码、Product/Engineering 文档或 Git；Playwright 缺失时必须 blocked，不能用静态测试
+替代运行态验收。
 
 #### `oec-research`
 
@@ -646,9 +664,9 @@ Pipeline 成功不能替代代码行为验证；closing 不自动执行 Pipeline
 Engineering 不建设 Dev 总控 Agent、全局工作流状态机、测试 Dispatcher 或默认并行 Agent，不强制
 TDD、review 或 closing，也不承担部署、E3、SAE、UTP 或远端 Git 写入。
 
-当前实现包含 10 Skills、3 Agents、0 Hook、0 MCP、0 Command。Claude Agent Markdown 与实验性
+当前实现包含 11 Skills、4 Agents、0 Hook、0 MCP、0 Command。Claude Agent Markdown 与实验性
 Codex TOML instructions parity 已自动验证；`oec-spec` bundle、路径选择、contract 校验和 legacy
-audit 均通过隔离执行验证；四个 manual-only Skills 有 Claude 与 Codex policy 测试。
+audit 均通过隔离执行验证；五个 manual-only Skills 有 Claude 与 Codex policy 测试。
 
 Codex Agent 的真实发现、`oec-spec` PATH 和完整运行旅程仍未完成宿主验收，因此不能将实验性 TOML
 描述为完整双宿主支持。Agent explicit-use 也主要由 description 约束，不应被管理报告夸大为宿主
@@ -884,8 +902,8 @@ Plugin schema 和 Markdown 测试只能证明组件可发现、字段正确和�
 
 ### 11.2 Native eval corpus
 
-Product 三个、Engineering 十个、Common 一个，共十四个 Skills。每个 Skill 至少有一个正向和一个
-近邻负向 executable case，共二十八个 cases。grader 验证 `Skill` tool 是否调用正确能力，并对负向
+Product 三个、Engineering 十一个、Common 一个，共十五个 Skills。每个 Skill 至少有一个正向和一个
+近邻负向 executable case，共三十个 cases。grader 验证 `Skill` tool 是否调用正确能力，并对负向
 场景要求零调用。
 
 这些 route graders 只证明能力是否被正确调用或抑制，不证明启用 Skill 后的任务结果优于无 Plugin
@@ -902,7 +920,7 @@ grader 与 with/without 消融；在该证据形成前，不以 Skill 数量或 
 
 当前 manual-only Skills 是 Product 的 `publishing-prds-to-e3`，以及 Engineering 的
 `migrating-legacy-ai-docs`、`challenging-engineering-decisions`、`delegating-engineering-agents` 和
-`closing-engineering-changes`。
+`orchestrating-long-running-coding`、`closing-engineering-changes`。
 
 ### 11.3 Eval 运行边界
 
@@ -1042,7 +1060,7 @@ Product、Engineering、E3 和 Pipeline 有不同事实来源、权限、状态�
 - 117/117 自动测试通过。
 - Marketplace 和五个 Plugin strict validation 通过。
 - Git archive 与隔离安装通过。
-- 隔离安装结果包含 5 Plugins、14 Skills 和 4 Agents。
+- 隔离安装结果包含 5 Plugins、15 Skills 和 5 Agents。
 - E3 与 Pipeline MCP 显示 Connected。
 - 五个候选 tag dry-run 通过。
 
@@ -1051,7 +1069,7 @@ Product、Engineering、E3 和 Pipeline 有不同事实来源、权限、状态�
 - 候选方案已经正式发布。
 - E3 当前实现的真实 owner 复验通过。
 - Pipeline 当前实现的真实单 POST 复验通过。
-- 十四个 Skills 的真实 LLM eval 全部通过。
+- 十五个 Skills 的真实 LLM outcome eval 全部通过；新增长时 Coding 仍缺真实 Agent/Playwright 旅程。
 - Codex Agents 已完成真实宿主验收。
 - Testing、UTP 或 SAE 已进入 Marketplace。
 - MCP Connected 等同于生产可用。

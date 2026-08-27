@@ -1,6 +1,6 @@
 # 平台 Plugin 层级与 MCP 迁移设计
 
-> 当前候选实现：Marketplace `3.0.1`、`oec-product@3.0.2`、`oec-engineering@1.6.0`、
+> 当前候选实现：Marketplace `3.0.1`、`oec-product@3.0.2`、`oec-engineering@1.7.0`、
 > `oec-e3@1.0.1`、`oec-pipeline@1.0.1`、`oec-common@0.2.1`。本文区分“代码和自动验证已完成”与“真实外部平台已验收”；
 > SAE、UTP 和 `oec-testing` 仍未进入 Marketplace。
 
@@ -73,7 +73,7 @@ flowchart TB
 | Plugin | Agent | Skills | MCP | 责任 |
 | --- | ---: | ---: | ---: | --- |
 | `oec-product@3.0.2` | 1 | 3 | 0 | PRD 领域知识和发布语义 |
-| `oec-engineering@1.6.0` | 3 | 10 | 0 | 团队 Specs、显式迁移、决策挑战、决策原型、聚焦工程方法和显式 Agent 委派 |
+| `oec-engineering@1.7.0` | 4 | 11 | 0 | 团队 Specs、聚焦工程方法、显式 Agent 委派和按需长时 Web 编码 |
 | `oec-e3@1.0.1` | 0 | 0 | 1 | E3 PRD 发布与研发任务执行 |
 | `oec-pipeline@1.0.1` | 0 | 0 | 1 | 既有 dev/test 流水线受控执行 |
 | `oec-common@0.2.1` | 0 | 1 | 0 | 零依赖 HTML-first 幻灯片 |
@@ -132,9 +132,10 @@ plan、幂等和远端校验全部属于 `oec-e3`。
 ### Engineering
 
 `oec-engineering` 不创建 Dev Agent，也不依赖 E3 或 Pipeline。普通编码继续由 Claude Code 主 Agent
-完成；十个 Skills 补充团队 Specs、显式旧 `ai-docs` 迁移、规划、显式决策挑战、决策原型、显式
-TDD、困难诊断、只读评审、显式 Agent 委派和收口方法，其中迁移、决策挑战、Agent 委派与收口只允许
-用户触发。Agent 委派不保存阶段状态，也不把完整流程变成默认路径。
+完成；十一个 Skills 补充团队 Specs、显式旧 `ai-docs` 迁移、规划、显式决策挑战、决策原型、显式
+TDD、困难诊断、只读评审、显式 Agent 委派、按需长时 Web 编码和收口方法，其中迁移、决策挑战、
+Agent 委派、长时 Coding 与收口只允许用户触发。长时 Coding 只在已有 change 上复用实现和运行态评估
+Agent，不保存项目级阶段状态，也不把完整流程变成默认路径。
 
 开发者按需组合：
 

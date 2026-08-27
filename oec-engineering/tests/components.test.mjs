@@ -45,16 +45,17 @@ const expectedSkills = [
   'diagnosing-failures',
   'managing-team-specs',
   'migrating-legacy-ai-docs',
+  'orchestrating-long-running-coding',
   'planning-engineering-changes',
   'prototyping-decisions',
   'reviewing-code-changes',
   'test-driven-development',
 ];
 
-test('engineering plugin exposes ten native Skills and no always-on orchestration components', () => {
+test('engineering plugin exposes eleven native Skills and no always-on orchestration components', () => {
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-engineering');
-  assert.equal(manifest.version, '1.6.0');
+  assert.equal(manifest.version, '1.7.0');
   // Agents and Skills are auto-discovered from directories, not declared in plugin.json.
   for (const key of ['skills', 'agents', 'mcpServers', 'commands', 'hooks']) assert.equal(key in manifest, false);
 
@@ -74,7 +75,7 @@ test('engineering plugin exposes ten native Skills and no always-on orchestratio
     .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
     .map((entry) => entry.name)
     .sort();
-  assert.deepEqual(agentFiles, ['oec-check.md', 'oec-implement.md', 'oec-research.md']);
+  assert.deepEqual(agentFiles, ['oec-check.md', 'oec-evaluate.md', 'oec-implement.md', 'oec-research.md']);
 
   const marketplace = JSON.parse(readFileSync(resolve(pluginRoot, '..', '.claude-plugin', 'marketplace.json'), 'utf8'));
   const packageManifest = JSON.parse(readFileSync(resolve(pluginRoot, '..', 'package.json'), 'utf8'));
@@ -93,7 +94,7 @@ test('engineering plugin exposes ten native Skills and no always-on orchestratio
 });
 
 test('Claude and experimental Codex Agents keep explicit-use policy and matching instructions', () => {
-  for (const name of ['oec-check', 'oec-implement', 'oec-research']) {
+  for (const name of ['oec-check', 'oec-evaluate', 'oec-implement', 'oec-research']) {
     const claude = claudeAgent(name);
     const codex = codexAgent(name);
     assert.match(compact(claude.metadata.description), /user explicitly requests/);
@@ -113,6 +114,18 @@ test('Claude and experimental Codex Agents keep explicit-use policy and matching
   const research = claudeAgent('oec-research');
   assert.match(compact(research.metadata.description), /existing change ID/);
   assert.match(research.body, /Do not create or guess a change package/);
+  const evaluate = claudeAgent('oec-evaluate');
+  assert.ok(evaluate.metadata.tools.includes('mcp__playwright__browser_navigate'));
+  assert.ok(evaluate.metadata.tools.includes('mcp__playwright__browser_snapshot'));
+  assert.equal(evaluate.metadata.tools.some((tool) => tool.includes('*')), false);
+  assert.equal(evaluate.metadata.tools.includes('mcp__playwright__browser_run_code_unsafe'), false);
+  assert.equal(evaluate.metadata.tools.includes('Write'), false);
+  assert.equal(evaluate.metadata.tools.includes('Edit'), false);
+  assert.equal('mcpServers' in evaluate.metadata, false);
+  assert.equal('hooks' in evaluate.metadata, false);
+  assert.equal('permissionMode' in evaluate.metadata, false);
+  assert.match(evaluate.body, /Product depth/);
+  assert.match(evaluate.body, /Working tree changed by evaluator/);
 });
 
 test('skill descriptions make positive and negative judgment boundaries explicit', () => {
@@ -132,6 +145,8 @@ test('skill descriptions make positive and negative judgment boundaries explicit
   assert.match(skill('challenging-engineering-decisions').metadata.description, /ordinary planning/);
   assert.match(skill('delegating-engineering-agents').metadata.description, /Explicitly routes/);
   assert.match(skill('delegating-engineering-agents').metadata.description, /ordinary coding/);
+  assert.match(skill('orchestrating-long-running-coding').metadata.description, /long-running high-quality coding/);
+  assert.match(skill('orchestrating-long-running-coding').metadata.description, /small fixes/);
   assert.match(skill('prototyping-decisions').metadata.description, /throwaway/);
   assert.match(skill('prototyping-decisions').metadata.description, /production features/);
   assert.match(skill('test-driven-development').metadata.description, /explicitly asks for TDD/);
@@ -150,6 +165,7 @@ test('explicit engineering Skills stay manual-only and no Skill recreates the le
       'closing-engineering-changes',
       'delegating-engineering-agents',
       'migrating-legacy-ai-docs',
+      'orchestrating-long-running-coding',
     ].includes(name)) {
       assert.equal(item.metadata['disable-model-invocation'], true);
     } else {
@@ -183,6 +199,21 @@ test('explicit engineering Skills stay manual-only and no Skill recreates the le
   ), 'utf8'));
   assert.equal(delegationOpenai.policy.allow_implicit_invocation, false);
   assert.match(delegationOpenai.interface.default_prompt, /\$delegating-engineering-agents/);
+
+  const orchestration = skill('orchestrating-long-running-coding');
+  assert.match(orchestration.body, /existing `ai-docs\/engineering\/changes\/<change-id>\/change\.md`/);
+  assert.match(orchestration.body, /Playwright tools are unavailable, report `blocked`/);
+  assert.match(orchestration.body, /Retain the returned Agent ID/);
+  assert.match(orchestration.body, /five build-and-evaluate cycles by default/);
+  assert.match(orchestration.body, /up to ten total cycles/);
+  assert.match(orchestration.body, /Do not create state files, snapshots, branches/);
+  assert.doesNotMatch(orchestration.body, /Sprint|backlog|run\.json|progress\.md|ledger/);
+  const orchestrationOpenai = YAML.parse(readFileSync(resolve(
+    pluginRoot,
+    'skills/orchestrating-long-running-coding/agents/openai.yaml',
+  ), 'utf8'));
+  assert.equal(orchestrationOpenai.policy.allow_implicit_invocation, false);
+  assert.match(orchestrationOpenai.interface.default_prompt, /\$orchestrating-long-running-coding/);
 
   const migration = skill('migrating-legacy-ai-docs');
   assert.match(migration.body, /preserve every existing `ai-docs` file in place/i);
