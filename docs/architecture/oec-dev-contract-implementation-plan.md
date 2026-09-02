@@ -1,6 +1,6 @@
 # OEC Dev 契约与实施计划
 
-- **Status**: Implemented candidate — Engineering 1.9.3 and Dev Beta 0.1.0 follow-up pending commit and release decision
+- **Status**: Implemented candidate — Engineering 1.9.4 and Dev Beta 0.1.0 follow-up pending commit and release decision
 - **Owner**: `oec-dev` / OEC Dev
 - **Scope**: `plainOEC-infra/oec-dev` (stable execution) and `plainOEC-infra/oec-dev-beta` (experimental long-running orchestration)
 - **Last updated**: 2026-09-02
@@ -28,6 +28,7 @@ OEC Dev 是一个模块感知的工程上下文和交付能力，不是固定的
 7. 对来自 PRD/Story/HANDOFF 的非平凡实现请求提供明确的规划门，避免需求文档被直接当作代码修改授权。
 8. 通过 SessionStart 注入 bootstrap Skill，让模型在首次行动前遵循 Skill 发现和任务交接规则。
 9. 在没有长期 Team Spec 根时允许 PRD 任务使用空上下文继续规划，同时保留缺失根的显式提醒。
+10. 正确解析带有嵌套标题的任务 Acceptance，并拒绝缺少来源类型的版本化任务。
 
 ### 1.2 保留的设计原则
 

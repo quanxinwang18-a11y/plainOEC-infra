@@ -165,8 +165,10 @@ export function sectionBody(body, names) {
   for (let index = 0; index < headings.length; index += 1) {
     const heading = headings[index];
     if (!wanted.has(heading[2].trim().toLowerCase())) continue;
+    const level = heading[1].length;
+    const nextPeer = headings.slice(index + 1).find((candidate) => candidate[1].length <= level);
     const start = heading.index + heading[0].length;
-    const end = headings[index + 1]?.index ?? body.length;
+    const end = nextPeer?.index ?? body.length;
     return body.slice(start, end).trim();
   }
   return null;

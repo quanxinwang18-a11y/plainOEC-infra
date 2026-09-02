@@ -26,7 +26,9 @@ oec-spec task resolve --dev-root "$DEV_ROOT" --product-root "$PRODUCT_ROOT" \
 ```
 
 3. For a Product task, read the PRD/Child PRD and `HANDOFF.yaml` from Product Root (`PRODUCT_ROOT`) only. Record
-   repository, revision, relative paths, featureName, and Story IDs; never copy the Product document.
+   repository, revision, relative paths, featureName, and Story IDs; never copy the Product document. When the
+   PRD is in the same repository, explicitly use that repository as both `DEV_ROOT` and `PRODUCT_ROOT`; do not
+   emit `source.kind: none` for a PRD-backed task.
 4. Run `oec-spec select --workspace "$DEV_ROOT" --paths <affected paths> --format json` and read the
    returned Specs and accepted ADRs. If `ai-docs/Spec` does not exist, selection is an empty-context
    warning, not a planning blocker; continue using repository evidence and the PRD. Do not invoke

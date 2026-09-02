@@ -331,6 +331,16 @@ test('an empty structured source is rejected at ready validation', async () => {
   assert.equal(result.errors.some((item) => item.code === 'source-empty'), true);
 });
 
+test('versioned task with an unspecified source kind is not ready', async () => {
+  const dev = await devFixture(null);
+  const spec = join(dev, 'ai-docs/versions/v1.2.3/dev-task/payment-retry/spec.md');
+  const original = await readFile(spec, 'utf8');
+  await writeFile(spec, original.replace(/source:\n(?:  .*\n)+/, 'source:\n  kind: none\n'));
+  const result = await checkTaskArtifacts({ devRoot: dev, taskRef: 'versioned:v1.2.3/payment-retry', stage: 'ready' });
+  assert.equal(result.ok, false);
+  assert.equal(result.errors.some((item) => item.code === 'source-kind-invalid'), true);
+});
+
 test('malformed structured source is rejected instead of being treated as absent', async () => {
   const dev = await mkdtemp(join(tmpdir(), 'oec-dev-source-invalid-'));
   const result = await resolveSourceRef('not-a-mapping', { devRoot: dev, productRoot: null }, { requireFiles: true });

@@ -4,6 +4,11 @@
 
 **BREAKING RC CHANGE:** align the public Dev identity and names before the first stable release.
 
+## 1.9.4
+
+- Fix nested task Acceptance section parsing so headings such as `### AC-001` are included in the parent section.
+- Reject versioned task Specs with an unspecified `source.kind` before they can claim `ready`.
+
 ## 1.9.3
 
 - Allow path-scoped Team Spec selection to continue with an empty context when `ai-docs/Spec/` is absent.

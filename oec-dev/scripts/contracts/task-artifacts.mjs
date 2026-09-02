@@ -159,6 +159,8 @@ function validateSpec(metadata, body, expected, path, errors, warnings, stage) {
   if (expected.kind === 'versioned' && stage !== 'structure') {
     if (!metadata.source || typeof metadata.source !== 'object' || Array.isArray(metadata.source)) {
       addError(errors, 'source-missing', path, 'versioned task Spec requires a structured source');
+    } else if (!['product', 'issue', 'external'].includes(metadata.source.kind)) {
+      addError(errors, 'source-kind-invalid', path, 'versioned task Spec source.kind must be product, issue, or external');
     } else if (metadata.source.kind === 'product' && !metadata.feature_name && !metadata.source.feature_name && !metadata.source.featureName) {
       addError(errors, 'feature-name-missing', path, 'Product task Spec requires feature_name');
     }

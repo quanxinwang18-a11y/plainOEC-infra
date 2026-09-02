@@ -21,7 +21,7 @@
     },
     {
       "name": "oec-dev",
-      "version": "1.9.3",
+      "version": "1.9.4",
       "description": "OEC Dev 模块上下文、任务 Spec/Design、任务实现、团队工程知识、故障诊断和代码评审。",
       "source": "./oec-dev",
       "category": "development"
