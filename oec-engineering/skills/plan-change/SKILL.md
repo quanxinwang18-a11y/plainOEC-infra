@@ -1,79 +1,71 @@
 ---
 name: plan-change
-description: Produces a technical design or implementation plan when the user asks to design a non-trivial code change, write a technical proposal, assess architecture tradeoffs, or plan cross-module work. Do not use for ordinary implementation, a small obvious fix, product PRD authoring, or external task creation.
-argument-hint: "[requirement, PRD, issue, or technical change]"
+description: Produces or updates a task-level Spec and Design for an explicit OEC development task sourced from a PRD, Story, HANDOFF, issue, or other non-trivial change. It records the technical design without forcing an implementation plan. Do not use for ordinary implementation, a small obvious fix, product PRD authoring, or external task creation.
+argument-hint: "[taskRef, PRD, HANDOFF, issue, or technical change]"
 ---
 
 # Plan change
 
-## Before planning
+This Skill prepares the smallest useful task context. It does not become a coding router or impose a
+fixed implementation sequence. Ordinary coding remains in the Main Session.
 
-Before designing a solution, verify the problem is understood. Answer these three questions:
+## Resolve context
 
-1. Can you state the behavior gap? (what happens now vs. what should happen)
-2. Are the boundaries known? (scope, out-of-scope, constraints)
-3. Are there multiple plausible approaches?
-
-If the answer to (3) is "yes" OR answers to (1) or (2) are unclear:
-  → Pause design. Generate 2–3 alternative approaches, each with tradeoffs. Present them
-    and wait for the user to choose a direction. Do not proceed to design until the user
-    selects an approach.
-
-Otherwise:
-  → Proceed to design.
-
-Turn the requested behavior into an implementable engineering decision grounded in the current
-repository. Explore code, configuration, tests, existing documentation, and accepted ADRs before
-prescribing a design. When target paths are known, run:
+1. Establish `DEV_ROOT` and, when Product files are separate, `PRODUCT_ROOT`. Do not guess among
+   multiple roots.
+2. Resolve the supplied identity through the bundled runtime; do not construct paths locally:
 
 ```bash
-oec-spec select --workspace "$PWD" --paths <target paths> --format json
+oec-spec task resolve --dev-root "$DEV_ROOT" --product-root "$PRODUCT_ROOT" \
+  --task-ref <taskRef> --allow-missing --format json
 ```
 
-Read only the returned team Specs plus directly relevant source material. A product PRD defines
-user-visible behavior; do not silently change it to simplify implementation. Ask for a missing fact
-only when different answers would materially change the design.
+3. For a Product task, read the PRD/Child PRD and `HANDOFF.yaml` from Product Root (`PRODUCT_ROOT`) only. Record
+   repository, revision, relative paths, featureName, and Story IDs; never copy the Product document.
+4. Run `oec-spec select --workspace "$DEV_ROOT" --paths <affected paths> --format json` and read the
+   returned Specs and accepted ADRs.
 
-## Choose the lightest useful output
+Read [references/task-artifact-contract.md](references/task-artifact-contract.md) and use the
+provided assets. If identity, source, module, or acceptance meaning is ambiguous, ask only the
+question that changes the boundary. Do not silently invent a task slug or source root.
 
-- For a small, local change, plan in the conversation. Do not create a document merely to satisfy a
-  process.
-- Persist `ai-docs/engineering/changes/<change-id>/change.md` for cross-module, public interface,
-  data, compatibility, migration, or otherwise high-risk work.
-- Add `design.md` only when a meaningful technical tradeoff needs a durable decision.
-- Add `plan.md` only when dependency order, coordination, rollback, or verification needs to survive
-  the current conversation.
+## Write the task pair
 
-Version-linked IDs use `vX.Y.Z-<featureName>`; unversioned technical work uses
-`YYYY-MM-DD-<slug>`. Link the source PRD, HANDOFF, story, or issue instead of copying it.
+Show the resolved roots, canonical `taskRef`, source, module paths, and exact files before writing.
+For a versioned task the required files are:
 
-Describe the intended boundary, affected interfaces and invariants, chosen design, significant
-alternatives, compatibility or migration consequences, and observable verification. Let the main
-coding agent choose routine file order and implementation detail unless ordering itself controls
-risk.
+```text
+ai-docs/versions/vX.Y.Z/dev-task/<task-slug>/spec.md
+ai-docs/versions/vX.Y.Z/dev-task/<task-slug>/design.md
+```
 
-## Change boundary
+For an unversioned `change:<change-id>`, preserve the existing `ai-docs/engineering/changes/<change-id>/`
+contract; do not create a parallel versioned directory. New managed unversioned packages may use the same
+paired task files only when the user explicitly chooses that profile.
 
-When transitioning from planning to implementation, state the change boundary before writing code:
+After the user confirms the file plan, write both documents when the inputs are clear. If a material
+question remains, write/update `spec.md` first and wait before writing `design.md`; this is an adaptive
+judgment, not a universal stage gate.
 
-- The smallest behavior gap between what happens now and what should happen.
-- Where that behavior actually lives (not where it is easiest to intercept).
-- Which files you expect to change, and why each one is necessary.
-- What you are explicitly not doing in this change.
+`spec.md` records goal, scope, affected modules/paths, source provenance, and observable `AC-NNN`
+acceptance items. `design.md` records only applicable constraints, the chosen implementation design,
+change boundary, and verification. Do not force API, database, deployment, or plan sections that do
+not apply.
 
-If the real scope turns out to be larger than this, say so and why before continuing. Do not widen
-on your own.
+Validate after writing:
 
-## Implementation
+```bash
+oec-spec task check --dev-root "$DEV_ROOT" --product-root "$PRODUCT_ROOT" \
+  --task-ref <taskRef> --stage ready --format json
+```
 
-After planning is complete, the change can be implemented in the main session or by dispatching
-an isolated agent:
+A failed check is visible and blocks a ready claim. At this checkpoint, run the read-only freshness
+check and report its candidates:
 
-- Dispatch the `implementer` subagent with the change ID when the user wants isolated
-  implementation. It reads only the change artifacts and team Specs, without the planning
-  discussion.
-- Dispatch the `researcher` subagent with the change ID and question when the user wants bounded
-  research first. It persists findings to the change directory and reports back.
+```bash
+oec-spec remind --workspace "$DEV_ROOT" --paths <affected paths> \
+  --task-ref <taskRef> --format json
+```
 
-Planning is read-only with respect to business code and external systems. Do not implement the
-change, create E3 tasks, deploy, or commit Git as part of this Skill.
+Do not implement code, create E3 tasks, update Team Specs, or commit as part of this Skill. Reminders
+never write documents.

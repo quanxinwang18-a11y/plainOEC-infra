@@ -1,12 +1,22 @@
 import { lstat, readFile, readdir, realpath, stat } from 'node:fs/promises';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 import YAML from 'yaml';
+import { checkTaskArtifacts } from './contracts/task-artifacts.mjs';
+import {
+  normalizeArtifactPath,
+  resolveSourceRef,
+  resolveWorkspaceRoots,
+  sourceForDocument,
+} from './contracts/workspace-source.mjs';
+import { parseTaskRef, resolveTaskRef, taskRefPath } from './contracts/task-ref.mjs';
+import { findSpecReminders } from './spec-reminder.mjs';
 
 const SPEC_ID = /^SPEC-[a-z0-9][a-z0-9-]*$/;
 const ADR_ID = /^ADR-\d{4}$/;
 const ADR_FILE = /^(ADR-\d{4})-[a-z0-9][a-z0-9-]*\.md$/;
 const CHANGE_ID = /^(?:v\d+\.\d+\.\d+-[A-Za-z][A-Za-z0-9]*|\d{4}-\d{2}-\d{2}-[a-z0-9][a-z0-9-]*)$/;
 const STORY_ID = /^US-\d{3,}$/;
+const MODULE_ID = /^[a-z][a-z0-9-]*$/;
 
 function issue(code, path, message) {
   return { code, path, message };
@@ -129,17 +139,84 @@ function validateStringList(value, key, path, errors, { required = false, patter
   return value;
 }
 
-async function loadEngineering(root) {
+async function loadModuleIndex(engineeringRoot, specIds, errors) {
+  const indexPath = resolve(engineeringRoot, 'module-index.yaml');
+  if (!(await exists(indexPath))) return [];
+  let info;
+  try {
+    info = await lstat(indexPath);
+  } catch (error) {
+    errors.push(issue('module-index-read-failed', 'ai-docs/engineering/module-index.yaml', error.message));
+    return [];
+  }
+  if (info.isSymbolicLink() || !info.isFile()) {
+    errors.push(issue('module-index-invalid', 'ai-docs/engineering/module-index.yaml', 'module-index.yaml must be a regular file'));
+    return [];
+  }
+  let document;
+  try {
+    document = YAML.parse(await readFile(indexPath, 'utf8'));
+  } catch (error) {
+    errors.push(issue('module-index-invalid', 'ai-docs/engineering/module-index.yaml', error.message));
+    return [];
+  }
+  if (!document || typeof document !== 'object' || Array.isArray(document)) {
+    errors.push(issue('module-index-invalid', 'ai-docs/engineering/module-index.yaml', 'module index must be a YAML mapping'));
+    return [];
+  }
+  if (document.schema_version !== 1) {
+    errors.push(issue('module-index-schema', 'ai-docs/engineering/module-index.yaml', 'schema_version must be 1'));
+  }
+  if (!Array.isArray(document.modules) || document.modules.length === 0) {
+    errors.push(issue('module-index-empty', 'ai-docs/engineering/module-index.yaml', 'modules must be a non-empty array'));
+    return [];
+  }
+  const ids = new Map();
+  const modules = [];
+  for (const item of document.modules) {
+    const id = item?.id;
+    if (typeof id !== 'string' || !MODULE_ID.test(id)) {
+      errors.push(issue('module-id-invalid', 'ai-docs/engineering/module-index.yaml', 'module id must match [a-z][a-z0-9-]*'));
+      continue;
+    }
+    if (ids.has(id)) {
+      errors.push(issue('module-id-duplicate', 'ai-docs/engineering/module-index.yaml', `${id} is already declared`));
+      continue;
+    }
+    ids.set(id, true);
+    const paths = validateStringList(item.paths, 'paths', 'ai-docs/engineering/module-index.yaml', errors);
+    for (const glob of paths) {
+      const problem = validateGlob(glob);
+      if (problem) errors.push(issue('module-glob-invalid', 'ai-docs/engineering/module-index.yaml', `${glob}: ${problem}`));
+    }
+    const specs = validateStringList(item.specs, 'specs', 'ai-docs/engineering/module-index.yaml', errors, { pattern: SPEC_ID });
+    for (const spec of specs) {
+      if (!specIds.has(spec)) errors.push(issue('module-spec-reference-missing', 'ai-docs/engineering/module-index.yaml', `${id} references unknown Spec: ${spec}`));
+    }
+    const dependsOn = validateStringList(item.depends_on, 'depends_on', 'ai-docs/engineering/module-index.yaml', errors, { pattern: MODULE_ID });
+    modules.push({ id, title: item.title, owner: item.owner, paths, specs, dependsOn });
+  }
+  for (const module of modules) {
+    for (const dependency of module.dependsOn) {
+      if (dependency === module.id) errors.push(issue('module-self-dependency', 'ai-docs/engineering/module-index.yaml', `${module.id} may not depend on itself`));
+      else if (!ids.has(dependency)) errors.push(issue('module-dependency-missing', 'ai-docs/engineering/module-index.yaml', `${module.id} depends on unknown module: ${dependency}`));
+    }
+  }
+  return modules;
+}
+
+async function loadEngineering(root, roots = { devRoot: root, productRoot: null }, { validateSources = true } = {}) {
   const engineeringRoot = resolve(root, 'ai-docs', 'engineering');
   const errors = [];
   const warnings = [];
   const specs = [];
   const adrs = [];
   const changes = [];
+  const modules = [];
 
   if (!(await exists(engineeringRoot))) {
     errors.push(issue('engineering-root-missing', 'ai-docs/engineering', 'team engineering root does not exist'));
-    return { root, engineeringRoot, errors, warnings, specs, adrs, changes };
+    return { root, engineeringRoot, errors, warnings, specs, adrs, changes, modules };
   }
 
   const indexPath = resolve(engineeringRoot, 'README.md');
@@ -166,8 +243,20 @@ async function loadEngineering(root) {
       const problem = validateGlob(glob);
       if (problem) errors.push(issue('spec-glob-invalid', path, `${glob}: ${problem}`));
     }
+    const moduleId = metadata.module_id ?? metadata.moduleId;
+    if (moduleId !== undefined && (typeof moduleId !== 'string' || !MODULE_ID.test(moduleId))) {
+      errors.push(issue('spec-module-id-invalid', path, 'module_id must match [a-z][a-z0-9-]*'));
+    }
     if (body.trim().length === 0) errors.push(issue('document-empty', path, 'Spec body must not be empty'));
-    specs.push({ id: metadata.id, path, appliesTo });
+    specs.push({ id: metadata.id, path, appliesTo, moduleId: moduleId ?? null });
+  }
+
+  modules.push(...await loadModuleIndex(engineeringRoot, specIds, errors));
+  const moduleIds = new Set(modules.map((item) => item.id));
+  for (const spec of specs) {
+    if (spec.moduleId && modules.length > 0 && !moduleIds.has(spec.moduleId)) {
+      errors.push(issue('spec-module-reference-missing', spec.path, `unknown module_id: ${spec.moduleId}`));
+    }
   }
 
   const decisionRoot = resolve(engineeringRoot, 'decisions');
@@ -241,17 +330,26 @@ async function loadEngineering(root) {
       for (const id of relatedAdrs) {
         if (!adrIds.has(id)) errors.push(issue('adr-reference-missing', path, `unknown ADR: ${id}`));
       }
-      if (metadata.source_prd !== undefined) {
-        if (typeof metadata.source_prd !== 'string') {
-          errors.push(issue('source-prd-invalid', path, 'source_prd must be a repository-relative path'));
-        } else {
-          const target = resolve(root, metadata.source_prd);
-          if (isAbsolute(metadata.source_prd) || !isInside(root, target)) {
-            errors.push(issue('source-prd-invalid', path, 'source_prd escapes the workspace'));
-          } else if (!(await exists(target))) {
-            errors.push(issue('source-prd-missing', path, `source_prd does not exist: ${metadata.source_prd}`));
-          }
+      const sourceInput = metadata.source ?? (metadata.source_prd !== undefined
+        ? {
+          kind: 'product',
+          root: roots.productRoot && typeof metadata.source_prd === 'string'
+            && await exists(resolve(roots.productRoot, normalizeArtifactPath(metadata.source_prd)))
+            ? 'product'
+            : 'dev',
+          prd_path: metadata.source_prd,
+          stories: sourceStories,
         }
+        : null);
+      if (sourceInput && validateSources) {
+        const version = /^(v\d+\.\d+\.\d+)-/.exec(entry.name)?.[1];
+        const sourceResult = await resolveSourceRef(sourceInput, roots, {
+          version,
+          requireFiles: true,
+          legacy: metadata,
+        });
+        errors.push(...sourceResult.errors.map((item) => issue(item.code, path, item.message)));
+        warnings.push(...sourceResult.warnings.map((item) => issue(item.code, path, item.message)));
       }
       if (body.trim().length === 0) errors.push(issue('document-empty', path, 'change body must not be empty'));
       changes.push({
@@ -298,7 +396,8 @@ async function loadEngineering(root) {
   specs.sort((a, b) => a.path.localeCompare(b.path));
   adrs.sort((a, b) => a.path.localeCompare(b.path));
   changes.sort((a, b) => a.path.localeCompare(b.path));
-  return { root, engineeringRoot, errors, warnings, specs, adrs, changes };
+  modules.sort((a, b) => a.id.localeCompare(b.id));
+  return { root, engineeringRoot, errors, warnings, specs, adrs, changes, modules };
 }
 
 function normalizeSelectionPath(root, input) {
@@ -309,9 +408,10 @@ function normalizeSelectionPath(root, input) {
   return normalized || '.';
 }
 
-export async function checkTeamSpecs({ workspace, change } = {}) {
-  const root = await workspaceRoot(workspace);
-  const result = await loadEngineering(root);
+export async function checkTeamSpecs({ workspace, devRoot, productRoot, change } = {}) {
+  const roots = await resolveWorkspaceRoots({ workspace, devRoot, productRoot });
+  const root = roots.devRoot;
+  const result = await loadEngineering(root, roots);
   if (change && !result.changes.some((item) => item.id === change)) {
     result.errors.push(issue('change-not-found', `ai-docs/engineering/changes/${change}`, 'requested change was not found'));
   }
@@ -323,20 +423,29 @@ export async function checkTeamSpecs({ workspace, change } = {}) {
     specs: result.specs,
     adrs: result.adrs,
     changes: result.changes,
+    modules: result.modules,
   };
 }
 
-export async function selectTeamSpecs({ workspace, paths = [] } = {}) {
-  const root = await workspaceRoot(workspace);
+export async function selectTeamSpecs({ workspace, devRoot, productRoot, paths = [] } = {}) {
+  const roots = await resolveWorkspaceRoots({ workspace, devRoot, productRoot });
+  const root = roots.devRoot;
   if (!Array.isArray(paths) || paths.length === 0) throw new Error('--paths requires at least one path');
   const normalizedPaths = paths.map((path) => normalizeSelectionPath(root, path));
-  const result = await loadEngineering(root);
+  const result = await loadEngineering(root, roots, { validateSources: false });
   const selected = [];
   for (const spec of result.specs) {
     const validGlobs = spec.appliesTo.filter((glob) => !validateGlob(glob));
     const matchedPaths = normalizedPaths.filter((path) => validGlobs.some((glob) => globToRegExp(glob).test(path)));
     if (matchedPaths.length > 0) selected.push({ ...spec, matchedPaths });
   }
+  const selectedSpecIds = new Set(selected.map((item) => item.id));
+  const selectedModuleIds = new Set(selected.map((item) => item.moduleId).filter(Boolean));
+  const modules = result.modules.filter((module) => {
+    if (selectedModuleIds.has(module.id) || module.specs.some((id) => selectedSpecIds.has(id))) return true;
+    const validGlobs = module.paths.filter((glob) => !validateGlob(glob));
+    return normalizedPaths.some((path) => validGlobs.some((glob) => globToRegExp(glob).test(path)));
+  });
   return {
     ok: result.errors.length === 0,
     workspace: root,
@@ -344,6 +453,7 @@ export async function selectTeamSpecs({ workspace, paths = [] } = {}) {
     errors: result.errors,
     warnings: result.warnings,
     specs: selected,
+    modules,
   };
 }
 
@@ -366,6 +476,17 @@ async function inspectSkillRoot(root) {
   topLevel.sort();
   return { root, topLevel, nestedSkillFiles: Math.max(0, allSkillFiles - topLevel.length) };
 }
+
+export {
+  checkTaskArtifacts,
+  findSpecReminders,
+  parseTaskRef,
+  resolveSourceRef,
+  resolveTaskRef,
+  resolveWorkspaceRoots,
+  sourceForDocument,
+  taskRefPath,
+};
 
 export async function auditLegacyInstallation({ workspace } = {}) {
   const root = await workspaceRoot(workspace);

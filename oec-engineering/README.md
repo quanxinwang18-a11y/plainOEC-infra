@@ -1,7 +1,17 @@
 # oec-engineering
 
-`oec-engineering` 提供团队 Specs、技术方案、诊断、代码评审、可选 Agent、长时 Web/全栈开发和工程
-收口能力。普通编码仍由主 Session 完成。
+`oec-engineering` 是 OEC Dev Plugin，提供模块上下文管理、任务级 `Spec`/`Design`、团队工程知识、
+技术方案、诊断、代码评审以及可选的独立 Agent。它不是固定的 Dev workflow engine；普通编码仍由
+Main Session 完成。
+
+本 Plugin 的 OEC Dev 契约事实源位于 Marketplace 仓库：
+
+```text
+docs/architecture/oec-dev-contract-implementation-plan.md
+```
+
+安装后的 Plugin 不依赖该仓库外部路径；运行期规则由本 README、Skill reference、Agent 和 bundled
+runtime 共同提供。
 
 ## 安装
 
@@ -43,59 +53,110 @@ bundle 需要 PATH 中存在 Node.js 20 或更新版本。
 /oec-engineering:close-change
 ```
 
-`migrate-legacy-ai-docs`、`challenge-decision`、`close-change`、
-`delegate-agents` 和 `run-long-coding` 只在用户显式调用时使用。
-决策挑战只压力测试一个技术决定，不自动进入规划或实现；Agent 委派只协调已有 change 或当前 diff，
-不创建工作流状态；长时 Coding 只处理已有 change 的非平凡 Web/full-stack 任务，并在当前主 Session
-内复用实现与运行态评估 Agent。决策原型只在用户明确要求用 throwaway artifact 回答交互或状态问题时
-发现。迁移不删除源文件，TDD 也只在用户明确要求 test-first 时适用。
+`plan-change` 在明确的 OEC Dev、PRD、Story、HANDOFF 或非平凡变更上准备任务 Spec/Design；不用于
+普通小修复。`review-code` 只读评审并可报告 Spec 提醒。`manage-specs` 负责长期 current-state
+Specs/ADR；其写入遵循显式调用和确认，`remind` 只读且可在自然检查点运行。TDD、诊断和决策原型按用户意图按需使用。
+
+`manage-specs`、`migrate-legacy-ai-docs`、`challenge-decision`、`prototype-decision`、`close-change`、
+`delegate-agents` 和 `run-long-coding` 只在用户显式调用时使用。它们不恢复旧版总控 Router、阶段文件
+或项目状态机。
+外部 E3/Pipeline 写入不属于本 Plugin。
 
 ### Agents
 
-需要独立上下文时，可以要求 Claude 使用：
+需要独立上下文时，可以要求宿主使用：
 
-- `implementer`：接收已有 change ID，在已声明的 boundary 内隔离实现并运行相关测试；
-- `checker`：通过 status 与 `diff HEAD` 覆盖 staged、unstaged、untracked 变更，运行相关测试，并可能
-  直接修复类型、lint 或明显 Spec 违规等无歧义机械问题；
-- `researcher`：接收已有 change ID，把有边界的研究结果写入对应 change 目录。
-- `evaluator`：接收已有 change ID、当前会话完成条件和内部非生产目标，使用预配置的 Playwright
-  MCP 操作运行中的 Web 应用，按产品深度、功能、视觉与代码质量返回独立证据，不修改项目文件或 Git。
+- `implementer`：接收已有 canonical `taskRef` 或 legacy change ID，在已声明的代码 boundary 内隔离
+  实现并运行相关测试；
+- `checker`：覆盖 staged、unstaged、untracked 变更，读取任务 Spec/Design 和相关 Team Specs，必要时
+  修复无歧义的代码机械问题；
+- `researcher`：接收已有 `taskRef`，把有边界的研究写入对应任务的 `research/`；
+- `evaluator`：接收已有 `taskRef`、完成条件和内部非生产目标，使用预配置的 Playwright MCP 运行态验证，
+  不修改项目文件或 Git。
 
-`implementer`、`researcher` 和 `evaluator` 缺少 change ID 或对应 `change.md` 时会停止并请求
-主会话补充，不会创建或猜测 change package。任何相关测试或运行态验收未执行、失败或证据不完整时，
-Agent 只报告 partial/failed/incomplete，不会输出完成结论。
+`implementer`、`researcher` 和 `evaluator` 缺少可解析的 taskRef 或对应 legacy 上下文时会停止，不会
+创建或猜测任务包。任何相关测试或运行态验收未执行、失败或证据不完整时，Agent 只报告
+`partial`/`failed`/`incomplete`，不会输出完成结论。
 
-通过 Claude Code 的 `@` Agent picker 可以保证派发。它们不是 slash commands；普通实现、评审和研究
-仍可由主 Session 完成。
+通过 Claude Code 的 `@` Agent picker 可以保证派发。Agent 不是 slash command；普通实现、评审和研究
+仍可由 Main Session 完成。所有 Agent 的任务身份先由 `oec-spec task resolve` 归一化，不在 Agent
+说明中重复拼接路径。
 
-需要统一入口时，调用 `delegate-agents` 并选择 `research`、`implement`、`check`
-或 `sequence`。`sequence` 只按 `researcher → implementer → checker` 串行推进，任何 Agent 未报告 complete 或研究
-要求修改设计时立即停止；该 Skill 不自动重试、不维护阶段状态，也不提交或关闭 change。
+需要统一委派时，调用 `delegate-agents` 并选择 `research`、`implement`、`check` 或 `sequence`。
+`sequence` 只按 `researcher → implementer → checker` 串行推进，不自动重试、不维护阶段状态，也不
+提交或关闭任务。
 
-需要在明确的非平凡 Web/full-stack change 上长时间构建并进行运行态验收时，调用：
+需要在明确的非平凡 Web/full-stack taskRef 上长时间构建并进行运行态验收时，调用：
 
 ```text
-/oec-engineering:run-long-coding [已有或当前已确认的 change]
+/oec-engineering:run-long-coding [已有或当前已确认的 taskRef]
 ```
 
-PRD、Story、Task 或 Issue 先通过 `plan-change` 形成 change。主 Session 再读取该 change、相关 Specs、
-ADRs、Design、Plan 和用户明确选择的参考文件，分别创建一次
-`implementer` 与 `evaluator`，随后按 Agent ID 在最多五个 build/evaluate cycle 中恢复同一对
-Agent。第五次仍未通过时必须停止；用户明确继续后绝对上限为十次。Runtime 通过后再创建 fresh
-`checker`。普通编码仍由主 Session 完成；长时流程只在当前 Session 保留 implementer 与 evaluator
-上下文，不创建项目状态文件，也不接管普通 Coding。
+长时能力只在当前 Session 保留 implementer 与 evaluator 上下文，不创建项目状态文件，也不接管普通
+Coding。完成后仍需显式调用 `close-change` 做最终收口。
 
 三种检查能力的区别：
 
 | 能力 | 是否修改工作树 | 适用目标 |
 | --- | --- | --- |
-| `review-code` | 否 | 只读、风险优先的代码 findings |
+| `review-code` | 否 | 只读、风险优先的代码 findings 和 Spec 提醒 |
 | `checker` | 可能 | fresh-eyes 检查并修复无歧义机械问题 |
 | `evaluator` | 不修改源码 | 操作内部测试应用并提供运行态证据 |
 
-`evaluator` 要求团队或用户预先配置并连接名为 `playwright` 的 MCP Server。Plugin 不安装、不
-内联启动也不声明该 MCP；缺失时长时流程 fail closed，不以静态测试替代运行态验收。第一版只支持
-本地或明确授权的内部非生产目标。
+## OEC Dev 任务契约
+
+任务级事实源和实施基线为：
+
+```text
+docs/architecture/oec-dev-contract-implementation-plan.md
+```
+
+Canonical taskRef：
+
+```text
+versioned:v1.2.3/payment-retry
+change:2026-09-02-cache-fix
+```
+
+版本化 Product 任务的产物位置：
+
+```text
+ai-docs/versions/v1.2.3/dev-task/payment-retry/
+├── README.md
+├── spec.md
+└── design.md
+```
+
+其中 `spec.md` 和 `design.md` 是新 Managed Task 的必需产物；`tasks.md`、`implementation-plan.md`、
+`verification.md`、`research/` 和 `sync-status.md` 仅在实际风险或协作需要时生成。
+
+`featureName`、任务目录 slug 和 E3 `changeId` 保持独立：
+
+```text
+featureName:       paymentRetry
+task-slug:         payment-retry
+externalChangeId:  v1.2.3-paymentRetry
+```
+
+不要在 Skill、Agent 或项目文档中自行实现另一套身份转换。
+
+## Product / Dev 双空间
+
+```text
+PRODUCT_ROOT
+├── ai-docs/prd/
+├── ai-docs/versions/*/prd/
+└── ai-docs/integrations/e3/
+
+DEV_ROOT
+├── 业务代码
+├── ai-docs/versions/*/dev-task/
+└── ai-docs/engineering/
+```
+
+Product PRD、Child PRD 和 `HANDOFF.yaml` 只从 `PRODUCT_ROOT` 读取；任务文档和团队工程文档只写入
+`DEV_ROOT`。根目录通过 `--dev-root`、`--product-root` 或兼容的 `--workspace` 明确提供，不能在多个
+候选目录中静默选择。文档只记录 repository、revision 和相对路径，不记录机器绝对路径。
 
 ## 团队 Specs
 
@@ -110,23 +171,37 @@ Skill 会先检查仓库证据并展示拟创建的路径，只生成真实事�
 ```text
 ai-docs/engineering/
 ├── README.md
+├── module-index.yaml       # 可选的稳定模块元数据
 ├── specs/
 ├── decisions/
 └── changes/
 ```
 
-缺少某类事实时不创建空模板。可选根 `CLAUDE.md` 或 `AGENTS.md` 只指向团队索引，不复制 Skill
-工作流。
+`specs/` 描述系统当前事实，`decisions/` 描述长期技术决定，`module-index.yaml` 只描述稳定模块身份、
+Owner 和依赖。缺少某类事实时不创建空模板。
 
-Plugin 启用后，`bin/oec-spec` 会加入 Claude Bash PATH：
+## oec-spec runtime
+
+`bin/oec-spec` 使用提交的独立 bundle，并提供只读确定性检查：
 
 ```bash
-oec-spec select --workspace "$PWD" --paths <paths> --format json
-oec-spec check --workspace "$PWD"
-oec-spec legacy-audit --workspace "$PWD"
+oec-spec select --workspace "$DEV_ROOT" --paths <paths> --format json
+oec-spec check --workspace "$DEV_ROOT"
+oec-spec task resolve --dev-root "$DEV_ROOT" --product-root "$PRODUCT_ROOT" \
+  --task-ref <taskRef> --format json
+oec-spec task check --dev-root "$DEV_ROOT" --product-root "$PRODUCT_ROOT" \
+  --task-ref <taskRef> --stage structure --format json
+oec-spec remind --workspace "$DEV_ROOT" --paths <changed paths> \
+  [--task-ref <taskRef>] --format json
+oec-spec legacy-audit --workspace "$DEV_ROOT"
 ```
 
-三个命令均为只读；legacy audit 不删除旧 managed files，也不移动 `ai-docs`。
+`task resolve` 是所有任务消费者的统一身份入口。`task check` 校验 `spec.md`/`design.md` 的路径、
+Frontmatter、章节、Acceptance ID、来源和交叉引用。`remind` 只报告可能需要复核的 Team Spec/ADR，
+不写文件、不创建状态，也不阻断普通编码。
+
+`select`、`check`、`task resolve`、`task check` 和 `remind` 都不执行外部写入；legacy audit 不删除旧
+managed files，也不移动 `ai-docs`。
 
 ## 旧 Dev 项目迁移
 
@@ -136,21 +211,20 @@ oec-spec legacy-audit --workspace "$PWD"
 /oec-engineering:migrate-legacy-ai-docs
 ```
 
-它会运行只读 legacy audit、枚举旧 `ai-docs`、提出“源路径 → 分类 → 目标路径 → 证据”的精确
-计划，并在确认后只写 `ai-docs/engineering/`。Product PRD、E3 mapping、历史记录和全部旧文件保持
-原位；`.oec-ai`、旧项目 Skills 和 Agents 的清理是另一个需要精确确认的破坏性操作。
-
-迁移依据和旧分发实测见
-[Engineering 能力迁移分析](https://github.com/quanxinwang18-a11y/plainOEC-infra/blob/master/docs/migrations/engineering-capability-migration.md)。
+它会运行只读 legacy audit、枚举旧 `ai-docs`，提出“源路径 → 分类 → 目标路径 → 证据”的精确计划。
+Product PRD、E3 mapping、历史记录和旧任务文件保持原位；旧 `dev-task` 和 `change.md` 只在明确升级时
+转换，不自动扁平化或复制。`.oec-ai`、旧项目 Skills 和 Agents 的清理是另一个需要精确确认的破坏性
+操作。
 
 ## 边界
 
 - Team Specs 只保存稳定、证据支持的工程事实。
-- Change packages 只保存非平凡变更需要的上下文和证据。
-- 普通实现、探索和验证属于主 Coding Agent。
+- 版本化任务的 `spec.md`/`design.md` 只保存一次变更的上下文和实现设计。
+- 普通实现、探索和验证属于 Main Coding Session。
+- 不强制 TDD、任务拆分、implementation plan 或 Agent 委派。
 - E3、SAE、UTP、远端 Git 和飞书写入不属于本 Plugin。
 - 安装不会在项目中创建 `.claude`、`.codex` 或 `ai-docs`。
-- 项目文件只在用户要求管理团队 Specs 并确认对应路径时创建或修改。
+- 项目文件只在用户明确要求并确认准确路径时创建或修改。
 
 ## 开发验证
 
@@ -158,8 +232,7 @@ oec-spec legacy-audit --workspace "$PWD"
 
 ```bash
 npm ci --ignore-scripts
-npm run build
-npm test
+npm run verify
 claude plugin validate --strict ./oec-engineering
 git diff --check
 ```
@@ -168,5 +241,5 @@ git diff --check
 
 ## 兼容性
 
-Claude Plugin 的 Skill 与 Agent 已通过结构和分发校验。仓库中的 Codex Agent 镜像仍需单独完成真实
-Agent 发现、工具可用性和完整运行旅程验收，不能由指令文件存在直接推导支持状态。
+Claude Plugin 的 Skill 与 Agent 通过结构和分发校验后，仍需单独完成真实 Agent 发现、工具可用性和
+完整运行旅程验收。Codex Agent 镜像在完成对应宿主验收前，不能由指令文件存在推导完整支持状态。

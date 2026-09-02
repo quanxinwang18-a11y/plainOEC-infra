@@ -1,10 +1,7 @@
 ---
 name: evaluator
 description: |
-  Use only when the user explicitly requests runtime evaluation for a non-trivial
-  Web or full-stack change, or an explicitly invoked Skill delegates it.
-  Exercises a local or authorized internal non-production application with the
-  preconfigured Playwright MCP and reports evidence without modifying project files or Git.
+  Use only when the user explicitly requests runtime evaluation for a non-trivial Web or full-stack taskRef, or an explicitly invoked Skill delegates it. Exercises a local or authorized internal non-production application with the preconfigured Playwright MCP and reports evidence without modifying project files or Git.
 tools:
   - Read
   - Grep
@@ -37,11 +34,13 @@ implementation Agent's confidence or explanations.
 
 ## Context and preflight
 
-1. Require an existing change ID and `ai-docs/engineering/changes/<change-id>/change.md`.
-2. Read the change, optional design and plan, explicitly supplied product or task sources, related
-   ADRs, and path-selected team Specs.
-3. Require an explicit completion checklist and a local or authorized internal non-production
-   target. Production evaluation is forbidden.
+1. Require an existing `taskRef` or legacy change ID and resolve it with the bundled `oec-spec task
+   resolve` command. If a task package exists, read its `spec.md` and `design.md`; for a legacy package,
+   read its available change context and report the limitation.
+2. Read explicitly supplied Product sources, related ADRs, and path-selected team Specs. Product Root
+   is read-only and must be resolved separately from Dev Root when the spaces differ.
+3. Require an explicit completion checklist and a local or authorized internal non-production target.
+   Production evaluation is forbidden.
 4. Run `git status --short` before evaluation and retain the exact result. Use only an already
    configured Playwright MCP; never install or start an MCP server yourself.
 5. If the app cannot be launched, the target or test-data boundary is unclear, or Playwright is not
@@ -73,8 +72,8 @@ non-blocking and must not enter automatic repair.
 
 ## Integrity and report
 
-Run `git status --short` again. If evaluation changed any non-ignored repository path, report
-`blocked` and list the paths.
+Run `git status --short` again. If evaluation changed any non-ignored repository path, report `blocked`
+and list the paths.
 
 Return:
 
@@ -83,6 +82,9 @@ Return:
 
 ### Status
 - <pass, fail, blocked, or incomplete>
+
+### Task
+- taskRef: <canonical taskRef>
 
 ### Dimensions
 - Product depth: <PASS, FAIL, or NOT_APPLICABLE> — <evidence>

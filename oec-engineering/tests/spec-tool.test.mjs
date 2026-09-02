@@ -163,6 +163,76 @@ test('selection rejects paths outside the canonical workspace', async () => {
   );
 });
 
+test('team change source can resolve from a separate Product Root', async () => {
+  const dev = await validFixture();
+  const product = await mkdtemp(join(tmpdir(), 'oec-product-root-'));
+  await writeFiles(product, {
+    'ai-docs/versions/v1.2.3/prd/prd-v1.2.3-payment.md': '# Payment PRD\n',
+  });
+  await writeFiles(dev, {
+    'ai-docs/engineering/changes/v1.2.3-payment/change.md': `---
+id: v1.2.3-payment
+related_specs:
+  - SPEC-payment-domain
+source:
+  kind: product
+  root: product
+  prd_path: ai-docs/versions/v1.2.3/prd/prd-v1.2.3-payment.md
+---
+# Payment change
+`,
+  });
+  const result = await checkTeamSpecs({ workspace: dev, productRoot: product, change: 'v1.2.3-payment' });
+  assert.equal(result.ok, true, JSON.stringify(result.errors, null, 2));
+});
+
+test('optional module index is validated and returned with path-scoped selection', async () => {
+  const workspace = await validFixture();
+  await writeFiles(workspace, {
+    'ai-docs/engineering/module-index.yaml': `schema_version: 1
+modules:
+  - id: payment
+    title: Payment
+    paths:
+      - services/payment/**
+    specs:
+      - SPEC-payment-domain
+    depends_on: []
+`,
+    'ai-docs/engineering/specs/modules/payment.md': `---
+id: SPEC-payment-domain
+module_id: payment
+applies_to:
+  - services/payment/**
+---
+# Payment
+Payment owns settlement state.
+`,
+  });
+  const checked = await checkTeamSpecs({ workspace });
+  assert.equal(checked.ok, true, JSON.stringify(checked.errors, null, 2));
+  assert.deepEqual(checked.modules.map((item) => item.id), ['payment']);
+  const selected = await selectTeamSpecs({ workspace, paths: ['services/payment/Settlement.java'] });
+  assert.deepEqual(selected.modules.map((item) => item.id), ['payment']);
+});
+
+test('invalid module index fails closed without affecting legacy audit', async () => {
+  const workspace = await validFixture();
+  await writeFiles(workspace, {
+    'ai-docs/engineering/module-index.yaml': `schema_version: 9
+modules:
+  - id: Payment
+    specs:
+      - SPEC-missing
+`,
+  });
+  const result = await checkTeamSpecs({ workspace });
+  assert.equal(result.ok, false);
+  const codes = new Set(result.errors.map((item) => item.code));
+  assert.equal(codes.has('module-index-schema'), true);
+  assert.equal(codes.has('module-id-invalid'), true);
+});
+
 test('legacy audit is read-only and separates managed configuration from ai-docs', async () => {
   const workspace = await mkdtemp(join(tmpdir(), 'oec-spec-legacy-'));
   await writeFiles(workspace, {

@@ -64,9 +64,10 @@ Product、Engineering 和 Common 是模型侧领域能力；E3 和 Pipeline 是�
 E3 或 Pipeline。普通编码始终由主 Session 负责，Engineering 不安装一个默认接管研发过程的总控
 Agent，也不向所有会话注入 SessionStart（会话启动）上下文。
 
-当前可以确认的事实包括：119 项自动测试全部通过；Marketplace 与五个 Plugin 通过固定 Claude Code
+当前可以确认的事实包括：150 项自动测试全部通过；Marketplace 与五个 Plugin 通过固定 Claude Code
 环境的严格结构校验；Git 归档包和隔离安装验证了五个 Plugin、十五个 Skills、五个 Agents 以及两个
-MCP Server；E3 和 Pipeline MCP 均能独立启动并显示 Connected（已连接）。
+MCP Server；Engineering 的 `oec-spec` bundle 还通过了 taskRef、任务 Spec/Design、双空间来源和
+reminder 隔离 fixture；E3 和 Pipeline MCP 均能独立启动并显示 Connected（已连接）。
 
 当前仍不能称为正式发布。LICENSE/notice 的 Owner（责任人）决策、E3 账号 owner 真实复验、Pipeline
 单 POST（一次提交）真实复验，以及受 early access（早期开放）限制的 LLM eval（大模型行为评测）
@@ -397,12 +398,12 @@ PlainOEC 将这些责任拆回适当位置：
 
 ```text
 需求或问题
-→ 仓库事实与相关 Specs
-→ 技术规划
-→ 条件性 change package
+→ 解析 Product/Dev 来源和 taskRef
+→ 按路径选择模块 Specs
+→ 版本化任务生成 spec.md + design.md（或使用非版本化 change package）
 → 主 Session 或显式 Agent 实现
 → 测试和验证
-→ review 或 fresh-eyes check
+→ review / fresh-eyes / Spec reminder（按需）
 → 用户显式 closing
 → 用户确认 exact-path commit
 ```
@@ -418,14 +419,20 @@ closing 和 commit 均可根据用户目标和证据省略。
 ```text
 ai-docs/engineering/
 ├── README.md
-├── specs/
-├── decisions/
-└── changes/<change-id>/
+├── module-index.yaml      # 可选模块元数据
+├── specs/                 # 系统当前事实
+├── decisions/             # 持久技术决定
+└── changes/<change-id>/   # 非版本化变更上下文
     ├── change.md
     ├── design.md          # 条件生成
     ├── plan.md            # 条件生成
     ├── research/          # 条件生成
     └── evidence.md        # 验证后条件生成
+
+ai-docs/versions/<version>/dev-task/<task-slug>/
+├── README.md              # 可选轻量索引
+├── spec.md                # 新 Managed Task 必需
+└── design.md              # 新 Managed Task 必需
 ```
 
 安装 Engineering Plugin 不会创建这个目录。只有用户要求初始化团队知识，或非平凡变更确实需要持久
@@ -445,19 +452,21 @@ Spec 不保存单次实施步骤、临时 review 结论、产品 PRD、通用框
 直接重写决定。选择改变时创建新 ADR，将旧 ADR 标记为 superseded，并链接新决定。局部实现细节和
 显然的框架使用不需要 ADR。
 
-#### Change packages
+#### Change packages and versioned task artifacts
 
 | Artifact | 保存内容 | 创建条件 |
 | --- | --- | --- |
-| `change.md` | 目标、边界、验收和风险 | 非平凡变更需要持久上下文 |
-| `design.md` | 约束、方案、替代和迁移 | 存在实质设计权衡 |
+| `dev-task/*/spec.md` | 一次版本化任务的目标、边界、来源和验收 | Product-linked Managed Task，必需 |
+| `dev-task/*/design.md` | 一次任务的约束、方案和验证 | Product-linked Managed Task，必需 |
+| `change.md` | 非版本化变更的目标、边界、验收和风险 | 非平凡 unversioned work，必需 |
+| `design.md` | 非版本化变更的约束、方案、替代和迁移 | 存在实质设计权衡 |
 | `plan.md` | 依赖顺序、协调、回滚和验证 | 内容需要跨会话或多人保存 |
 | `research/` | 有边界的研究结果 | 显式 Research Agent 输出 |
 | `evidence.md` | 实际执行的验证和残余风险 | 验证已经真实发生 |
 
-`change.md` 是持久 change package 的唯一必需文件；其余产物都必须由实际需要触发。版本关联工作使用
-`vX.Y.Z-<featureName>`，无版本技术工作使用 `YYYY-MM-DD-<slug>`。Product PRD、HANDOFF、Story 和
-issue 通过链接引用，不复制进工程文档。
+版本化任务使用 `versioned:vX.Y.Z/<task-slug>`，外部 E3 identity 可以单独使用
+`vX.Y.Z-<featureName>`；无版本技术工作使用 `change:YYYY-MM-DD-<slug>`。Product PRD、HANDOFF、Story
+和 issue 通过 SourceRef 或链接引用，不复制进工程文档。
 
 产品和工程文档的责任关系是：
 
@@ -476,30 +485,36 @@ Change package：本次非平凡变更的边界、决定和证据
 
 ### 7.5 `oec-spec` 确定性 runtime
 
-Engineering Plugin 提供一个自足的 `oec-spec` bundle，包含三个只读或确定性命令：
+Engineering Plugin 提供一个自足的 `oec-spec` bundle，包含现有团队知识命令和 OEC Dev 任务命令：
 
 | 命令 | 责任 | 不负责 |
 | --- | --- | --- |
-| `select` | 按待改路径选择相关 Specs | 判断设计正确性 |
-| `check` | 校验 Spec/ADR/change contract | 评审技术内容质量 |
+| `select` | 按待改路径选择相关 Specs 和模块 | 判断设计正确性 |
+| `check` | 校验 Team Spec/ADR/change contract | 评审技术内容质量 |
+| `task resolve` | 统一解析 versioned/unversioned taskRef | 模糊选择任务 |
+| `task check` | 校验任务 `spec.md`/`design.md` 结构、身份和来源 | 判断技术方案是否正确 |
+| `remind` | 报告可能需要更新的 Spec/ADR | 自动写入或阻断普通编码 |
 | `legacy-audit` | 只读审计旧 Dev 资产 | 删除、移动或迁移远端状态 |
 
-`select` 接受 canonical workspace 和仓库相对路径，根据 `applies_to` 返回 repository-wide 和路径匹配
-Specs，并拒绝 workspace 外路径。它减少无关上下文，但不会替模型选择架构。
+`select` 接受 canonical workspace 和仓库相对路径，根据 `applies_to` 返回 repository-wide、路径匹配
+Specs 和可选模块，并拒绝 workspace 外路径。它减少无关上下文，但不会替模型选择架构。
 
-`check` 验证 frontmatter、ID、glob、引用、链接和 change package contract。error 阻断完成，warning
-需要报告。它只能证明结构符合 contract，不能证明文档中的技术判断正确。
+`task resolve` 是所有 Skill/Agent 的唯一任务身份入口；`task check` 验证 Frontmatter、版本、slug、
+任务 pair、章节、Acceptance ID、来源和交叉引用。`remind` 只输出 advisory candidates，默认不写文件、
+不创建状态、不打断 Direct Coding。
 
-`legacy-audit` 枚举旧 `ai-docs` 与 managed configuration，不修改源文件，不删除 `.oec-ai`、
-`.claude` 或 `.codex`，也不采用 E3 mapping。
+`check` 与 `task check` 只能证明结构符合 contract，不能证明文档中的技术判断正确。`legacy-audit` 枚举
+旧 `ai-docs` 与 managed configuration，不修改源文件，不删除 `.oec-ai`、`.claude` 或 `.codex`，也不
+采用 E3 mapping。
 
 ### 7.6 十一个 Engineering Skills
 
 #### 7.6.1 团队知识类
 
 `manage-specs` 在用户要求初始化、更新或协调团队工程知识时创建 current-state Specs、ADRs 和
-必要 change context。它先检查代码、配置、测试和正式决定，只写有证据的事实。缺少真实内容时不创建
-空模板，也不将普通实现计划写成团队 Spec。
+必要 change context；也可以在 `remind` 模式报告潜在受影响的长期事实。它先检查代码、配置、测试和
+正式决定，只写有证据的事实。缺少真实内容时不创建空模板，也不将普通实现计划写成团队 Spec。写入
+仍需显式调用和用户确认。
 
 `migrate-legacy-ai-docs` 是 manual-only Skill。它从旧 `ai-docs` 抽取仍被当前代码证明的事实和仍
 有效的决定，而不是复制目录树。旧文件保持原位；Product PRD、E3 mapping、历史 workflow state、
@@ -515,9 +530,9 @@ Specs，并拒绝 workspace 外路径。它减少无关上下文，但不会替�
 真实观察选择方案。如果测试、benchmark、命令或源码读取能更直接回答，就不创建原型。原型不自动
 升级为生产实现，也不默认写入生产路径。
 
-`plan-change` 用于非平凡技术方案和跨模块工作。它先确认当前行为、期望行为、边界、
-约束和是否存在多种合理方案；多方案或边界不清时先让用户选择。小改动只在对话中规划，高风险工作才
-创建持久 change package。planning 本身不修改业务代码、外部平台或 Git 历史。
+`plan-change` 用于明确的 OEC Dev、PRD、Story、HANDOFF 或非平凡变更。它先通过 `taskRef` resolver
+固定 Product/Dev 来源和受影响模块，再在版本化 `dev-task` 目录创建 `spec.md` + `design.md`。小改动
+仍只在对话中规划；任务文档的存在不规定编码顺序。planning 本身不修改业务代码、外部平台或 Git 历史。
 
 #### 7.6.3 实现方法与诊断类
 
@@ -529,16 +544,16 @@ slice 工作，确认测试因缺失行为而失败，再实现最小代码并�
 区分成功与失败的信号，然后用最便宜观察区分可证伪假设。三个不同修复尝试仍失败时停止堆叠补丁，
 重新检查架构或假设。明显的局部错误不需要该 Skill。
 
-`delegate-agents` 为已有 change 或当前 diff 提供统一的 Agent 委派入口。`research`、`implement`
+`delegate-agents` 为已有 canonical taskRef 或当前 diff 提供统一的 Agent 委派入口。`research`、`implement`
 和 `check` 只派发对应 Agent；用户选择 `sequence` 时才按 `researcher → implementer → checker`
-串行推进。任一 Agent 未报告 complete、研究要求修改设计或检查发现
-判断性问题时停止。它不保存阶段状态、不自动重试，也不提交、关闭 change 或写外部平台。
+串行推进。任一 Agent 未报告 complete、研究要求修改设计或检查发现判断性问题时停止。它不保存阶段
+状态、不自动重试，也不提交、关闭任务或写外部平台。
 
-`run-long-coding` 只在用户明确要求完成非平凡 Web/full-stack
-change，且本地或内部非生产应用可以通过预配置 Playwright MCP 运行验收时使用。主 Session 分别创建
-一次 `implementer` 和 `evaluator`，随后按 Agent ID 复用同一对 Agent，在默认最多五次、用户明确
-继续后绝对上限十次的 build/evaluate cycle 中原样传递运行态 finding。普通 Coding 仍走主 Session；
-长时流程不创建项目状态文件，也不自动 commit 或 closing。
+`run-long-coding` 只在用户明确要求完成非平凡 Web/full-stack taskRef，且本地或内部非生产应用可以
+通过预配置 Playwright MCP 运行验收时使用。主 Session 分别创建一次 `implementer` 和 `evaluator`，
+随后按 Agent ID 复用同一对 Agent，在默认最多五次、用户明确继续后绝对上限十次的 build/evaluate
+cycle 中原样传递运行态 finding。普通 Coding 仍走主 Session；长时流程不创建项目状态文件，也不
+自动 commit 或 closing。
 
 #### 7.6.4 评审与收口类
 
@@ -566,7 +581,7 @@ finding 必须给出紧凑位置、触发输入、系统后果和最小修正方
 | 明确 test-first | TDD | 普通“补测试” |
 | 难复现或反复失败 | diagnosing | 简单局部错误 |
 | 审查代码 diff | reviewing | PRD review |
-| 显式委派已有 change 或当前 diff | delegating | 普通主 Session 编码 |
+| 显式委派已有 taskRef 或当前 diff | delegating | 普通主 Session 编码 |
 | 长时完成可运行 Web/full-stack change | `run-long-coding` | 小型修改、非 Web 或生产操作 |
 | 显式完成工程变更 | closing | 未完成实现 |
 
@@ -585,25 +600,26 @@ implementer、evaluator 并最终派发 fresh checker。二者都不改变 Agent
 
 #### `implementer`
 
-`implementer` 接受已有 change ID，并从 `change.md`、可选 `design.md`、`plan.md` 和路径相关 Specs
-加载干净上下文。change ID 或 `change.md` 缺失时必须 blocked，不能自行创建或猜测 change package。
+`implementer` 接受 canonical taskRef 或 legacy change ID，并从解析后的 `spec.md`/`design.md`（或旧
+`change.md`）和路径相关 Specs 加载干净上下文。taskRef 或任务上下文缺失时必须 blocked，不能自行
+创建或猜测任务包。
 
-Agent 只在声明 boundary 内修改代码。如果真实范围扩大，停止并返回主 Session 决定。它运行 change
-plan 指定的测试；未指定时发现最小相关测试，并运行适用 typecheck 和 lint。相关测试未运行、跳过或
+Agent 只在声明 boundary 内修改代码。如果真实范围扩大，停止并返回主 Session 决定。它运行任务
+Design 指定的测试；未指定时发现最小相关测试，并运行适用 typecheck 和 lint。相关测试未运行、跳过或
 失败时只能报告 partial/failed，不能输出 implementation complete。
 
 #### `checker`
 
 `checker` 使用 `git status --short`、`git diff HEAD --` 和 relevant untracked files 覆盖 staged、
-unstaged 与 untracked 变更。它读取可选 change package、路径相关 Specs，并运行相关测试、typecheck
-和 lint。
+unstaged 与 untracked 变更。它读取可选 taskRef、任务 Spec/Design、路径相关 Specs，并运行相关测试、
+typecheck 和 lint；没有 taskRef 时可以检查普通 diff，但不创建任务上下文。
 
 Agent 可以修复缺失类型、lint 违规等明确机械问题；架构选择、权衡和不清晰的 Spec 解释只报告给主
 Session。它不修改 `ai-docs/engineering/`，不将 Agent 观点写成持久团队事实。
 
 #### `evaluator`
 
-`evaluator` 接受已有 change ID、当前 Session 的完成条件和本地或明确授权的内部非生产目标。它只
+`evaluator` 接受已有 taskRef 或 legacy change ID、当前 Session 的完成条件和本地或明确授权的内部非生产目标。它只
 使用用户或团队预先连接的 Playwright MCP，实际操作运行中的 Web 应用，并分别对产品深度、功能、视觉
 和代码质量给出 `PASS`、`FAIL` 或 `NOT_APPLICABLE`。完整 finding 必须包含复现步骤、预期、实际、
 Playwright/API/状态证据以及是否仍在 change boundary 内。Agent 可以改变隔离的测试应用状态，但不
@@ -612,14 +628,16 @@ Playwright/API/状态证据以及是否仍在 change boundary 内。Agent 可以
 
 #### `researcher`
 
-`researcher` 必须获得已有 change ID 和 `change.md`，只写：
+`researcher` 必须获得已有 taskRef，只写解析后的任务 `research/`：
 
 ```text
+ai-docs/versions/vX.Y.Z/dev-task/<task-slug>/research/*.md
+或
 ai-docs/engineering/changes/<change-id>/research/*.md
 ```
 
 内部研究引用源码路径；外部研究优先主来源并注明版本和 caveat。Agent 不修改代码、Spec、ADR、
-`change.md` 或 Git，只向主 Session 返回研究文件路径、摘要和关键限制。
+任务 Spec/Design 或 Git，只向主 Session 返回研究文件路径、摘要和关键限制。
 
 ### 7.9 Engineering 协作关系
 
@@ -661,11 +679,13 @@ Pipeline 成功不能替代代码行为验证；closing 不自动执行 Pipeline
 ### 7.12 非目标、证据与风险
 
 Engineering 不建设 Dev 总控 Agent、全局工作流状态机、测试 Dispatcher 或默认并行 Agent，不强制
-TDD、review 或 closing，也不承担部署、E3、SAE、UTP 或远端 Git 写入。
+TDD、review 或完整文档包，也不承担部署、E3、SAE、UTP 或远端 Git 写入。版本化 OEC Dev 任务只对
+`spec.md` + `design.md` 的路径和结构负责；编码顺序仍由 Main Session 决定。
 
 当前实现包含 11 Skills、4 Agents、0 Hook、0 MCP、0 Command。Claude Agent Markdown 与实验性
-Codex TOML instructions parity 已自动验证；`oec-spec` bundle、路径选择、contract 校验和 legacy
-audit 均通过隔离执行验证；五个 manual-only Skills 有 Claude 与 Codex policy 测试。
+Codex TOML instructions parity 已自动验证；`oec-spec` bundle、路径选择、taskRef、任务 contract、
+双空间来源、reminder 和 legacy audit 均通过隔离执行验证；Claude 的 manual-only metadata 以及
+已有 Codex policy 文件已通过结构测试，尚未据此宣称所有 Skill 的 Codex 宿主行为。
 
 Codex Agent 的真实发现、`oec-spec` PATH 和完整运行旅程仍未完成宿主验收，因此不能将实验性 TOML
 描述为完整双宿主支持。Agent explicit-use 也主要由 description 约束，不应被管理报告夸大为宿主
@@ -918,8 +938,8 @@ grader 与 with/without 消融；在该证据形成前，不以 Skill 数量或 
 - manual-only Skills 不应由模型自动调用。
 
 当前 manual-only Skills 是 Product 的 `publish-prd-to-e3`，以及 Engineering 的
-`migrate-legacy-ai-docs`、`challenge-decision`、`delegate-agents` 和
-`run-long-coding`、`close-change`。
+`manage-specs`、`migrate-legacy-ai-docs`、`challenge-decision`、`prototype-decision`、
+`delegate-agents`、`run-long-coding` 和 `close-change`。
 
 ### 11.3 Eval 运行边界
 
@@ -1056,7 +1076,7 @@ Product、Engineering、E3 和 Pipeline 有不同事实来源、权限、状态�
 ### 15.1 当前可以声明
 
 - 本地完整修复已形成 release candidate。
-- 119/119 自动测试通过。
+- 150/150 自动测试通过。
 - Marketplace 和五个 Plugin strict validation 通过。
 - Git archive 与隔离安装通过。
 - 隔离安装结果包含 5 Plugins、15 Skills 和 5 Agents。

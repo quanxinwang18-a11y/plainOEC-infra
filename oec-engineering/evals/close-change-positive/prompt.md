@@ -7,4 +7,4 @@ timeout_seconds: 300
 allowed_tools: [Read, Glob, Grep, Skill]
 ---
 
-Use /oec-engineering:close-change to verify and close the completed change without deploying it.
+Use /oec-engineering:close-change to verify and close the completed versioned task without deploying or updating E3.

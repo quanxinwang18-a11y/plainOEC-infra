@@ -40,9 +40,11 @@ boundaries.
 2. Inspect relevant repository evidence. Classify each candidate statement as current fact, durable
    decision, active change context, historical context, or obsolete process.
 3. Present an exact migration plan containing each source path, proposed target path, classification,
-   and supporting evidence. Include files that will remain unchanged. Wait for user confirmation.
+   and supporting evidence. Include files that will remain unchanged. Versioned `dev-task` packages
+   remain at their canonical paths; only their verified facts or an explicitly approved upgrade may be
+   represented elsewhere. Wait for user confirmation.
 4. Create or update only the confirmed files under `ai-docs/engineering/`. Link source PRDs and
-   maintained contracts instead of copying them.
+   maintained contracts instead of copying them. Do not flatten or duplicate task Spec/Design files.
 5. Run `oec-spec check --workspace "$PWD"`. Errors block completion; warnings require a concise
    user-visible explanation.
 6. Show the exact changed paths and what was intentionally left in place. Before committing, obtain

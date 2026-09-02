@@ -14,7 +14,7 @@ Engineering 和内容交付能力，平台 Plugin 用确定性 MCP 处理 E3 与
 | Plugin | 作用 | 组件 | 外部副作用 | 依赖 |
 | --- | --- | --- | --- | --- |
 | `oec-product` | PRD 编写、需求评审和 E3 发布 | 1 Agent + 3 Skills | 发布时受控写 E3 | 自动依赖 `oec-e3` |
-| `oec-engineering` | 团队工程知识、技术方案、诊断、代码评审、长时 Web/全栈开发和收口 | 11 Skills + 4 Agents + `oec-spec` | 无默认外部写入 | 无平台强依赖 |
+| `oec-engineering` | OEC Dev 模块上下文、任务 Spec/Design、团队工程知识、诊断、代码评审和可选长时开发 | 11 Skills + 4 Agents + `oec-spec` | 无默认外部写入 | 无平台强依赖 |
 | `oec-e3` | PRD 发布、研发任务、进度和状态 | 1 MCP Server / 10 Tools | 受控写 E3 | 可独立安装，也被 Product 依赖 |
 | `oec-pipeline` | 发现并运行已有 dev/test 流水线 | 1 MCP Server / 4 Tools | 受控启动流水线 | 独立安装 |
 | `oec-common` | 可演讲、概览和打印的 HTML Slides | 1 Skill | 无远端业务写入 | 独立安装 |
@@ -69,7 +69,7 @@ Marketplace 只负责发现和分发。Plugin 可独立安装、升级和卸载�
 
 当前本地证据包括：
 
-- `119/119` 自动测试通过；
+- `150/150` 自动测试通过；
 - Marketplace 与五个 Plugin strict validation 通过；
 - committed bundles 可在没有 Plugin 内 `node_modules` 的隔离环境运行；
 - E3/Pipeline 的路径、身份、并发、幂等和失败恢复具有自动测试；
@@ -104,6 +104,8 @@ git diff --check
 
 - [QUICKSTART](QUICKSTART.md)：全部 Plugin 介绍、角色安装建议、首次使用和回退。
 - [PlainOEC 文档地图](docs/README.md)：架构、策略、迁移、评审、审计和证据分类。
+- [OEC Dev 契约与实施计划](docs/architecture/oec-dev-contract-implementation-plan.md)：任务身份、
+  Spec/Design、双空间来源和 Team Spec reminder 的事实源。
 - [PlainOEC-infra 完整架构与能力管理报告](docs/strategy/plainoec-infra-management-report.md)：面向
   管理者的完整组件、协作、证据与发布状态。
 - [Product 能力迁移分析](docs/migrations/product-capability-migration.md)：旧 PM 能力到当前 Product/E3

@@ -43,6 +43,8 @@ contract 为准；策略、迁移、评审和历史验收不能覆盖当前实�
 
 - [平台 Plugin 层级与 MCP 迁移设计](architecture/platform-plugin-hierarchy.md)：当前领域/平台分层、
   依赖、工具链和状态归属。
+- [OEC Dev 契约与实施计划](architecture/oec-dev-contract-implementation-plan.md)：OEC Dev 的
+  `taskRef`、任务 Spec/Design、Product/Dev 来源解析和 Team Spec 提醒的实施事实源。
 
 ### Strategy
 

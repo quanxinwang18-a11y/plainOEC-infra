@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- Add a shared `taskRef` contract for versioned `dev-task` packages and unversioned Engineering changes,
+  including legacy change-ID resolution and safe DEV_ROOT containment.
+- Add deterministic `spec.md`/`design.md` task-pair validation with structured identity, source, module,
+  section, acceptance, and cross-reference checks.
+- Add Product Root / Dev Root source resolution for same-space and split-space repositories without
+  copying or writing Product artifacts.
+- Add advisory `oec-spec remind` checks at planning, review, and close checkpoints; reminders are read-only,
+  have no state file, and do not interrupt Direct Coding.
+- Update Engineering Skills and Agents to consume the normalized task reference while preserving the
+  current no-router, no-default-Agent distribution boundary.
+
 ## 1.8.0
 
 **BREAKING RC CHANGE:** normalize public capability names before the first stable release.

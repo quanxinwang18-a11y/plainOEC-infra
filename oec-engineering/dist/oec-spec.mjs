@@ -3997,10 +3997,10 @@ var require_resolve_block_map = __commonJS({
       let offset = bm.offset;
       let commentEnd = null;
       for (const collItem of bm.items) {
-        const { start, key, sep: sep2, value } = collItem;
+        const { start, key, sep: sep3, value } = collItem;
         const keyProps = resolveProps.resolveProps(start, {
           indicator: "explicit-key-ind",
-          next: key ?? sep2?.[0],
+          next: key ?? sep3?.[0],
           offset,
           onError,
           parentIndent: bm.indent,
@@ -4014,7 +4014,7 @@ var require_resolve_block_map = __commonJS({
             else if ("indent" in key && key.indent !== bm.indent)
               onError(offset, "BAD_INDENT", startColMsg);
           }
-          if (!keyProps.anchor && !keyProps.tag && !sep2) {
+          if (!keyProps.anchor && !keyProps.tag && !sep3) {
             commentEnd = keyProps.end;
             if (keyProps.comment) {
               if (map.comment)
@@ -4038,7 +4038,7 @@ var require_resolve_block_map = __commonJS({
         ctx.atKey = false;
         if (utilMapIncludes.mapIncludes(ctx, map.items, keyNode))
           onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
-        const valueProps = resolveProps.resolveProps(sep2 ?? [], {
+        const valueProps = resolveProps.resolveProps(sep3 ?? [], {
           indicator: "map-value-ind",
           next: value,
           offset: keyNode.range[2],
@@ -4054,7 +4054,7 @@ var require_resolve_block_map = __commonJS({
             if (ctx.options.strict && keyProps.start < valueProps.found.offset - 1024)
               onError(keyNode.range, "KEY_OVER_1024_CHARS", "The : indicator must be at most 1024 chars after the start of an implicit block mapping key");
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep2, null, valueProps, onError);
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep3, null, valueProps, onError);
           if (ctx.schema.compat)
             utilFlowIndentCheck.flowIndentCheck(bm.indent, value, onError);
           offset = valueNode.range[2];
@@ -4145,7 +4145,7 @@ var require_resolve_end = __commonJS({
       let comment = "";
       if (end) {
         let hasSpace = false;
-        let sep2 = "";
+        let sep3 = "";
         for (const token of end) {
           const { source, type } = token;
           switch (type) {
@@ -4159,13 +4159,13 @@ var require_resolve_end = __commonJS({
               if (!comment)
                 comment = cb;
               else
-                comment += sep2 + cb;
-              sep2 = "";
+                comment += sep3 + cb;
+              sep3 = "";
               break;
             }
             case "newline":
               if (comment)
-                sep2 += source;
+                sep3 += source;
               hasSpace = true;
               break;
             default:
@@ -4208,18 +4208,18 @@ var require_resolve_flow_collection = __commonJS({
       let offset = fc.offset + fc.start.source.length;
       for (let i = 0; i < fc.items.length; ++i) {
         const collItem = fc.items[i];
-        const { start, key, sep: sep2, value } = collItem;
+        const { start, key, sep: sep3, value } = collItem;
         const props = resolveProps.resolveProps(start, {
           flow: fcName,
           indicator: "explicit-key-ind",
-          next: key ?? sep2?.[0],
+          next: key ?? sep3?.[0],
           offset,
           onError,
           parentIndent: fc.indent,
           startOnNewline: false
         });
         if (!props.found) {
-          if (!props.anchor && !props.tag && !sep2 && !value) {
+          if (!props.anchor && !props.tag && !sep3 && !value) {
             if (i === 0 && props.comma)
               onError(props.comma, "UNEXPECTED_TOKEN", `Unexpected , in ${fcName}`);
             else if (i < fc.items.length - 1)
@@ -4273,8 +4273,8 @@ var require_resolve_flow_collection = __commonJS({
             }
           }
         }
-        if (!isMap && !sep2 && !props.found) {
-          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep2, null, props, onError);
+        if (!isMap && !sep3 && !props.found) {
+          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep3, null, props, onError);
           coll.items.push(valueNode);
           offset = valueNode.range[2];
           if (isBlock(value))
@@ -4286,7 +4286,7 @@ var require_resolve_flow_collection = __commonJS({
           if (isBlock(key))
             onError(keyNode.range, "BLOCK_IN_FLOW", blockMsg);
           ctx.atKey = false;
-          const valueProps = resolveProps.resolveProps(sep2 ?? [], {
+          const valueProps = resolveProps.resolveProps(sep3 ?? [], {
             flow: fcName,
             indicator: "map-value-ind",
             next: value,
@@ -4297,8 +4297,8 @@ var require_resolve_flow_collection = __commonJS({
           });
           if (valueProps.found) {
             if (!isMap && !props.found && ctx.options.strict) {
-              if (sep2)
-                for (const st of sep2) {
+              if (sep3)
+                for (const st of sep3) {
                   if (st === valueProps.found)
                     break;
                   if (st.type === "newline") {
@@ -4315,7 +4315,7 @@ var require_resolve_flow_collection = __commonJS({
             else
               onError(valueProps.start, "MISSING_CHAR", `Missing , or : between ${fcName} items`);
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep2, null, valueProps, onError) : null;
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep3, null, valueProps, onError) : null;
           if (valueNode) {
             if (isBlock(value))
               onError(valueNode.range, "BLOCK_IN_FLOW", blockMsg);
@@ -4495,7 +4495,7 @@ var require_resolve_block_scalar = __commonJS({
           chompStart = i + 1;
       }
       let value = "";
-      let sep2 = "";
+      let sep3 = "";
       let prevMoreIndented = false;
       for (let i = 0; i < contentStart; ++i)
         value += lines[i][0].slice(trimIndent) + "\n";
@@ -4512,24 +4512,24 @@ var require_resolve_block_scalar = __commonJS({
           indent = "";
         }
         if (type === Scalar.Scalar.BLOCK_LITERAL) {
-          value += sep2 + indent.slice(trimIndent) + content;
-          sep2 = "\n";
+          value += sep3 + indent.slice(trimIndent) + content;
+          sep3 = "\n";
         } else if (indent.length > trimIndent || content[0] === "	") {
-          if (sep2 === " ")
-            sep2 = "\n";
-          else if (!prevMoreIndented && sep2 === "\n")
-            sep2 = "\n\n";
-          value += sep2 + indent.slice(trimIndent) + content;
-          sep2 = "\n";
+          if (sep3 === " ")
+            sep3 = "\n";
+          else if (!prevMoreIndented && sep3 === "\n")
+            sep3 = "\n\n";
+          value += sep3 + indent.slice(trimIndent) + content;
+          sep3 = "\n";
           prevMoreIndented = true;
         } else if (content === "") {
-          if (sep2 === "\n")
+          if (sep3 === "\n")
             value += "\n";
           else
-            sep2 = "\n";
+            sep3 = "\n";
         } else {
-          value += sep2 + content;
-          sep2 = " ";
+          value += sep3 + content;
+          sep3 = " ";
           prevMoreIndented = false;
         }
       }
@@ -4711,25 +4711,25 @@ var require_resolve_flow_scalar = __commonJS({
       if (!match)
         return source;
       let res = match[1];
-      let sep2 = " ";
+      let sep3 = " ";
       let pos = first.lastIndex;
       line.lastIndex = pos;
       while (match = line.exec(source)) {
         if (match[1] === "") {
-          if (sep2 === "\n")
-            res += sep2;
+          if (sep3 === "\n")
+            res += sep3;
           else
-            sep2 = "\n";
+            sep3 = "\n";
         } else {
-          res += sep2 + match[1];
-          sep2 = " ";
+          res += sep3 + match[1];
+          sep3 = " ";
         }
         pos = line.lastIndex;
       }
       const last = /[ \t]*(.*)/sy;
       last.lastIndex = pos;
       match = last.exec(source);
-      return res + sep2 + (match?.[1] ?? "");
+      return res + sep3 + (match?.[1] ?? "");
     }
     function doubleQuotedValue(source, onError) {
       let res = "";
@@ -5539,14 +5539,14 @@ var require_cst_stringify = __commonJS({
         }
       }
     }
-    function stringifyItem({ start, key, sep: sep2, value }) {
+    function stringifyItem({ start, key, sep: sep3, value }) {
       let res = "";
       for (const st of start)
         res += st.source;
       if (key)
         res += stringifyToken(key);
-      if (sep2)
-        for (const st of sep2)
+      if (sep3)
+        for (const st of sep3)
           res += st.source;
       if (value)
         res += stringifyToken(value);
@@ -6713,18 +6713,18 @@ var require_parser = __commonJS({
         if (this.type === "map-value-ind") {
           const prev = getPrevProps(this.peek(2));
           const start = getFirstKeyStartProps(prev);
-          let sep2;
+          let sep3;
           if (scalar.end) {
-            sep2 = scalar.end;
-            sep2.push(this.sourceToken);
+            sep3 = scalar.end;
+            sep3.push(this.sourceToken);
             delete scalar.end;
           } else
-            sep2 = [this.sourceToken];
+            sep3 = [this.sourceToken];
           const map = {
             type: "block-map",
             offset: scalar.offset,
             indent: scalar.indent,
-            items: [{ start, key: scalar, sep: sep2 }]
+            items: [{ start, key: scalar, sep: sep3 }]
           };
           this.onKeyLine = true;
           this.stack[this.stack.length - 1] = map;
@@ -6877,15 +6877,15 @@ var require_parser = __commonJS({
                 } else if (isFlowToken(it.key) && !includesToken(it.sep, "newline")) {
                   const start2 = getFirstKeyStartProps(it.start);
                   const key = it.key;
-                  const sep2 = it.sep;
-                  sep2.push(this.sourceToken);
+                  const sep3 = it.sep;
+                  sep3.push(this.sourceToken);
                   delete it.key;
                   delete it.sep;
                   this.stack.push({
                     type: "block-map",
                     offset: this.offset,
                     indent: this.indent,
-                    items: [{ start: start2, key, sep: sep2 }]
+                    items: [{ start: start2, key, sep: sep3 }]
                   });
                 } else if (start.length > 0) {
                   it.sep = it.sep.concat(start, this.sourceToken);
@@ -7079,13 +7079,13 @@ var require_parser = __commonJS({
             const prev = getPrevProps(parent);
             const start = getFirstKeyStartProps(prev);
             fixFlowSeqItems(fc);
-            const sep2 = fc.end.splice(1, fc.end.length);
-            sep2.push(this.sourceToken);
+            const sep3 = fc.end.splice(1, fc.end.length);
+            sep3.push(this.sourceToken);
             const map = {
               type: "block-map",
               offset: fc.offset,
               indent: fc.indent,
-              items: [{ start, key: fc, sep: sep2 }]
+              items: [{ start, key: fc, sep: sep3 }]
             };
             this.onKeyLine = true;
             this.stack[this.stack.length - 1] = map;
@@ -7364,16 +7364,29 @@ var require_dist = __commonJS({
 });
 
 // scripts/spec-tool.mjs
+var import_yaml5 = __toESM(require_dist(), 1);
+import { lstat as lstat5, readFile as readFile5, readdir as readdir4, realpath as realpath4, stat as stat2 } from "node:fs/promises";
+import { isAbsolute as isAbsolute2, relative as relative3, resolve as resolve5, sep as sep2 } from "node:path";
+
+// scripts/contracts/task-artifacts.mjs
+var import_yaml3 = __toESM(require_dist(), 1);
+import { lstat as lstat3, readFile as readFile3, readdir as readdir2, realpath as realpath3 } from "node:fs/promises";
+import { join as join2, resolve as resolve3 } from "node:path";
+
+// scripts/contracts/common.mjs
 var import_yaml = __toESM(require_dist(), 1);
-import { lstat, readFile, readdir, realpath, stat } from "node:fs/promises";
+import { lstat, realpath, stat } from "node:fs/promises";
 import { isAbsolute, relative, resolve, sep } from "node:path";
-var SPEC_ID = /^SPEC-[a-z0-9][a-z0-9-]*$/;
-var ADR_ID = /^ADR-\d{4}$/;
-var ADR_FILE = /^(ADR-\d{4})-[a-z0-9][a-z0-9-]*\.md$/;
-var CHANGE_ID = /^(?:v\d+\.\d+\.\d+-[A-Za-z][A-Za-z0-9]*|\d{4}-\d{2}-\d{2}-[a-z0-9][a-z0-9-]*)$/;
-var STORY_ID = /^US-\d{3,}$/;
-function issue(code, path, message) {
-  return { code, path, message };
+var ContractError = class extends Error {
+  constructor(code, message, path = void 0) {
+    super(message);
+    this.name = "ContractError";
+    this.code = code;
+    if (path) this.path = path;
+  }
+};
+function issue(code, path, message, severity = "error") {
+  return { code, path, message, severity };
 }
 function toPosix(path) {
   return path.split(sep).join("/");
@@ -7382,7 +7395,7 @@ function isInside(parent, child) {
   const rel = relative(parent, child);
   return rel === "" || !rel.startsWith(`..${sep}`) && rel !== ".." && !isAbsolute(rel);
 }
-async function exists(path) {
+async function pathExists(path) {
   try {
     await stat(path);
     return true;
@@ -7391,51 +7404,78 @@ async function exists(path) {
     throw error;
   }
 }
-async function workspaceRoot(input) {
-  if (!input) throw new Error("--workspace is required");
-  const root = await realpath(resolve(input));
-  const info = await stat(root);
-  if (!info.isDirectory()) throw new Error(`workspace is not a directory: ${input}`);
-  return root;
-}
-async function walkFiles(root, errors, logicalRoot = root) {
-  if (!await exists(root)) return [];
-  const files = [];
-  async function visit(directory) {
-    const entries = await readdir(directory, { withFileTypes: true });
-    entries.sort((a, b) => a.name.localeCompare(b.name));
-    for (const entry of entries) {
-      const absolute = resolve(directory, entry.name);
-      const logical = toPosix(relative(logicalRoot, absolute));
-      if (entry.isSymbolicLink()) {
-        errors?.push(issue("symlink-not-allowed", logical, "symbolic links are not followed"));
-      } else if (entry.isDirectory()) {
-        await visit(absolute);
-      } else if (entry.isFile()) {
-        files.push(absolute);
-      }
-    }
+async function canonicalDirectory(input, code = "workspace-invalid") {
+  if (typeof input !== "string" || input.trim().length === 0) {
+    throw new ContractError(code, "directory path is required");
   }
-  await visit(root);
-  return files;
+  let target;
+  try {
+    target = await realpath(resolve(input));
+    const info = await stat(target);
+    if (!info.isDirectory()) throw new Error("not a directory");
+  } catch (error) {
+    throw new ContractError(code, `directory does not exist or is not a directory: ${input}`);
+  }
+  return target;
 }
-function parseFrontmatter(text, path, errors, required = true) {
+function relativePath(root, input, { allowDot = false } = {}) {
+  if (typeof input !== "string" || input.trim().length === 0) {
+    throw new ContractError("path-invalid", "path must be a non-empty string");
+  }
+  const value = input.trim();
+  if (isAbsolute(value) || /^[A-Za-z]:[\\/]/.test(value)) {
+    throw new ContractError("path-invalid", `path must be repository-relative: ${input}`);
+  }
+  if (value.includes("\\")) {
+    throw new ContractError("path-invalid", `path must use POSIX separators: ${input}`);
+  }
+  if (value.split("/").some((part) => part === "." || part === "..")) {
+    throw new ContractError("path-escape", `path may not contain . or .. segments: ${input}`);
+  }
+  const lexical = resolve(root, value);
+  if (!isInside(root, lexical)) {
+    throw new ContractError("path-escape", `path escapes root: ${input}`);
+  }
+  const normalized = toPosix(relative(root, lexical));
+  if (!normalized && !allowDot) throw new ContractError("path-invalid", `path may not be root: ${input}`);
+  return normalized || ".";
+}
+async function safeExistingFile(root, input, codePrefix = "path") {
+  const normalized = relativePath(root, input);
+  const lexical = resolve(root, normalized);
+  let info;
+  try {
+    info = await lstat(lexical);
+  } catch (error) {
+    if (error.code === "ENOENT") throw new ContractError(`${codePrefix}-missing`, `file does not exist: ${normalized}`, normalized);
+    throw error;
+  }
+  if (info.isSymbolicLink()) {
+    throw new ContractError(`${codePrefix}-symlink`, `symbolic links are not allowed: ${normalized}`, normalized);
+  }
+  if (!info.isFile()) throw new ContractError(`${codePrefix}-invalid`, `path is not a file: ${normalized}`, normalized);
+  const canonical = await realpath(lexical);
+  if (!isInside(root, canonical)) {
+    throw new ContractError(`${codePrefix}-escape`, `file resolves outside root: ${normalized}`, normalized);
+  }
+  return { relativePath: normalized, absolutePath: canonical };
+}
+function parseFrontmatter(text, path, { required = true } = {}) {
   const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(text);
   if (!match) {
-    if (required) errors.push(issue("frontmatter-missing", path, "YAML frontmatter is required"));
+    if (required) throw new ContractError("frontmatter-missing", "YAML frontmatter is required", path);
     return { metadata: {}, body: text };
   }
+  let metadata;
   try {
-    const metadata = import_yaml.default.parse(match[1]);
-    if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
-      errors.push(issue("frontmatter-invalid", path, "frontmatter must be a YAML mapping"));
-      return { metadata: {}, body: text.slice(match[0].length) };
-    }
-    return { metadata, body: text.slice(match[0].length) };
+    metadata = import_yaml.default.parse(match[1]);
   } catch (error) {
-    errors.push(issue("frontmatter-invalid", path, error.message));
-    return { metadata: {}, body: text.slice(match[0].length) };
+    throw new ContractError("frontmatter-invalid", error.message, path);
   }
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    throw new ContractError("frontmatter-invalid", "frontmatter must be a YAML mapping", path);
+  }
+  return { metadata, body: text.slice(match[0].length) };
 }
 function validateGlob(glob) {
   if (typeof glob !== "string" || glob.length === 0) return "glob must be a non-empty string";
@@ -7470,138 +7510,1726 @@ function globToRegExp(glob) {
   }
   return new RegExp(`${pattern}$`);
 }
-function validateStringList(value, key, path, errors, { required = false, pattern } = {}) {
+function stringList(value, field, { required = false, pattern } = {}) {
   if (value === void 0 && !required) return [];
-  if (!Array.isArray(value) || required && value.length === 0 || value.some((item) => typeof item !== "string")) {
-    errors.push(issue("field-invalid", path, `${key} must be ${required ? "a non-empty" : "an"} array of strings`));
-    return [];
+  if (!Array.isArray(value) || required && value.length === 0 || value.some((item) => typeof item !== "string" || item.trim() === "")) {
+    throw new ContractError("field-invalid", `${field} must be ${required ? "a non-empty" : "an"} array of strings`);
   }
   if (pattern) {
     for (const item of value) {
-      if (!pattern.test(item)) errors.push(issue("field-invalid", path, `${key} contains invalid value: ${item}`));
+      if (!pattern.test(item)) throw new ContractError("field-invalid", `${field} contains invalid value: ${item}`);
     }
   }
   return value;
 }
-async function loadEngineering(root) {
-  const engineeringRoot = resolve(root, "ai-docs", "engineering");
+function sectionBody(body, names) {
+  const wanted = new Set(names.map((name) => name.toLowerCase()));
+  const headings = [...body.matchAll(/^(#{1,6})\s+(.+?)\s*#*\s*$/gm)];
+  for (let index = 0; index < headings.length; index += 1) {
+    const heading = headings[index];
+    if (!wanted.has(heading[2].trim().toLowerCase())) continue;
+    const start = heading.index + heading[0].length;
+    const end = headings[index + 1]?.index ?? body.length;
+    return body.slice(start, end).trim();
+  }
+  return null;
+}
+function hasPlaceholder(text) {
+  return /\{\{[^}]+\}\}|<\s*(?:placeholder|title|description|path|fill)[^>]*>|\b(?:TODO|TBD)\b|待补充/i.test(text);
+}
+
+// scripts/contracts/task-ref.mjs
+import { lstat as lstat2, readFile as readFile2, readdir, realpath as realpath2 } from "node:fs/promises";
+import { join, resolve as resolve2 } from "node:path";
+
+// scripts/contracts/workspace-source.mjs
+var import_yaml2 = __toESM(require_dist(), 1);
+import { readFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+var VERSION_ID = /^v\d+\.\d+\.\d+$/;
+var FEATURE_NAME = /^[a-z][A-Za-z0-9]*$/;
+var STORY_ID = /^US-\d{3,}$/;
+var ROOT_NAMES = /* @__PURE__ */ new Set(["product", "dev", "external"]);
+var execFileAsync = promisify(execFile);
+function normalizeArtifactPath(value) {
+  if (typeof value !== "string") return "";
+  let normalized = value.trim().replaceAll("\\", "/").replace(/^\.\//, "");
+  if (normalized.startsWith("versions/")) normalized = `ai-docs/${normalized}`;
+  return normalized;
+}
+function sourceValue(source, snake, camel) {
+  return source?.[snake] ?? source?.[camel];
+}
+function pathVersion(path) {
+  const match = /(?:^|\/)versions\/(v\d+\.\d+\.\d+)\//.exec(path);
+  return match?.[1] ?? null;
+}
+function storyIds(value) {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => typeof item === "string" ? item : item?.id).filter((item) => typeof item === "string");
+}
+function uniqueSorted(values) {
+  return [...new Set(values)].sort();
+}
+async function readSourceFile(root, path, errors, warnings, { parseYaml = false, required = true } = {}) {
+  try {
+    const file = await safeExistingFile(root, path, "source");
+    const text = await readFile(file.absolutePath, "utf8");
+    if (!parseYaml) return { ...file, text, value: null };
+    try {
+      return { ...file, text, value: import_yaml2.default.parse(text) };
+    } catch (error) {
+      errors.push(issue("source-yaml-invalid", path, error.message));
+    }
+  } catch (error) {
+    if (!required && error.code === "source-missing") {
+      warnings.push(issue("source-unverified", path, "source file is not present in the selected root", "warning"));
+    } else {
+      errors.push(issue(error.code ?? "source-file-invalid", path, error.message));
+    }
+  }
+  return null;
+}
+async function legacySuperprojectRoot(candidate) {
+  try {
+    const result = await execFileAsync("git", ["-C", candidate, "rev-parse", "--show-superproject-working-tree"], {
+      encoding: "utf8",
+      timeout: 1500,
+      windowsHide: true
+    });
+    const value = result.stdout.trim();
+    return value || null;
+  } catch {
+    return null;
+  }
+}
+async function resolveWorkspaceRoots({
+  workspace,
+  devRoot,
+  productRoot,
+  env = process.env,
+  cwd = process.cwd()
+} = {}) {
+  const explicitlyBoundDev = Boolean(devRoot || workspace || env.OEC_DEV_ROOT);
+  const devInput = devRoot ?? workspace ?? env.OEC_DEV_ROOT ?? cwd;
+  let resolvedDevRoot = await canonicalDirectory(devInput, "dev-root-invalid");
+  if (workspace && devRoot) {
+    const resolvedWorkspace = await canonicalDirectory(workspace, "dev-root-invalid");
+    if (resolvedWorkspace !== resolvedDevRoot) {
+      throw new ContractError("dev-root-conflict", "--workspace and --dev-root refer to different paths");
+    }
+  }
+  const productInput = productRoot ?? env.OEC_PRODUCT_ROOT;
+  let resolvedProductRoot = productInput ? await canonicalDirectory(productInput, "product-root-invalid") : null;
+  let discovery = explicitlyBoundDev ? "explicit" : "cwd";
+  if (!resolvedProductRoot && !explicitlyBoundDev) {
+    const superproject = await legacySuperprojectRoot(resolvedDevRoot);
+    if (superproject) {
+      try {
+        const resolvedSuperproject = await canonicalDirectory(superproject, "dev-root-invalid");
+        if (resolvedSuperproject !== resolvedDevRoot) {
+          resolvedProductRoot = resolvedDevRoot;
+          resolvedDevRoot = resolvedSuperproject;
+          discovery = "git-submodule";
+        }
+      } catch {
+      }
+    }
+  }
+  return {
+    devRoot: resolvedDevRoot,
+    productRoot: resolvedProductRoot,
+    sameSpace: Boolean(resolvedProductRoot && resolvedProductRoot === resolvedDevRoot),
+    discovery
+  };
+}
+function assertDevWritePath(roots, targetAbsolute) {
+  if (!isInside(roots.devRoot, targetAbsolute)) {
+    throw new ContractError("dev-write-escape", "write target is outside DEV_ROOT");
+  }
+  if (roots.productRoot && !roots.sameSpace && isInside(roots.productRoot, targetAbsolute)) {
+    throw new ContractError("product-write-forbidden", "Engineering may not write inside Product Root (PRODUCT_ROOT)");
+  }
+  return targetAbsolute;
+}
+function chooseRoot(source, roots, { requireLocal = false } = {}) {
+  const requested = source.root ?? source.source_root;
+  if (requested && requested !== "inferred" && !ROOT_NAMES.has(requested)) {
+    throw new ContractError("source-root-invalid", `source.root must be product, dev, or external: ${requested}`);
+  }
+  if (requested === "external") return { role: "external", root: null };
+  if (requested === "product") {
+    if (!roots.productRoot) {
+      if (!requireLocal) return { role: "product", root: null };
+      throw new ContractError("product-root-required", "PRODUCT_ROOT is required for a product source");
+    }
+    return { role: "product", root: roots.productRoot };
+  }
+  if (requested === "dev") return { role: "dev", root: roots.devRoot };
+  if (roots.productRoot) return { role: "product", root: roots.productRoot };
+  if (!requireLocal) return { role: "dev", root: roots.devRoot };
+  throw new ContractError("product-root-required", "PRODUCT_ROOT is required to resolve a Product source");
+}
+function normalizeSource(source = {}, legacy = {}) {
+  if (!source || typeof source !== "object" || Array.isArray(source)) source = {};
+  const prdPath = sourceValue(source, "prd_path", "prdPath") ?? legacy.source_prd ?? legacy.sourcePrd;
+  const handoffPath = sourceValue(source, "handoff_path", "handoffPath");
+  const stories = sourceValue(source, "stories", "storyIds") ?? legacy.source_stories ?? legacy.sourceStories;
+  const kind = source.kind ?? (prdPath || handoffPath ? "product" : "none");
+  const root = source.root ?? source.source_root ?? (kind === "product" ? "inferred" : void 0);
+  return {
+    kind,
+    root,
+    repository: source.repository,
+    revision: source.revision,
+    prdPath: prdPath ? normalizeArtifactPath(prdPath) : void 0,
+    handoffPath: handoffPath ? normalizeArtifactPath(handoffPath) : void 0,
+    stories: stories === void 0 ? void 0 : storyIds(stories),
+    featureName: source.feature_name ?? source.featureName,
+    reference: source.reference
+  };
+}
+async function validateProductFiles(normalized, root, errors, warnings, {
+  version,
+  featureName,
+  requireFiles
+} = {}) {
+  const result = {
+    prd: null,
+    handoff: null,
+    version: pathVersion(normalized.prdPath ?? normalized.handoffPath ?? ""),
+    featureName: featureName ?? normalized.featureName ?? null,
+    stories: uniqueSorted(normalized.stories ?? [])
+  };
+  if (featureName && normalized.featureName && featureName !== normalized.featureName) {
+    errors.push(issue("source-feature-mismatch", normalized.handoffPath ?? normalized.prdPath ?? "", `source feature_name must be ${featureName}`));
+  }
+  if (normalized.prdPath) {
+    result.prd = await readSourceFile(root, normalized.prdPath, errors, warnings, { required: requireFiles });
+    if (result.prd && !result.prd.text.trim()) errors.push(issue("source-file-empty", normalized.prdPath, "Product source file is empty"));
+  } else if (requireFiles) {
+    errors.push(issue("source-prd-missing", "", "Product source requires prd_path"));
+  }
+  if (normalized.handoffPath) {
+    result.handoff = await readSourceFile(root, normalized.handoffPath, errors, warnings, { parseYaml: true, required: requireFiles });
+    const handoff = result.handoff?.value;
+    if (handoff && typeof handoff !== "object") {
+      errors.push(issue("handoff-invalid", normalized.handoffPath, "HANDOFF must be a YAML mapping"));
+    } else if (handoff) {
+      if (handoff.schema_version !== 4) {
+        if (requireFiles) errors.push(issue("handoff-schema", normalized.handoffPath, "HANDOFF schema_version must be 4"));
+        else warnings.push(issue("handoff-schema", normalized.handoffPath, "HANDOFF schema_version is not 4", "warning"));
+      }
+      const handoffVersion = handoff.prd_version;
+      if (!VERSION_ID.test(handoffVersion ?? "")) {
+        if (requireFiles) errors.push(issue("handoff-version-invalid", normalized.handoffPath, "HANDOFF prd_version must use vX.Y.Z"));
+        else warnings.push(issue("handoff-version-invalid", normalized.handoffPath, "HANDOFF prd_version is missing or invalid", "warning"));
+      } else if (version && handoffVersion !== version) {
+        errors.push(issue("source-version-mismatch", normalized.handoffPath, `HANDOFF version must be ${version}`));
+      }
+      const children = Array.isArray(handoff.sub_prds) ? handoff.sub_prds : [];
+      if (children.length === 0) {
+        if (requireFiles) errors.push(issue("handoff-sub-prds-empty", normalized.handoffPath, "HANDOFF sub_prds must contain at least one item"));
+        else warnings.push(issue("handoff-sub-prds-empty", normalized.handoffPath, "HANDOFF has no sub_prds", "warning"));
+      }
+      if (featureName) {
+        const child = children.find((item) => item?.featureName === featureName);
+        if (!child) errors.push(issue("source-feature-missing", normalized.handoffPath, `${featureName} is absent from HANDOFF`));
+        else {
+          result.featureName = featureName;
+          const expectedStories = uniqueSorted(storyIds(child.stories));
+          if (result.stories.length > 0 && expectedStories.join("|") !== result.stories.join("|")) {
+            errors.push(issue("source-story-mismatch", normalized.handoffPath, `${featureName} HANDOFF stories differ from task source`));
+          }
+          result.stories = expectedStories;
+          const childPath = normalizeArtifactPath(child.file);
+          const expectedChildPath = version ? `ai-docs/versions/${version}/prd/prd-${version}-${featureName}.md` : null;
+          if (!childPath) {
+            if (requireFiles) errors.push(issue("source-prd-missing", normalized.handoffPath, `${featureName} HANDOFF entry has no child PRD path`));
+          } else if (expectedChildPath && childPath !== expectedChildPath) {
+            errors.push(issue("source-prd-mismatch", normalized.handoffPath, `HANDOFF child path must be ${expectedChildPath}`));
+          } else if (normalized.prdPath && childPath !== normalized.prdPath) {
+            errors.push(issue("source-prd-mismatch", normalized.handoffPath, `HANDOFF child path must equal ${normalized.prdPath}`));
+          }
+          if (childPath) {
+            const childFile = await readSourceFile(root, childPath, errors, warnings, { required: requireFiles });
+            if (childFile && !childFile.text.trim()) errors.push(issue("source-file-empty", childPath, "Child PRD is empty"));
+          }
+        }
+      }
+    }
+  }
+  if (version && !VERSION_ID.test(version)) {
+    errors.push(issue("source-version-invalid", normalized.prdPath ?? normalized.handoffPath ?? "", `invalid version: ${version}`));
+  }
+  if (result.featureName && !FEATURE_NAME.test(result.featureName)) {
+    errors.push(issue("source-feature-invalid", normalized.handoffPath ?? normalized.prdPath ?? "", `invalid featureName: ${result.featureName}`));
+  }
+  if (normalized.prdPath && result.featureName && version) {
+    const expectedChild = `ai-docs/versions/${version}/prd/prd-${version}-${result.featureName}.md`;
+    if (normalized.handoffPath && normalized.prdPath !== expectedChild) {
+      errors.push(issue("source-prd-mismatch", normalized.prdPath, `Product child PRD path must be ${expectedChild}`));
+    }
+  }
+  const discoveredVersion = pathVersion(normalized.prdPath ?? normalized.handoffPath ?? "");
+  if (version && discoveredVersion && discoveredVersion !== version) {
+    errors.push(issue("source-version-mismatch", normalized.prdPath ?? normalized.handoffPath, `source version must be ${version}`));
+  }
+  if (normalized.stories !== void 0) {
+    for (const story of normalized.stories) {
+      if (!STORY_ID.test(story)) errors.push(issue("source-story-invalid", normalized.prdPath ?? normalized.handoffPath, `invalid Story ID: ${story}`));
+    }
+  }
+  return result;
+}
+async function resolveSourceRef(source, roots, options = {}) {
+  const errors = [];
+  const warnings = [];
+  if (source !== void 0 && source !== null && (typeof source !== "object" || Array.isArray(source))) {
+    errors.push(issue("source-invalid", "", "source must be a YAML mapping"));
+    return { ok: false, kind: "invalid", root: null, source: {}, errors, warnings };
+  }
+  const normalized = normalizeSource(source, options.legacy ?? {});
+  if (normalized.kind === "none") {
+    const hasLegacySource = Boolean(options.legacy?.source_prd || options.legacy?.sourcePrd || options.legacy?.source_stories || options.legacy?.sourceStories);
+    if (source !== void 0 && source !== null && !hasLegacySource && Object.keys(source).length === 0) {
+      if (options.requireFiles) errors.push(issue("source-empty", "", "source must identify a Product, issue, or external source"));
+      else warnings.push(issue("source-empty", "", "source is empty at structure stage", "warning"));
+      return { ok: errors.length === 0, kind: "none", root: null, source: normalized, errors, warnings };
+    }
+    return { ok: true, kind: "none", root: null, source: normalized, errors, warnings };
+  }
+  if (!["product", "issue", "external"].includes(normalized.kind)) {
+    errors.push(issue("source-kind-invalid", "", `unsupported source kind: ${normalized.kind}`));
+    return { ok: false, kind: normalized.kind, root: null, source: normalized, errors, warnings };
+  }
+  for (const path of [normalized.prdPath, normalized.handoffPath].filter((value) => value !== void 0)) {
+    if (!path || path.startsWith("/") || /^[A-Za-z]:[\\/]/.test(path) || path.includes("\\") || path.split("/").some((part) => part === "." || part === "..")) {
+      errors.push(issue(path.includes("..") ? "source-path-escape" : "source-path-invalid", path, "source paths must be safe POSIX repository-relative paths"));
+    }
+  }
+  if (normalized.kind === "issue") {
+    if (!normalized.reference) warnings.push(issue("source-reference-missing", "", "issue source has no reference", "warning"));
+    return { ok: errors.length === 0, kind: "issue", root: null, source: normalized, errors, warnings };
+  }
+  if (normalized.kind === "external" || normalized.root === "external") {
+    if (!normalized.repository || !normalized.revision || !normalized.prdPath) {
+      if (options.requireFiles) errors.push(issue("external-source-incomplete", normalized.prdPath ?? "", "external Product source requires repository, revision, and prd_path"));
+      else warnings.push(issue("external-source-incomplete", normalized.prdPath ?? "", "external Product source is incomplete at structure stage", "warning"));
+    } else {
+      warnings.push(issue("source-unverifiable", normalized.prdPath, "external Product source cannot be verified in the local workspace", "warning"));
+    }
+    return { ok: errors.length === 0, kind: "external", root: null, source: normalized, errors, warnings };
+  }
+  let selected;
+  try {
+    selected = chooseRoot(normalized, roots, { requireLocal: options.requireFiles !== false });
+  } catch (error) {
+    errors.push(issue(error.code ?? "source-root-invalid", "", error.message));
+    return { ok: false, kind: normalized.kind, root: null, source: normalized, errors, warnings };
+  }
+  const root = selected.root;
+  if (!root) {
+    warnings.push(issue("source-unverified", "", "PRODUCT_ROOT was not provided; Product source was not locally verified", "warning"));
+    return { ok: true, kind: "product", root: selected.role, rootPath: null, source: normalized, product: null, errors, warnings };
+  }
+  if (!normalized.prdPath && !normalized.handoffPath) {
+    if (options.requireFiles) errors.push(issue("source-path-missing", "", "Product source requires prd_path or handoff_path"));
+    else warnings.push(issue("source-path-missing", "", "Product source has no prd_path or handoff_path yet", "warning"));
+    return { ok: errors.length === 0, kind: "product", root: selected.role, source: normalized, errors, warnings };
+  }
+  for (const path of [normalized.prdPath, normalized.handoffPath].filter(Boolean)) {
+    try {
+      relativePath(root, path);
+    } catch (error) {
+      errors.push(issue(error.code === "path-escape" ? "source-path-escape" : "source-path-invalid", path, error.message));
+    }
+  }
+  if (errors.length === 0) {
+    const product = await validateProductFiles(normalized, root, errors, warnings, options);
+    return {
+      ok: errors.length === 0,
+      kind: "product",
+      root: selected.role,
+      rootPath: root,
+      source: normalized,
+      product,
+      errors,
+      warnings
+    };
+  }
+  return { ok: false, kind: "product", root: selected.role, rootPath: root, source: normalized, errors, warnings };
+}
+
+// scripts/contracts/task-ref.mjs
+var VERSION_ID2 = /^v\d+\.\d+\.\d+$/;
+var TASK_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+var FEATURE_NAME2 = /^[a-z][A-Za-z0-9]*$/;
+var DATE_CHANGE_ID = /^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*$/;
+var LEGACY_VERSION_CHANGE_ID = /^v\d+\.\d+\.\d+-[A-Za-z][A-Za-z0-9]*$/;
+var CHANGE_ID = /^(?:\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*|v\d+\.\d+\.\d+-[A-Za-z][A-Za-z0-9]*)$/;
+var VERSIONED_REF = /^versioned:(v\d+\.\d+\.\d+)\/([a-z0-9]+(?:-[a-z0-9]+)*)$/;
+var SHORT_VERSIONED_REF = /^(v\d+\.\d+\.\d+)\/([a-z0-9]+(?:-[a-z0-9]+)*)$/;
+var VERSIONED_PATH = /^ai-docs\/versions\/(v\d+\.\d+\.\d+)\/dev-task\/([a-z0-9]+(?:-[a-z0-9]+)*)$/;
+var CHANGE_ID_PATTERN = "(?:\\d{4}-\\d{2}-\\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*|v\\d+\\.\\d+\\.\\d+-[A-Za-z][A-Za-z0-9]*)";
+var CHANGE_REF = new RegExp(`^change:(${CHANGE_ID_PATTERN})$`);
+var CHANGE_PATH = new RegExp(`^ai-docs\\/engineering\\/changes\\/(${CHANGE_ID_PATTERN})$`);
+function invalid(message) {
+  return { ok: false, errors: [{ code: "task-ref-invalid", path: "", message, severity: "error" }] };
+}
+function camelToKebab(value) {
+  return value.replace(/([A-Z]+)([A-Z][a-z])/g, "$1-$2").replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
+}
+function parsedVersioned(version, taskSlug, extra = {}) {
+  return {
+    kind: "versioned",
+    version,
+    taskSlug,
+    ref: `versioned:${version}/${taskSlug}`,
+    ...extra
+  };
+}
+function parsedChange(changeId, extra = {}) {
+  return {
+    kind: "change",
+    changeId,
+    ref: `change:${changeId}`,
+    ...extra
+  };
+}
+function parseTaskRef(input) {
+  if (typeof input !== "string" || input.trim().length === 0) {
+    throw new ContractError("task-ref-invalid", "taskRef must be a non-empty string");
+  }
+  const value = input.trim();
+  if (value.includes("\\") || value.startsWith("/") || /^[A-Za-z]:[\\/]/.test(value) || value.split("/").includes("..")) {
+    throw new ContractError("task-ref-invalid", "taskRef must be a safe repository-relative reference");
+  }
+  let match = VERSIONED_REF.exec(value) ?? SHORT_VERSIONED_REF.exec(value);
+  if (match) return parsedVersioned(match[1], match[2]);
+  match = VERSIONED_PATH.exec(value);
+  if (match) return parsedVersioned(match[1], match[2], { inputPath: value });
+  match = CHANGE_REF.exec(value) ?? CHANGE_PATH.exec(value);
+  if (match) return parsedChange(match[1], { inputPath: value });
+  if (LEGACY_VERSION_CHANGE_ID.test(value)) {
+    const separator = value.indexOf("-", 1);
+    const version = value.slice(0, separator);
+    const featureName = value.slice(separator + 1);
+    return {
+      kind: "legacy-id",
+      legacyChangeId: value,
+      version,
+      featureName,
+      ref: null
+    };
+  }
+  if (DATE_CHANGE_ID.test(value)) return parsedChange(value);
+  throw new ContractError("task-ref-invalid", `unsupported taskRef: ${input}`);
+}
+function relativeTaskPath(parsed) {
+  if (parsed.kind === "versioned") return `ai-docs/versions/${parsed.version}/dev-task/${parsed.taskSlug}`;
+  if (parsed.kind === "change") return `ai-docs/engineering/changes/${parsed.changeId}`;
+  throw new ContractError("task-ref-invalid", `cannot build a path for ${parsed.kind}`);
+}
+async function directoryState(devRoot, relativeTask) {
+  const absolute = resolve2(devRoot, relativeTask);
+  if (!isInside(devRoot, absolute)) throw new ContractError("task-ref-path-escape", `task path escapes DEV_ROOT: ${relativeTask}`);
+  try {
+    const info = await lstat2(absolute);
+    if (info.isSymbolicLink()) throw new ContractError("task-ref-symlink-escape", `task directory is a symbolic link: ${relativeTask}`);
+    if (!info.isDirectory()) throw new ContractError("task-ref-invalid", `task path is not a directory: ${relativeTask}`);
+    const canonical = await realpath2(absolute);
+    if (!isInside(devRoot, canonical)) throw new ContractError("task-ref-symlink-escape", `task directory resolves outside DEV_ROOT: ${relativeTask}`);
+    return { exists: true, absolutePath: canonical };
+  } catch (error) {
+    if (error.code === "ENOENT") return { exists: false, absolutePath: absolute };
+    if (error instanceof ContractError) throw error;
+    throw error;
+  }
+}
+async function readMetadata(absolutePath, relativeTask) {
+  const metadata = {};
+  let legacy = true;
+  for (const name of ["spec.md", "design.md", "change.md", "README.md"]) {
+    const path = join(absolutePath, name);
+    try {
+      const info = await lstat2(path);
+      if (info.isSymbolicLink() || !info.isFile()) continue;
+      const text = await readFile2(path, "utf8");
+      const parsed = parseFrontmatter(text, `${relativeTask}/${name}`, { required: false });
+      if (Object.keys(parsed.metadata).length > 0) {
+        legacy = false;
+        if (name === "spec.md") Object.assign(metadata, parsed.metadata);
+        else {
+          for (const [key, value] of Object.entries(parsed.metadata)) {
+            if (metadata[key] === void 0) metadata[key] = value;
+          }
+        }
+      }
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+  }
+  return { metadata, legacy };
+}
+async function findLegacyId(devRoot, legacyChangeId) {
+  const candidates = [];
+  const directRelative = `ai-docs/engineering/changes/${legacyChangeId}`;
+  const directState = await directoryState(devRoot, directRelative);
+  if (directState.exists) {
+    const info = await readMetadata(directState.absolutePath, directRelative);
+    candidates.push({
+      parsed: parsedChange(legacyChangeId, { legacy: info.legacy }),
+      relativeTask: directRelative,
+      state: directState,
+      info
+    });
+  }
+  const version = legacyChangeId.slice(0, legacyChangeId.indexOf("-", 1));
+  const featureName = legacyChangeId.slice(legacyChangeId.indexOf("-", 1) + 1);
+  const expectedSlug = camelToKebab(featureName);
+  const versionsRoot = resolve2(devRoot, "ai-docs", "versions");
+  try {
+    const versions = await readdir(versionsRoot, { withFileTypes: true });
+    for (const entry of versions) {
+      if (!entry.isDirectory() || entry.isSymbolicLink() || entry.name !== version) continue;
+      const taskRoot = resolve2(versionsRoot, entry.name, "dev-task");
+      let tasks;
+      try {
+        tasks = await readdir(taskRoot, { withFileTypes: true });
+      } catch (error) {
+        if (error.code === "ENOENT") continue;
+        throw error;
+      }
+      for (const task of tasks) {
+        if (!task.isDirectory() || task.isSymbolicLink() || !TASK_SLUG.test(task.name)) continue;
+        const relativeTask = `ai-docs/versions/${version}/dev-task/${task.name}`;
+        const state = await directoryState(devRoot, relativeTask);
+        const info = await readMetadata(state.absolutePath, relativeTask);
+        const metadataId = info.metadata.external_change_id ?? info.metadata.externalChangeId;
+        const metadataFeature = info.metadata.feature_name ?? info.metadata.featureName;
+        if (metadataId === legacyChangeId || metadataFeature === featureName || task.name === expectedSlug) {
+          candidates.push({ parsed: parsedVersioned(version, task.name, {
+            featureName: metadataFeature ?? featureName,
+            externalChangeId: metadataId ?? legacyChangeId,
+            legacy: info.legacy
+          }), relativeTask, state, info });
+        }
+      }
+    }
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+  return candidates;
+}
+function artifactPaths(devRoot, relativeTask) {
+  const absolute = resolve2(devRoot, relativeTask);
+  return {
+    spec: toPosix(`${relativeTask}/spec.md`),
+    design: toPosix(`${relativeTask}/design.md`),
+    readme: toPosix(`${relativeTask}/README.md`),
+    absoluteSpec: resolve2(absolute, "spec.md"),
+    absoluteDesign: resolve2(absolute, "design.md")
+  };
+}
+function appendError(errors, error, fallbackCode = "task-ref-invalid") {
+  errors.push({
+    code: error.code ?? fallbackCode,
+    path: error.path ?? "",
+    message: error.message,
+    severity: "error"
+  });
+}
+async function resolveTaskRef({
+  workspace,
+  devRoot,
+  productRoot,
+  taskRef,
+  changeId,
+  path,
+  version,
+  taskSlug,
+  featureName,
+  source,
+  allowMissing = false,
+  requireSource = false
+} = {}) {
+  const errors = [];
+  const warnings = [];
+  let roots;
+  try {
+    roots = await resolveWorkspaceRoots({ workspace, devRoot, productRoot });
+  } catch (error) {
+    appendError(errors, error, "dev-root-invalid");
+    return { ok: false, errors, warnings };
+  }
+  const hasVersionIdentity = version !== void 0 || taskSlug !== void 0;
+  const hasAnyIdentity = Boolean(taskRef || changeId || path || hasVersionIdentity);
+  if (!hasAnyIdentity) return invalid("one of taskRef, changeId, path, or version/taskSlug is required");
+  if (taskRef && changeId) return invalid("taskRef and changeId may not be supplied together");
+  if (path && (taskRef || changeId || hasVersionIdentity)) return invalid("path may not be combined with another task identity");
+  if (version && !taskSlug || !version && taskSlug) return invalid("version and taskSlug must be supplied together");
+  let parsed;
+  try {
+    if (path) {
+      const normalized = relativePath(roots.devRoot, path);
+      const versionMatch = VERSIONED_PATH.exec(normalized);
+      const changeMatch = CHANGE_PATH.exec(normalized);
+      if (versionMatch) parsed = parsedVersioned(versionMatch[1], versionMatch[2], { inputPath: normalized });
+      else if (changeMatch) parsed = parsedChange(changeMatch[1], { inputPath: normalized });
+      else throw new ContractError("task-ref-invalid", "path must point to a canonical task directory");
+    } else if (version && taskSlug) {
+      if (!VERSION_ID2.test(version) || !TASK_SLUG.test(taskSlug)) throw new ContractError("task-ref-invalid", "invalid version or task slug");
+      parsed = parsedVersioned(version, taskSlug, { featureName });
+    } else {
+      parsed = parseTaskRef(taskRef ?? changeId);
+    }
+  } catch (error) {
+    appendError(errors, error);
+    return { ok: false, errors, warnings };
+  }
+  if (featureName !== void 0 && !FEATURE_NAME2.test(featureName)) {
+    errors.push({ code: "feature-name-invalid", path: "", message: "featureName must match lowerCamelCase", severity: "error" });
+    return { ok: false, errors, warnings };
+  }
+  if (parsed.kind === "legacy-id") {
+    let candidates;
+    try {
+      candidates = await findLegacyId(roots.devRoot, parsed.legacyChangeId);
+    } catch (error) {
+      appendError(errors, error);
+      return { ok: false, errors, warnings };
+    }
+    if (candidates.length > 1) {
+      errors.push({ code: "task-ref-ambiguous", path: "", message: `${parsed.legacyChangeId} matches multiple task directories`, severity: "error" });
+      return { ok: false, errors, warnings };
+    }
+    if (candidates.length === 1) {
+      parsed = candidates[0].parsed;
+    } else {
+      const slug = camelToKebab(parsed.featureName);
+      if (!TASK_SLUG.test(slug)) {
+        errors.push({ code: "task-ref-invalid", path: "", message: `cannot derive a task slug from ${parsed.featureName}`, severity: "error" });
+        return { ok: false, errors, warnings };
+      }
+      parsed = parsedVersioned(parsed.version, slug, {
+        featureName: parsed.featureName,
+        externalChangeId: parsed.legacyChangeId,
+        legacyAlias: true
+      });
+    }
+  }
+  const relativeTask = relativeTaskPath(parsed);
+  let state;
+  try {
+    state = await directoryState(roots.devRoot, relativeTask);
+    assertDevWritePath(roots, state.absolutePath);
+  } catch (error) {
+    appendError(errors, error);
+    return { ok: false, errors, warnings };
+  }
+  if (!state.exists && !allowMissing) {
+    errors.push({ code: "task-ref-not-found", path: relativeTask, message: "task directory does not exist", severity: "error" });
+  }
+  let metadata = {};
+  let legacy = Boolean(parsed.legacy);
+  if (state.exists) {
+    try {
+      const info = await readMetadata(state.absolutePath, relativeTask);
+      metadata = info.metadata;
+      legacy ||= info.legacy;
+      if (parsed.kind === "change" && !metadata.task_ref && !metadata.taskRef) legacy = true;
+    } catch (error) {
+      appendError(errors, error);
+    }
+  }
+  const metadataRef = metadata.task_ref ?? metadata.taskRef;
+  if (metadataRef) {
+    try {
+      const normalizedMetadata = parseTaskRef(metadataRef);
+      const expected = parsed.ref;
+      const actual = normalizedMetadata.kind === "versioned" ? normalizedMetadata.ref : normalizedMetadata.kind === "change" ? normalizedMetadata.ref : null;
+      if (actual && expected && actual !== expected) {
+        errors.push({ code: "task-identity-mismatch", path: `${relativeTask}/spec.md`, message: `task_ref must be ${expected}`, severity: "error" });
+      }
+    } catch (error) {
+      appendError(errors, error, "task-identity-mismatch");
+    }
+  }
+  const resolvedFeatureName = featureName ?? parsed.featureName ?? metadata.feature_name ?? metadata.featureName ?? metadata.source?.feature_name ?? metadata.source?.featureName;
+  const externalChangeId = parsed.externalChangeId ?? metadata.external_change_id ?? metadata.externalChangeId ?? metadata.source?.external_change_id ?? metadata.source?.externalChangeId;
+  const sourceDeclared = source !== void 0 || metadata.source !== void 0 || metadata.source_prd !== void 0;
+  const sourceMetadata = source ?? metadata.source ?? {};
+  let sourceResult = { ok: true, kind: "none", errors: [], warnings: [] };
+  if (sourceDeclared) {
+    sourceResult = await resolveSourceRef(sourceMetadata, roots, {
+      version: parsed.version,
+      featureName: resolvedFeatureName,
+      requireFiles: requireSource && state.exists,
+      legacy: metadata
+    });
+    errors.push(...sourceResult.errors);
+    warnings.push(...sourceResult.warnings);
+  }
+  if (requireSource && !sourceResult.ok) {
+    warnings.push({ code: "source-required", path: relativeTask, message: "a resolvable Product source is required for this operation", severity: "warning" });
+  }
+  const artifacts = artifactPaths(roots.devRoot, relativeTask);
+  return {
+    ok: errors.length === 0,
+    kind: parsed.kind,
+    ref: parsed.ref,
+    version: parsed.version ?? null,
+    taskSlug: parsed.taskSlug ?? null,
+    changeId: parsed.changeId ?? null,
+    featureName: resolvedFeatureName ?? null,
+    externalChangeId: externalChangeId ?? null,
+    devRoot: roots.devRoot,
+    productRoot: roots.productRoot,
+    sameSpace: roots.sameSpace,
+    rootDiscovery: roots.discovery,
+    relativePath: relativeTask,
+    absolutePath: state.absolutePath,
+    artifacts,
+    exists: state.exists,
+    compatibility: legacy ? "legacy" : state.exists ? "native" : "missing",
+    metadata,
+    source: sourceResult,
+    errors,
+    warnings
+  };
+}
+
+// scripts/contracts/task-artifacts.mjs
+var SPEC_ID = /^SPEC-[a-z0-9][a-z0-9-]*$/;
+var ADR_ID = /^ADR-\d{4}$/;
+var MODULE_ID = /^[a-z][a-z0-9-]*$/;
+var STATUS = /* @__PURE__ */ new Set(["draft", "ready", "active", "implemented", "verified", "blocked"]);
+var ARTIFACT_NAMES = /* @__PURE__ */ new Set(["README.md", "spec.md", "design.md", "tasks.md", "implementation-plan.md", "verification.md", "debug-notes.md", "sync-status.md", "research"]);
+var SPEC_SECTIONS = [
+  ["goal and scope", "\u76EE\u6807\u4E0E\u8303\u56F4"],
+  ["acceptance", "\u9A8C\u6536", "\u9A8C\u6536\u6807\u51C6"]
+];
+var DESIGN_SECTIONS = [
+  ["constraints and affected contracts", "\u7EA6\u675F\u4E0E\u53D7\u5F71\u54CD\u5951\u7EA6"],
+  ["chosen design", "\u9009\u5B9A\u65B9\u6848", "\u8BBE\u8BA1\u65B9\u6848"],
+  ["change boundary", "\u53D8\u66F4\u8FB9\u754C"],
+  ["verification", "\u9A8C\u8BC1"]
+];
+function addError(errors, code, path, message) {
+  errors.push(issue(code, path, message, "error"));
+}
+function addWarning(warnings, code, path, message) {
+  warnings.push(issue(code, path, message, "warning"));
+}
+function requiredString(metadata, field, path, errors) {
+  if (typeof metadata[field] !== "string" || metadata[field].trim().length === 0) {
+    addError(errors, "field-invalid", path, `${field} must be a non-empty string`);
+    return null;
+  }
+  return metadata[field].trim();
+}
+function fieldArray(metadata, field, path, errors, { required = false, pattern } = {}) {
+  try {
+    return stringList(metadata[field], field, { required, pattern });
+  } catch (error) {
+    addError(errors, error.code ?? "field-invalid", path, error.message);
+    return [];
+  }
+}
+function validatePathGlobs(value, path, errors) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    addError(errors, "affected-paths-invalid", path, "affected_paths must be a mapping with include");
+    return [];
+  }
+  const include = fieldArray(value, "include", path, errors, { required: true });
+  for (const glob of include) {
+    const problem = validateGlob(glob);
+    if (problem) addError(errors, "path-glob-invalid", path, `${glob}: ${problem}`);
+  }
+  const exclude = fieldArray(value, "exclude", path, errors);
+  for (const glob of exclude) {
+    const problem = validateGlob(glob);
+    if (problem) addError(errors, "path-glob-invalid", path, `${glob}: ${problem}`);
+  }
+  return include;
+}
+function validateMetadataIdentity(metadata, artifactKind, expectedRef, path, errors, warnings) {
+  if (metadata.artifact !== artifactKind) addError(errors, "artifact-kind-invalid", path, `artifact must be ${artifactKind}`);
+  if (metadata.schema_version !== 1) addError(errors, "schema-version-invalid", path, "schema_version must be 1");
+  const taskRef = requiredString(metadata, "task_ref", path, errors);
+  if (taskRef) {
+    try {
+      const parsed = parseTaskRef(taskRef);
+      if (parsed.kind === "legacy-id") {
+        addWarning(warnings, "legacy-task-ref", path, "legacy task identity is accepted for reading but should be normalized");
+      } else if (parsed.ref !== expectedRef.ref) {
+        addError(errors, "task-identity-mismatch", path, `task_ref must be ${expectedRef.ref}`);
+      }
+    } catch (error) {
+      addError(errors, error.code ?? "task-ref-invalid", path, error.message);
+    }
+  }
+  const title = requiredString(metadata, "title", path, errors);
+  if (title && hasPlaceholder(title)) addError(errors, "placeholder-text", path, "title contains a placeholder");
+  if (metadata.status !== void 0 && !STATUS.has(metadata.status)) {
+    addError(errors, "status-invalid", path, `status must be one of ${[...STATUS].join(", ")}`);
+  }
+}
+function withoutComments(text) {
+  return text.replace(/<!--(?:[\s\S]*?)-->/g, "").trim();
+}
+function withoutCodeFences(text) {
+  return text.replace(/```[\s\S]*?```/g, "");
+}
+function validateBodySections(body, sections, path, errors) {
+  const cleanBody = withoutCodeFences(body);
+  for (const names of sections) {
+    const content = sectionBody(cleanBody, names);
+    if (content === null) {
+      addError(errors, "section-missing", path, `required section is missing: ${names[0]}`);
+    } else if (!withoutComments(content)) {
+      addError(errors, "section-empty", path, `required section is empty: ${names[0]}`);
+    } else if (hasPlaceholder(content)) {
+      addError(errors, "placeholder-text", path, `required section contains a placeholder: ${names[0]}`);
+    }
+  }
+}
+function acceptanceIds(body) {
+  return [...withoutComments(body).matchAll(/\bAC-\d{3,}\b/g)].map((match) => match[0]);
+}
+function validateAcceptance(body, path, errors) {
+  const cleanBody = withoutCodeFences(body);
+  const ids = acceptanceIds(sectionBody(cleanBody, ["acceptance", "\u9A8C\u6536", "\u9A8C\u6536\u6807\u51C6"]) ?? "");
+  if (ids.length === 0) {
+    addError(errors, "acceptance-missing", path, "Acceptance must contain at least one AC-NNN item");
+    return;
+  }
+  const seen = /* @__PURE__ */ new Set();
+  for (const id of ids) {
+    if (seen.has(id)) addError(errors, "acceptance-duplicate", path, `duplicate acceptance ID: ${id}`);
+    seen.add(id);
+  }
+}
+function validateSpec(metadata, body, expected, path, errors, warnings, stage) {
+  validateMetadataIdentity(metadata, "task-spec", expected, path, errors, warnings);
+  const modules = fieldArray(metadata, "module_ids", path, errors, { required: stage !== "structure", pattern: MODULE_ID });
+  if (stage !== "structure" && modules.length === 0) addError(errors, "module-missing", path, "module_ids must contain at least one module before ready");
+  validatePathGlobs(metadata.affected_paths, path, errors);
+  const relatedSpecs = fieldArray(metadata, "related_specs", path, errors, { pattern: SPEC_ID });
+  const relatedAdrs = fieldArray(metadata, "related_adrs", path, errors, { pattern: ADR_ID });
+  if (metadata.feature_name !== void 0 && (typeof metadata.feature_name !== "string" || !FEATURE_NAME2.test(metadata.feature_name))) {
+    addError(errors, "feature-name-invalid", path, "feature_name must match lowerCamelCase");
+  }
+  if (metadata.external_change_id !== void 0 && (typeof metadata.external_change_id !== "string" || !CHANGE_ID.test(metadata.external_change_id))) {
+    addError(errors, "external-change-id-invalid", path, "external_change_id has an invalid change ID");
+  }
+  if (metadata.feature_name && expected.featureName && metadata.feature_name !== expected.featureName) {
+    addError(errors, "feature-name-mismatch", path, `feature_name must be ${expected.featureName}`);
+  }
+  if (metadata.external_change_id && expected.externalChangeId && metadata.external_change_id !== expected.externalChangeId) {
+    addError(errors, "external-change-id-mismatch", path, `external_change_id must be ${expected.externalChangeId}`);
+  }
+  if (expected.kind === "versioned" && stage !== "structure") {
+    if (!metadata.source || typeof metadata.source !== "object" || Array.isArray(metadata.source)) {
+      addError(errors, "source-missing", path, "versioned task Spec requires a structured source");
+    } else if (metadata.source.kind === "product" && !metadata.feature_name && !metadata.source.feature_name && !metadata.source.featureName) {
+      addError(errors, "feature-name-missing", path, "Product task Spec requires feature_name");
+    }
+  }
+  validateBodySections(body, SPEC_SECTIONS, path, errors);
+  validateAcceptance(body, path, errors);
+  return { modules, relatedSpecs, relatedAdrs };
+}
+function validateDesign(metadata, body, expected, specAbsolutePath, designAbsolutePath, path, errors, warnings) {
+  validateMetadataIdentity(metadata, "task-design", expected, path, errors, warnings);
+  const specRef = requiredString(metadata, "spec_ref", path, errors);
+  if (specRef && !["./spec.md", "spec.md"].includes(specRef)) {
+    addError(errors, "spec-reference-invalid", path, "spec_ref must point to ./spec.md in the same task directory");
+  }
+  validateBodySections(body, DESIGN_SECTIONS, path, errors);
+  if (specRef && specAbsolutePath && designAbsolutePath && resolve3(designAbsolutePath, "..", specRef) !== specAbsolutePath) {
+    addError(errors, "spec-reference-invalid", path, "spec_ref does not resolve to the task Spec");
+  }
+  return { specRef };
+}
+async function readArtifact(root, relativePath2, errors, required = true) {
+  const absolute = resolve3(root, relativePath2);
+  try {
+    const info = await lstat3(absolute);
+    if (info.isSymbolicLink()) {
+      addError(errors, "symlink-not-allowed", relativePath2, "task artifacts may not be symbolic links");
+      return null;
+    }
+    if (!info.isFile()) {
+      addError(errors, "artifact-invalid", relativePath2, "task artifact must be a file");
+      return null;
+    }
+    const text = await readFile3(absolute, "utf8");
+    let parsed;
+    try {
+      parsed = parseFrontmatter(text, relativePath2);
+    } catch (error) {
+      addError(errors, error.code ?? "frontmatter-invalid", relativePath2, error.message);
+      return null;
+    }
+    return { relativePath: relativePath2, absolutePath: absolute, text, ...parsed };
+  } catch (error) {
+    if (error.code === "ENOENT" && !required) return null;
+    if (error.code === "ENOENT") addError(errors, "artifact-missing", relativePath2, "required task artifact is missing");
+    else addError(errors, "artifact-read-failed", relativePath2, error.message);
+    return null;
+  }
+}
+async function collectMarkdownFiles(directory) {
+  const files = [];
+  async function visit(current) {
+    let entries;
+    try {
+      entries = await readdir2(current, { withFileTypes: true });
+    } catch (error) {
+      if (error.code === "ENOENT") return;
+      throw error;
+    }
+    for (const entry of entries) {
+      if (entry.isSymbolicLink()) continue;
+      const absolute = join2(current, entry.name);
+      if (entry.isDirectory()) await visit(absolute);
+      else if (entry.isFile() && entry.name.endsWith(".md")) files.push(absolute);
+    }
+  }
+  await visit(directory);
+  return files;
+}
+async function loadEngineeringReferences(root, warnings) {
+  const engineeringRoot = join2(root, "ai-docs", "engineering");
+  if (!await pathExists(engineeringRoot)) return { specs: /* @__PURE__ */ new Set(), adrs: /* @__PURE__ */ new Set() };
+  const specs = /* @__PURE__ */ new Set();
+  const adrs = /* @__PURE__ */ new Set();
+  for (const absolute of await collectMarkdownFiles(join2(engineeringRoot, "specs"))) {
+    const relativePath2 = absolute.slice(root.length + 1).split("\\").join("/");
+    try {
+      const parsed = parseFrontmatter(await readFile3(absolute, "utf8"), relativePath2);
+      if (typeof parsed.metadata.id === "string" && SPEC_ID.test(parsed.metadata.id)) specs.add(parsed.metadata.id);
+    } catch (error) {
+      warnings.push(issue("team-spec-unreadable", relativePath2, error.message, "warning"));
+    }
+  }
+  for (const absolute of await collectMarkdownFiles(join2(engineeringRoot, "decisions"))) {
+    const relativePath2 = absolute.slice(root.length + 1).split("\\").join("/");
+    try {
+      const parsed = parseFrontmatter(await readFile3(absolute, "utf8"), relativePath2);
+      if (typeof parsed.metadata.id === "string" && ADR_ID.test(parsed.metadata.id)) adrs.add(parsed.metadata.id);
+    } catch (error) {
+      warnings.push(issue("adr-unreadable", relativePath2, error.message, "warning"));
+    }
+  }
+  return { specs, adrs };
+}
+async function validateEngineeringReferences(root, relatedSpecs, relatedAdrs, errors, warnings, stage) {
+  if (relatedSpecs.length === 0 && relatedAdrs.length === 0) return;
+  const engineeringRoot = join2(root, "ai-docs", "engineering");
+  if (!await pathExists(engineeringRoot)) {
+    for (const id of relatedSpecs) {
+      if (stage === "structure") addWarning(warnings, "spec-reference-unverified", "ai-docs/engineering/specs", `cannot verify Spec before engineering root exists: ${id}`);
+      else addError(errors, "spec-reference-missing", "ai-docs/engineering/specs", `unknown Spec: ${id}`);
+    }
+    for (const id of relatedAdrs) {
+      if (stage === "structure") addWarning(warnings, "adr-reference-unverified", "ai-docs/engineering/decisions", `cannot verify ADR before engineering root exists: ${id}`);
+      else addError(errors, "adr-reference-missing", "ai-docs/engineering/decisions", `unknown ADR: ${id}`);
+    }
+    return;
+  }
+  const known = await loadEngineeringReferences(root, warnings);
+  for (const id of relatedSpecs) {
+    if (!known.specs.has(id)) {
+      if (stage === "structure") addWarning(warnings, "spec-reference-unverified", "ai-docs/engineering/specs", `Spec is not verified at structure stage: ${id}`);
+      else addError(errors, "spec-reference-missing", "ai-docs/engineering/specs", `unknown Spec: ${id}`);
+    }
+  }
+  for (const id of relatedAdrs) {
+    if (!known.adrs.has(id)) {
+      if (stage === "structure") addWarning(warnings, "adr-reference-unverified", "ai-docs/engineering/decisions", `ADR is not verified at structure stage: ${id}`);
+      else addError(errors, "adr-reference-missing", "ai-docs/engineering/decisions", `unknown ADR: ${id}`);
+    }
+  }
+}
+async function validateTaskLinks(file, devRoot, errors) {
+  if (!file?.text) return;
+  const documentText = file.text.replace(/```[\s\S]*?```/g, "");
+  for (const match of documentText.matchAll(/!?(?:\[[^\]]*\])\(([^)]+)\)/g)) {
+    let targetText = match[1].trim().split(/\s+["']/)[0].split("#")[0];
+    if (!targetText || /^(?:https?:|mailto:|data:)/i.test(targetText)) continue;
+    try {
+      targetText = decodeURIComponent(targetText);
+    } catch {
+      addError(errors, "link-invalid", file.relativePath, `link is not valid URI text: ${targetText}`);
+      continue;
+    }
+    if (targetText.startsWith("/") || /^[A-Za-z]:[\\/]/.test(targetText)) {
+      addError(errors, "link-absolute", file.relativePath, "task document links must be relative");
+      continue;
+    }
+    const target = resolve3(file.absolutePath, "..", targetText);
+    if (!isInside(devRoot, target)) {
+      addError(errors, "link-path-escape", file.relativePath, `link escapes DEV_ROOT: ${targetText}`);
+      continue;
+    }
+    try {
+      const info = await lstat3(target);
+      if (info.isSymbolicLink()) addError(errors, "link-symlink", file.relativePath, `link target is a symbolic link: ${targetText}`);
+      else if (!info.isFile() && !info.isDirectory()) addError(errors, "broken-link", file.relativePath, `link target is not a file or directory: ${targetText}`);
+      else if (!isInside(devRoot, await realpath3(target))) addError(errors, "link-path-escape", file.relativePath, `link resolves outside DEV_ROOT: ${targetText}`);
+    } catch (error) {
+      if (error.code === "ENOENT") addError(errors, "broken-link", file.relativePath, `link target does not exist: ${targetText}`);
+      else addError(errors, "link-read-failed", file.relativePath, error.message);
+    }
+  }
+}
+async function checkModuleIds(root, modules, errors, warnings) {
+  const indexPath = join2(root, "ai-docs", "engineering", "module-index.yaml");
+  if (!await pathExists(indexPath)) return;
+  let info;
+  try {
+    info = await lstat3(indexPath);
+  } catch (error) {
+    addError(errors, "module-index-invalid", "ai-docs/engineering/module-index.yaml", error.message);
+    return;
+  }
+  if (info.isSymbolicLink() || !info.isFile()) {
+    addError(errors, "module-index-invalid", "ai-docs/engineering/module-index.yaml", "module-index.yaml must be a regular file");
+    return;
+  }
+  let index;
+  try {
+    index = import_yaml3.default.parse(await readFile3(indexPath, "utf8"));
+  } catch (error) {
+    addError(errors, "module-index-invalid", "ai-docs/engineering/module-index.yaml", error.message);
+    return;
+  }
+  if (!index || typeof index !== "object" || Array.isArray(index)) {
+    addError(errors, "module-index-invalid", "ai-docs/engineering/module-index.yaml", "module index must be a YAML mapping");
+    return;
+  }
+  if (index.schema_version !== 1) addError(errors, "module-index-schema", "ai-docs/engineering/module-index.yaml", "schema_version must be 1");
+  if (!Array.isArray(index.modules) || index.modules.length === 0) {
+    addError(errors, "module-index-empty", "ai-docs/engineering/module-index.yaml", "modules must be a non-empty array");
+    return;
+  }
+  const known = /* @__PURE__ */ new Set();
+  const declared = [];
+  for (const item of index.modules) {
+    const id = item?.id;
+    if (typeof id !== "string" || !MODULE_ID.test(id)) {
+      addError(errors, "module-id-invalid", "ai-docs/engineering/module-index.yaml", "module id must match [a-z][a-z0-9-]*");
+      continue;
+    }
+    if (known.has(id)) addError(errors, "module-id-duplicate", "ai-docs/engineering/module-index.yaml", `duplicate module: ${id}`);
+    known.add(id);
+    const paths = Array.isArray(item.paths) ? item.paths : [];
+    for (const glob of paths) {
+      const problem = validateGlob(glob);
+      if (problem) addError(errors, "module-glob-invalid", "ai-docs/engineering/module-index.yaml", `${glob}: ${problem}`);
+    }
+    const specIds = Array.isArray(item.specs) ? item.specs : [];
+    for (const spec of specIds) {
+      if (typeof spec !== "string" || !SPEC_ID.test(spec)) addError(errors, "module-spec-invalid", "ai-docs/engineering/module-index.yaml", `invalid Spec reference: ${spec}`);
+    }
+    const dependsOn = Array.isArray(item.depends_on) ? item.depends_on : [];
+    for (const dependency of dependsOn) {
+      if (typeof dependency !== "string" || !MODULE_ID.test(dependency)) addError(errors, "module-dependency-invalid", "ai-docs/engineering/module-index.yaml", `invalid module dependency: ${dependency}`);
+    }
+    declared.push({ id, specIds, dependsOn });
+  }
+  for (const module of declared) {
+    for (const dependency of module.dependsOn) {
+      if (MODULE_ID.test(dependency) && !known.has(dependency)) {
+        addError(errors, "module-dependency-missing", "ai-docs/engineering/module-index.yaml", `${module.id} depends on unknown module: ${dependency}`);
+      }
+    }
+  }
+  if (await pathExists(join2(root, "ai-docs", "engineering", "specs"))) {
+    const knownSpecs = await loadEngineeringReferences(root, warnings);
+    for (const module of declared) {
+      for (const spec of module.specIds) {
+        if (SPEC_ID.test(spec) && !knownSpecs.specs.has(spec)) {
+          addError(errors, "module-spec-reference-missing", "ai-docs/engineering/module-index.yaml", `${module.id} references unknown Spec: ${spec}`);
+        }
+      }
+    }
+  }
+  for (const module of modules) {
+    if (!known.has(module)) addError(errors, "module-reference-missing", "ai-docs/engineering/module-index.yaml", `unknown module: ${module}`);
+  }
+}
+function knownArtifactWarnings(taskRoot, relativeTask, warnings, errors) {
+  return readdirNames(taskRoot).then((names) => {
+    for (const name of names) {
+      if (/^(?:spec|design)(?:[-_](?:final|new|v\d+)|\.(?:final|new|v\d+))\.md$/i.test(name)) {
+        addError(errors, "duplicate-artifact", `${relativeTask}/${name}`, "use the canonical spec.md/design.md instead of a versioned or final copy");
+      } else if (!ARTIFACT_NAMES.has(name) && !name.startsWith(".")) {
+        addWarning(warnings, "task-artifact-ignored", `${relativeTask}/${name}`, "file is not part of the task artifact contract");
+      }
+    }
+  });
+}
+async function readdirNames(path) {
+  try {
+    return (await readdir2(path, { withFileTypes: true })).map((entry) => entry.name);
+  } catch (error) {
+    if (error.code === "ENOENT") return [];
+    throw error;
+  }
+}
+async function checkTaskArtifacts({
+  workspace,
+  devRoot,
+  productRoot,
+  taskRef,
+  changeId,
+  path,
+  version,
+  taskSlug,
+  featureName,
+  stage = "structure",
+  allowLegacy = true
+} = {}) {
+  if (!["structure", "ready", "close"].includes(stage)) {
+    throw new ContractError("stage-invalid", "stage must be structure, ready, or close");
+  }
+  const resolved = await resolveTaskRef({
+    workspace,
+    devRoot,
+    productRoot,
+    taskRef,
+    changeId,
+    path,
+    version,
+    taskSlug,
+    featureName,
+    requireSource: stage !== "structure"
+  });
+  const errors = [...resolved.errors ?? []];
+  const warnings = [...resolved.warnings ?? []];
+  if (!resolved.exists) {
+    return {
+      ok: false,
+      stage,
+      task: resolved,
+      errors: errors.length ? errors : [issue("task-ref-not-found", resolved.relativePath ?? "", "task directory does not exist")],
+      warnings,
+      artifacts: {}
+    };
+  }
+  const root = resolved.devRoot;
+  const taskRoot = resolved.absolutePath;
+  const specPath = `${resolved.relativePath}/spec.md`;
+  const designPath = `${resolved.relativePath}/design.md`;
+  const legacyFilePresence = await Promise.all([
+    pathExists(join2(taskRoot, "change.md")),
+    pathExists(join2(taskRoot, "spec.md")),
+    pathExists(join2(taskRoot, "design.md")),
+    pathExists(join2(taskRoot, "README.md"))
+  ]);
+  const hasLegacyFiles = resolved.compatibility === "legacy" && legacyFilePresence.some(Boolean);
+  if (allowLegacy && hasLegacyFiles) {
+    warnings.push(issue("legacy-task-incomplete", resolved.relativePath, "legacy task package is readable but does not contain the new structured Spec/Design pair", "warning"));
+    if (stage !== "structure") {
+      errors.push(issue("legacy-task-incomplete", resolved.relativePath, "legacy task package must be explicitly upgraded before ready or close validation"));
+    }
+    return { ok: errors.length === 0, stage, task: resolved, errors, warnings, artifacts: { spec: null, design: null } };
+  }
+  const spec = await readArtifact(root, specPath, errors, true);
+  const design = await readArtifact(root, designPath, errors, true);
+  if (!spec || !design) {
+    return { ok: errors.length === 0, stage, task: resolved, errors, warnings, artifacts: { spec, design } };
+  }
+  let specData;
+  let designData;
+  const specResult = validateSpec(spec.metadata, spec.body, resolved, specPath, errors, warnings, stage);
+  try {
+    designData = validateDesign(design.metadata, design.body, resolved, spec.absolutePath, design.absolutePath, designPath, errors, warnings);
+  } catch (error) {
+    addError(errors, error.code ?? "design-invalid", designPath, error.message);
+  }
+  specData = specResult;
+  await checkModuleIds(root, specData.modules, errors, warnings);
+  await validateEngineeringReferences(root, specData.relatedSpecs, specData.relatedAdrs, errors, warnings, stage);
+  await validateTaskLinks(spec, root, errors);
+  await validateTaskLinks(design, root, errors);
+  await knownArtifactWarnings(taskRoot, resolved.relativePath, warnings, errors);
+  if (stage === "close" && spec.metadata.status === "verified" && !await pathExists(join2(taskRoot, "verification.md"))) {
+    addWarning(warnings, "verification-file-missing", `${resolved.relativePath}/verification.md`, "verified status has no persisted verification.md; record evidence if this is a controlled change");
+  }
+  return {
+    ok: errors.length === 0,
+    stage,
+    task: resolved,
+    errors,
+    warnings,
+    artifacts: {
+      spec: { ...spec, data: specData },
+      design: { ...design, data: designData }
+    }
+  };
+}
+
+// scripts/spec-reminder.mjs
+var import_yaml4 = __toESM(require_dist(), 1);
+import { lstat as lstat4, readFile as readFile4, readdir as readdir3 } from "node:fs/promises";
+import { join as join3, relative as relative2, resolve as resolve4 } from "node:path";
+var HIGH_SIGNALS = /* @__PURE__ */ new Set(["contract", "data", "boundary", "compatibility", "ownership", "command"]);
+var SIGNALS = /* @__PURE__ */ new Set([...HIGH_SIGNALS]);
+function normalizeSignals(value) {
+  const values = Array.isArray(value) ? value : typeof value === "string" ? value.split(",") : [];
+  return [...new Set(values.map((item) => String(item).trim().toLowerCase()).filter(Boolean))];
+}
+function matchingPaths(paths, globs) {
+  const valid = globs.filter((glob) => !validateGlob(glob)).map(globToRegExp);
+  return paths.filter((path) => valid.some((pattern) => pattern.test(path)));
+}
+async function walkMarkdown(root, logicalRoot = root) {
+  const files = [];
+  async function visit(directory) {
+    let entries;
+    try {
+      entries = await readdir3(directory, { withFileTypes: true });
+    } catch (error) {
+      if (error.code === "ENOENT") return;
+      throw error;
+    }
+    entries.sort((left, right) => left.name.localeCompare(right.name));
+    for (const entry of entries) {
+      const absolute = resolve4(directory, entry.name);
+      if (entry.isSymbolicLink()) continue;
+      if (entry.isDirectory()) await visit(absolute);
+      else if (entry.isFile() && entry.name.endsWith(".md")) files.push({ absolute, path: relative2(logicalRoot, absolute).split("\\").join("/") });
+    }
+  }
+  await visit(root);
+  return files;
+}
+async function loadSpecs(devRoot) {
+  const specRoot = resolve4(devRoot, "ai-docs", "engineering", "specs");
+  const files = await walkMarkdown(specRoot, devRoot);
+  const specs = [];
+  const warnings = [];
+  for (const file of files) {
+    let text;
+    try {
+      text = await readFile4(file.absolute, "utf8");
+    } catch (error) {
+      warnings.push(issue("spec-read-failed", file.path, error.message, "warning"));
+      continue;
+    }
+    let parsed;
+    try {
+      parsed = parseFrontmatter(text, file.path);
+    } catch (error) {
+      warnings.push(issue(error.code ?? "spec-frontmatter-invalid", file.path, error.message, "warning"));
+      continue;
+    }
+    const appliesTo = Array.isArray(parsed.metadata.applies_to) ? parsed.metadata.applies_to.filter((item) => typeof item === "string") : [];
+    specs.push({
+      id: parsed.metadata.id ?? file.path,
+      path: file.path,
+      appliesTo,
+      moduleId: parsed.metadata.module_id ?? parsed.metadata.moduleId ?? null
+    });
+  }
+  return { specs, warnings };
+}
+async function loadModuleIndex(devRoot) {
+  const path = resolve4(devRoot, "ai-docs", "engineering", "module-index.yaml");
+  try {
+    const info = await lstat4(path);
+    if (info.isSymbolicLink() || !info.isFile()) return { modules: [], warnings: [] };
+    const parsed = import_yaml4.default.parse(await readFile4(path, "utf8"));
+    const modules = Array.isArray(parsed?.modules) ? parsed.modules.filter((item) => item && typeof item.id === "string") : [];
+    return { modules, warnings: [] };
+  } catch (error) {
+    if (error.code === "ENOENT") return { modules: [], warnings: [] };
+    return { modules: [], warnings: [issue("module-index-invalid", "ai-docs/engineering/module-index.yaml", error.message, "warning")] };
+  }
+}
+async function taskSignals(task) {
+  if (!task?.exists || !task.absolutePath) return { paths: [], signals: [], candidates: [] };
+  const specPath = join3(task.absolutePath, "spec.md");
+  try {
+    const info = await lstat4(specPath);
+    if (info.isSymbolicLink() || !info.isFile()) return { paths: [], signals: [], candidates: [] };
+    const parsed = parseFrontmatter(await readFile4(specPath, "utf8"), `${task.relativePath}/spec.md`);
+    const paths = parsed.metadata.affected_paths?.include ?? [];
+    const explicitSignals = parsed.metadata.impact_signals ?? parsed.metadata.impactSignals ?? [];
+    const declared = parsed.metadata.knowledge_impact ?? parsed.metadata.durable_updates ?? [];
+    return {
+      paths: Array.isArray(paths) ? paths.filter((item) => typeof item === "string") : [],
+      signals: normalizeSignals(explicitSignals),
+      candidates: Array.isArray(declared) ? declared : []
+    };
+  } catch {
+    return { paths: [], signals: [], candidates: [] };
+  }
+}
+function candidateKey(candidate) {
+  return `${candidate.kind}:${candidate.target}`;
+}
+function addCandidate(map, candidate) {
+  if (!candidate.target) return;
+  const key = candidateKey(candidate);
+  const existing = map.get(key);
+  if (!existing) {
+    map.set(key, { ...candidate, reasons: [...new Set(candidate.reasons ?? [])], paths: [...new Set(candidate.paths ?? [])] });
+    return;
+  }
+  existing.reasons = [.../* @__PURE__ */ new Set([...existing.reasons, ...candidate.reasons ?? []])];
+  existing.paths = [.../* @__PURE__ */ new Set([...existing.paths, ...candidate.paths ?? []])];
+  if (candidate.severity === "review" || existing.severity !== "review" && candidate.severity === "high") {
+    existing.severity = candidate.severity;
+  }
+}
+async function findSpecReminders({
+  workspace,
+  devRoot,
+  productRoot,
+  paths = [],
+  taskRef,
+  changeId,
+  signals = []
+} = {}) {
+  const errors = [];
+  const warnings = [];
+  let roots;
+  try {
+    roots = await resolveWorkspaceRoots({ workspace, devRoot, productRoot });
+  } catch (error) {
+    return {
+      ok: false,
+      remind: false,
+      level: "blocked",
+      candidates: [],
+      errors: [issue(error.code ?? "dev-root-invalid", "", error.message)],
+      warnings
+    };
+  }
+  const normalizedPaths = [];
+  const pathInputs = Array.isArray(paths) ? paths : paths ? [paths] : [];
+  for (const input of pathInputs) {
+    try {
+      normalizedPaths.push(relativePath(roots.devRoot, input));
+    } catch (error) {
+      errors.push(issue(error.code ?? "path-invalid", "", error.message));
+    }
+  }
+  const resolvedTask = taskRef || changeId ? await resolveTaskRef({ workspace, devRoot, productRoot, taskRef, changeId, allowMissing: false }) : null;
+  if (resolvedTask?.errors?.length) errors.push(...resolvedTask.errors);
+  const taskInfo = await taskSignals(resolvedTask);
+  const allPaths = normalizedPaths.length > 0 ? [...new Set(normalizedPaths)] : [...new Set(taskInfo.paths)];
+  const explicitSignals = [.../* @__PURE__ */ new Set([...normalizeSignals(signals), ...taskInfo.signals])];
+  const unknownSignals = explicitSignals.filter((signal) => !SIGNALS.has(signal));
+  for (const signal of unknownSignals) warnings.push(issue("reminder-signal-unknown", "", `unknown reminder signal: ${signal}`, "warning"));
+  const high = explicitSignals.some((signal) => HIGH_SIGNALS.has(signal));
+  const severity = high ? "review" : "suggestion";
+  const { specs, warnings: specWarnings } = await loadSpecs(roots.devRoot);
+  warnings.push(...specWarnings);
+  const { modules, warnings: moduleWarnings } = await loadModuleIndex(roots.devRoot);
+  warnings.push(...moduleWarnings);
+  const candidates = /* @__PURE__ */ new Map();
+  for (const spec of specs) {
+    const matched = matchingPaths(allPaths, spec.appliesTo);
+    if (matched.length === 0) continue;
+    addCandidate(candidates, {
+      kind: "update-spec",
+      target: spec.id,
+      severity,
+      paths: matched,
+      reasons: ["changed paths match the Spec scope"]
+    });
+  }
+  const specificGlobs = specs.flatMap((spec) => spec.appliesTo.filter((glob) => glob !== "**"));
+  const uncoveredPaths = allPaths.filter((path) => !specificGlobs.some((glob) => matchingPaths([path], [glob]).length > 0));
+  if (uncoveredPaths.length > 0 && (high || specs.length === 0)) {
+    addCandidate(candidates, {
+      kind: "create-spec",
+      target: "ai-docs/engineering/specs/<module>.md",
+      severity,
+      paths: uncoveredPaths,
+      reasons: ["changed paths are not covered by a module-scoped Spec"]
+    });
+  }
+  if (high && allPaths.length > 0) {
+    const boundaryPaths = allPaths.filter((path) => /(?:module-index\.yaml|package\.json|pom\.xml|build\.gradle|settings\.gradle|openapi|schema|migration|migrations|proto|routes?|commands?)/i.test(path));
+    if (boundaryPaths.length > 0 || explicitSignals.some((signal) => ["boundary", "ownership", "compatibility"].includes(signal))) {
+      addCandidate(candidates, {
+        kind: "review-adr",
+        target: "ai-docs/engineering/decisions/ADR-NNNN-<slug>.md",
+        severity: "review",
+        paths: boundaryPaths.length > 0 ? boundaryPaths : allPaths,
+        reasons: ["change carries a durable boundary, ownership, compatibility, or contract signal"]
+      });
+    }
+  }
+  for (const declared of taskInfo.candidates) {
+    if (typeof declared === "string") {
+      addCandidate(candidates, { kind: "update-spec", target: declared, severity: "review", paths: allPaths, reasons: ["task source declares a durable knowledge update"] });
+    } else if (declared && typeof declared === "object") {
+      const target = declared.target ?? declared.id;
+      const kind = declared.kind === "adr" ? "review-adr" : "update-spec";
+      addCandidate(candidates, {
+        kind,
+        target,
+        severity: "review",
+        paths: allPaths,
+        reasons: [declared.reason ?? "task source declares a durable knowledge update"]
+      });
+    }
+  }
+  if (modules.length > 0 && explicitSignals.includes("boundary") && allPaths.length > 0) {
+    const matchedModules = modules.filter((module) => matchingPaths(allPaths, Array.isArray(module.paths) ? module.paths : []).length > 0);
+    for (const module of matchedModules) {
+      addCandidate(candidates, {
+        kind: "review-module",
+        target: module.id,
+        severity: "review",
+        paths: allPaths,
+        reasons: ["changed paths intersect a declared module boundary"]
+      });
+    }
+  }
+  const ordered = [...candidates.values()].sort((left, right) => `${left.kind}:${left.target}`.localeCompare(`${right.kind}:${right.target}`));
+  return {
+    ok: errors.length === 0,
+    remind: ordered.length > 0,
+    level: ordered.some((candidate) => candidate.severity === "review") ? "review" : ordered.length > 0 ? "suggestion" : "none",
+    workspace: roots.devRoot,
+    productRoot: roots.productRoot,
+    paths: allPaths,
+    signals: explicitSignals,
+    candidates: ordered,
+    errors,
+    warnings
+  };
+}
+
+// scripts/spec-tool.mjs
+var SPEC_ID2 = /^SPEC-[a-z0-9][a-z0-9-]*$/;
+var ADR_ID2 = /^ADR-\d{4}$/;
+var ADR_FILE = /^(ADR-\d{4})-[a-z0-9][a-z0-9-]*\.md$/;
+var CHANGE_ID2 = /^(?:v\d+\.\d+\.\d+-[A-Za-z][A-Za-z0-9]*|\d{4}-\d{2}-\d{2}-[a-z0-9][a-z0-9-]*)$/;
+var STORY_ID2 = /^US-\d{3,}$/;
+var MODULE_ID2 = /^[a-z][a-z0-9-]*$/;
+function issue2(code, path, message) {
+  return { code, path, message };
+}
+function toPosix2(path) {
+  return path.split(sep2).join("/");
+}
+function isInside2(parent, child) {
+  const rel = relative3(parent, child);
+  return rel === "" || !rel.startsWith(`..${sep2}`) && rel !== ".." && !isAbsolute2(rel);
+}
+async function exists(path) {
+  try {
+    await stat2(path);
+    return true;
+  } catch (error) {
+    if (error.code === "ENOENT") return false;
+    throw error;
+  }
+}
+async function workspaceRoot(input) {
+  if (!input) throw new Error("--workspace is required");
+  const root = await realpath4(resolve5(input));
+  const info = await stat2(root);
+  if (!info.isDirectory()) throw new Error(`workspace is not a directory: ${input}`);
+  return root;
+}
+async function walkFiles(root, errors, logicalRoot = root) {
+  if (!await exists(root)) return [];
+  const files = [];
+  async function visit(directory) {
+    const entries = await readdir4(directory, { withFileTypes: true });
+    entries.sort((a, b) => a.name.localeCompare(b.name));
+    for (const entry of entries) {
+      const absolute = resolve5(directory, entry.name);
+      const logical = toPosix2(relative3(logicalRoot, absolute));
+      if (entry.isSymbolicLink()) {
+        errors?.push(issue2("symlink-not-allowed", logical, "symbolic links are not followed"));
+      } else if (entry.isDirectory()) {
+        await visit(absolute);
+      } else if (entry.isFile()) {
+        files.push(absolute);
+      }
+    }
+  }
+  await visit(root);
+  return files;
+}
+function parseFrontmatter2(text, path, errors, required = true) {
+  const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(text);
+  if (!match) {
+    if (required) errors.push(issue2("frontmatter-missing", path, "YAML frontmatter is required"));
+    return { metadata: {}, body: text };
+  }
+  try {
+    const metadata = import_yaml5.default.parse(match[1]);
+    if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+      errors.push(issue2("frontmatter-invalid", path, "frontmatter must be a YAML mapping"));
+      return { metadata: {}, body: text.slice(match[0].length) };
+    }
+    return { metadata, body: text.slice(match[0].length) };
+  } catch (error) {
+    errors.push(issue2("frontmatter-invalid", path, error.message));
+    return { metadata: {}, body: text.slice(match[0].length) };
+  }
+}
+function validateGlob2(glob) {
+  if (typeof glob !== "string" || glob.length === 0) return "glob must be a non-empty string";
+  if (isAbsolute2(glob) || /^[A-Za-z]:/.test(glob)) return "glob must be repository-relative";
+  if (glob.includes("\\")) return "glob must use POSIX separators";
+  if (glob.startsWith("/") || glob.endsWith("/") || glob.includes("//")) return "glob has an invalid separator";
+  if (!/^[A-Za-z0-9._/*?-]+$/.test(glob)) return "glob uses unsupported syntax";
+  if (glob.split("/").some((part) => part === "." || part === "..")) return "glob may not contain . or .. segments";
+  return null;
+}
+function globToRegExp2(glob) {
+  let pattern = "^";
+  for (let index = 0; index < glob.length; index += 1) {
+    const character = glob[index];
+    if (character === "*") {
+      if (glob[index + 1] === "*") {
+        index += 1;
+        if (glob[index + 1] === "/") {
+          index += 1;
+          pattern += "(?:.*/)?";
+        } else {
+          pattern += ".*";
+        }
+      } else {
+        pattern += "[^/]*";
+      }
+    } else if (character === "?") {
+      pattern += "[^/]";
+    } else {
+      pattern += character.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+  }
+  return new RegExp(`${pattern}$`);
+}
+function validateStringList(value, key, path, errors, { required = false, pattern } = {}) {
+  if (value === void 0 && !required) return [];
+  if (!Array.isArray(value) || required && value.length === 0 || value.some((item) => typeof item !== "string")) {
+    errors.push(issue2("field-invalid", path, `${key} must be ${required ? "a non-empty" : "an"} array of strings`));
+    return [];
+  }
+  if (pattern) {
+    for (const item of value) {
+      if (!pattern.test(item)) errors.push(issue2("field-invalid", path, `${key} contains invalid value: ${item}`));
+    }
+  }
+  return value;
+}
+async function loadModuleIndex2(engineeringRoot, specIds, errors) {
+  const indexPath = resolve5(engineeringRoot, "module-index.yaml");
+  if (!await exists(indexPath)) return [];
+  let info;
+  try {
+    info = await lstat5(indexPath);
+  } catch (error) {
+    errors.push(issue2("module-index-read-failed", "ai-docs/engineering/module-index.yaml", error.message));
+    return [];
+  }
+  if (info.isSymbolicLink() || !info.isFile()) {
+    errors.push(issue2("module-index-invalid", "ai-docs/engineering/module-index.yaml", "module-index.yaml must be a regular file"));
+    return [];
+  }
+  let document;
+  try {
+    document = import_yaml5.default.parse(await readFile5(indexPath, "utf8"));
+  } catch (error) {
+    errors.push(issue2("module-index-invalid", "ai-docs/engineering/module-index.yaml", error.message));
+    return [];
+  }
+  if (!document || typeof document !== "object" || Array.isArray(document)) {
+    errors.push(issue2("module-index-invalid", "ai-docs/engineering/module-index.yaml", "module index must be a YAML mapping"));
+    return [];
+  }
+  if (document.schema_version !== 1) {
+    errors.push(issue2("module-index-schema", "ai-docs/engineering/module-index.yaml", "schema_version must be 1"));
+  }
+  if (!Array.isArray(document.modules) || document.modules.length === 0) {
+    errors.push(issue2("module-index-empty", "ai-docs/engineering/module-index.yaml", "modules must be a non-empty array"));
+    return [];
+  }
+  const ids = /* @__PURE__ */ new Map();
+  const modules = [];
+  for (const item of document.modules) {
+    const id = item?.id;
+    if (typeof id !== "string" || !MODULE_ID2.test(id)) {
+      errors.push(issue2("module-id-invalid", "ai-docs/engineering/module-index.yaml", "module id must match [a-z][a-z0-9-]*"));
+      continue;
+    }
+    if (ids.has(id)) {
+      errors.push(issue2("module-id-duplicate", "ai-docs/engineering/module-index.yaml", `${id} is already declared`));
+      continue;
+    }
+    ids.set(id, true);
+    const paths = validateStringList(item.paths, "paths", "ai-docs/engineering/module-index.yaml", errors);
+    for (const glob of paths) {
+      const problem = validateGlob2(glob);
+      if (problem) errors.push(issue2("module-glob-invalid", "ai-docs/engineering/module-index.yaml", `${glob}: ${problem}`));
+    }
+    const specs = validateStringList(item.specs, "specs", "ai-docs/engineering/module-index.yaml", errors, { pattern: SPEC_ID2 });
+    for (const spec of specs) {
+      if (!specIds.has(spec)) errors.push(issue2("module-spec-reference-missing", "ai-docs/engineering/module-index.yaml", `${id} references unknown Spec: ${spec}`));
+    }
+    const dependsOn = validateStringList(item.depends_on, "depends_on", "ai-docs/engineering/module-index.yaml", errors, { pattern: MODULE_ID2 });
+    modules.push({ id, title: item.title, owner: item.owner, paths, specs, dependsOn });
+  }
+  for (const module of modules) {
+    for (const dependency of module.dependsOn) {
+      if (dependency === module.id) errors.push(issue2("module-self-dependency", "ai-docs/engineering/module-index.yaml", `${module.id} may not depend on itself`));
+      else if (!ids.has(dependency)) errors.push(issue2("module-dependency-missing", "ai-docs/engineering/module-index.yaml", `${module.id} depends on unknown module: ${dependency}`));
+    }
+  }
+  return modules;
+}
+async function loadEngineering(root, roots = { devRoot: root, productRoot: null }, { validateSources = true } = {}) {
+  const engineeringRoot = resolve5(root, "ai-docs", "engineering");
   const errors = [];
   const warnings = [];
   const specs = [];
   const adrs = [];
   const changes = [];
+  const modules = [];
   if (!await exists(engineeringRoot)) {
-    errors.push(issue("engineering-root-missing", "ai-docs/engineering", "team engineering root does not exist"));
-    return { root, engineeringRoot, errors, warnings, specs, adrs, changes };
+    errors.push(issue2("engineering-root-missing", "ai-docs/engineering", "team engineering root does not exist"));
+    return { root, engineeringRoot, errors, warnings, specs, adrs, changes, modules };
   }
-  const indexPath = resolve(engineeringRoot, "README.md");
+  const indexPath = resolve5(engineeringRoot, "README.md");
   if (!await exists(indexPath)) {
-    errors.push(issue("engineering-index-missing", "ai-docs/engineering/README.md", "engineering index is required"));
+    errors.push(issue2("engineering-index-missing", "ai-docs/engineering/README.md", "engineering index is required"));
   }
-  const specRoot = resolve(engineeringRoot, "specs");
+  const specRoot = resolve5(engineeringRoot, "specs");
   const specFiles = (await walkFiles(specRoot, errors, root)).filter((path) => path.endsWith(".md"));
   const specIds = /* @__PURE__ */ new Map();
   for (const absolute of specFiles) {
-    const path = toPosix(relative(root, absolute));
-    const text = await readFile(absolute, "utf8");
-    const { metadata, body } = parseFrontmatter(text, path, errors);
-    if (!SPEC_ID.test(metadata.id ?? "")) {
-      errors.push(issue("spec-id-invalid", path, "id must match SPEC-[a-z0-9][a-z0-9-]*"));
+    const path = toPosix2(relative3(root, absolute));
+    const text = await readFile5(absolute, "utf8");
+    const { metadata, body } = parseFrontmatter2(text, path, errors);
+    if (!SPEC_ID2.test(metadata.id ?? "")) {
+      errors.push(issue2("spec-id-invalid", path, "id must match SPEC-[a-z0-9][a-z0-9-]*"));
     } else if (specIds.has(metadata.id)) {
-      errors.push(issue("spec-id-duplicate", path, `${metadata.id} is already used by ${specIds.get(metadata.id)}`));
+      errors.push(issue2("spec-id-duplicate", path, `${metadata.id} is already used by ${specIds.get(metadata.id)}`));
     } else {
       specIds.set(metadata.id, path);
     }
     const appliesTo = validateStringList(metadata.applies_to, "applies_to", path, errors, { required: true });
     for (const glob of appliesTo) {
-      const problem = validateGlob(glob);
-      if (problem) errors.push(issue("spec-glob-invalid", path, `${glob}: ${problem}`));
+      const problem = validateGlob2(glob);
+      if (problem) errors.push(issue2("spec-glob-invalid", path, `${glob}: ${problem}`));
     }
-    if (body.trim().length === 0) errors.push(issue("document-empty", path, "Spec body must not be empty"));
-    specs.push({ id: metadata.id, path, appliesTo });
+    const moduleId = metadata.module_id ?? metadata.moduleId;
+    if (moduleId !== void 0 && (typeof moduleId !== "string" || !MODULE_ID2.test(moduleId))) {
+      errors.push(issue2("spec-module-id-invalid", path, "module_id must match [a-z][a-z0-9-]*"));
+    }
+    if (body.trim().length === 0) errors.push(issue2("document-empty", path, "Spec body must not be empty"));
+    specs.push({ id: metadata.id, path, appliesTo, moduleId: moduleId ?? null });
   }
-  const decisionRoot = resolve(engineeringRoot, "decisions");
+  modules.push(...await loadModuleIndex2(engineeringRoot, specIds, errors));
+  const moduleIds = new Set(modules.map((item) => item.id));
+  for (const spec of specs) {
+    if (spec.moduleId && modules.length > 0 && !moduleIds.has(spec.moduleId)) {
+      errors.push(issue2("spec-module-reference-missing", spec.path, `unknown module_id: ${spec.moduleId}`));
+    }
+  }
+  const decisionRoot = resolve5(engineeringRoot, "decisions");
   const adrFiles = (await walkFiles(decisionRoot, errors, root)).filter((path) => path.endsWith(".md"));
   const adrIds = /* @__PURE__ */ new Map();
   for (const absolute of adrFiles) {
-    const path = toPosix(relative(root, absolute));
+    const path = toPosix2(relative3(root, absolute));
     const filename = path.split("/").at(-1);
     const filenameMatch = ADR_FILE.exec(filename);
-    const text = await readFile(absolute, "utf8");
-    const { metadata, body } = parseFrontmatter(text, path, errors);
-    if (!filenameMatch) errors.push(issue("adr-filename-invalid", path, "ADR filename must be ADR-NNNN-<slug>.md"));
-    if (!ADR_ID.test(metadata.id ?? "")) {
-      errors.push(issue("adr-id-invalid", path, "id must match ADR-NNNN"));
+    const text = await readFile5(absolute, "utf8");
+    const { metadata, body } = parseFrontmatter2(text, path, errors);
+    if (!filenameMatch) errors.push(issue2("adr-filename-invalid", path, "ADR filename must be ADR-NNNN-<slug>.md"));
+    if (!ADR_ID2.test(metadata.id ?? "")) {
+      errors.push(issue2("adr-id-invalid", path, "id must match ADR-NNNN"));
     } else if (filenameMatch && filenameMatch[1] !== metadata.id) {
-      errors.push(issue("adr-id-mismatch", path, `frontmatter id must match ${filenameMatch[1]}`));
+      errors.push(issue2("adr-id-mismatch", path, `frontmatter id must match ${filenameMatch[1]}`));
     } else if (adrIds.has(metadata.id)) {
-      errors.push(issue("adr-id-duplicate", path, `${metadata.id} is already used by ${adrIds.get(metadata.id)}`));
+      errors.push(issue2("adr-id-duplicate", path, `${metadata.id} is already used by ${adrIds.get(metadata.id)}`));
     } else {
       adrIds.set(metadata.id, path);
     }
     if (!["accepted", "superseded"].includes(metadata.status)) {
-      errors.push(issue("adr-status-invalid", path, "status must be accepted or superseded"));
+      errors.push(issue2("adr-status-invalid", path, "status must be accepted or superseded"));
     }
     if (typeof metadata.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(metadata.date)) {
-      errors.push(issue("adr-date-invalid", path, "date must use YYYY-MM-DD"));
+      errors.push(issue2("adr-date-invalid", path, "date must use YYYY-MM-DD"));
     }
-    const supersedes = validateStringList(metadata.supersedes, "supersedes", path, errors, { pattern: ADR_ID });
-    if (body.trim().length === 0) errors.push(issue("document-empty", path, "ADR body must not be empty"));
+    const supersedes = validateStringList(metadata.supersedes, "supersedes", path, errors, { pattern: ADR_ID2 });
+    if (body.trim().length === 0) errors.push(issue2("document-empty", path, "ADR body must not be empty"));
     adrs.push({ id: metadata.id, path, status: metadata.status, supersedes });
   }
   for (const adr of adrs) {
     for (const superseded of adr.supersedes) {
-      if (superseded === adr.id) errors.push(issue("adr-self-reference", adr.path, "ADR may not supersede itself"));
-      else if (!adrIds.has(superseded)) errors.push(issue("adr-reference-missing", adr.path, `unknown ADR: ${superseded}`));
+      if (superseded === adr.id) errors.push(issue2("adr-self-reference", adr.path, "ADR may not supersede itself"));
+      else if (!adrIds.has(superseded)) errors.push(issue2("adr-reference-missing", adr.path, `unknown ADR: ${superseded}`));
     }
   }
-  const changesRoot = resolve(engineeringRoot, "changes");
+  const changesRoot = resolve5(engineeringRoot, "changes");
   if (await exists(changesRoot)) {
-    const entries = await readdir(changesRoot, { withFileTypes: true });
+    const entries = await readdir4(changesRoot, { withFileTypes: true });
     entries.sort((a, b) => a.name.localeCompare(b.name));
     for (const entry of entries) {
       const entryPath = `ai-docs/engineering/changes/${entry.name}`;
       if (entry.isSymbolicLink()) {
-        errors.push(issue("symlink-not-allowed", entryPath, "symbolic links are not followed"));
+        errors.push(issue2("symlink-not-allowed", entryPath, "symbolic links are not followed"));
         continue;
       }
       if (!entry.isDirectory()) {
-        warnings.push(issue("change-entry-ignored", entryPath, "only change directories are inspected"));
+        warnings.push(issue2("change-entry-ignored", entryPath, "only change directories are inspected"));
         continue;
       }
-      const changeFile = resolve(changesRoot, entry.name, "change.md");
+      const changeFile = resolve5(changesRoot, entry.name, "change.md");
       if (!await exists(changeFile)) {
-        errors.push(issue("change-file-missing", `${entryPath}/change.md`, "persisted change directory requires change.md"));
+        errors.push(issue2("change-file-missing", `${entryPath}/change.md`, "persisted change directory requires change.md"));
         continue;
       }
-      const path = toPosix(relative(root, changeFile));
-      const text = await readFile(changeFile, "utf8");
-      const { metadata, body } = parseFrontmatter(text, path, errors);
-      if (metadata.id !== entry.name || !CHANGE_ID.test(metadata.id ?? "")) {
-        errors.push(issue("change-id-invalid", path, "id must match its versioned or dated directory name"));
+      const path = toPosix2(relative3(root, changeFile));
+      const text = await readFile5(changeFile, "utf8");
+      const { metadata, body } = parseFrontmatter2(text, path, errors);
+      if (metadata.id !== entry.name || !CHANGE_ID2.test(metadata.id ?? "")) {
+        errors.push(issue2("change-id-invalid", path, "id must match its versioned or dated directory name"));
       }
-      const relatedSpecs = validateStringList(metadata.related_specs, "related_specs", path, errors, { pattern: SPEC_ID });
-      const relatedAdrs = validateStringList(metadata.related_adrs, "related_adrs", path, errors, { pattern: ADR_ID });
-      const sourceStories = validateStringList(metadata.source_stories, "source_stories", path, errors, { pattern: STORY_ID });
+      const relatedSpecs = validateStringList(metadata.related_specs, "related_specs", path, errors, { pattern: SPEC_ID2 });
+      const relatedAdrs = validateStringList(metadata.related_adrs, "related_adrs", path, errors, { pattern: ADR_ID2 });
+      const sourceStories = validateStringList(metadata.source_stories, "source_stories", path, errors, { pattern: STORY_ID2 });
       for (const id of relatedSpecs) {
-        if (!specIds.has(id)) errors.push(issue("spec-reference-missing", path, `unknown Spec: ${id}`));
+        if (!specIds.has(id)) errors.push(issue2("spec-reference-missing", path, `unknown Spec: ${id}`));
       }
       for (const id of relatedAdrs) {
-        if (!adrIds.has(id)) errors.push(issue("adr-reference-missing", path, `unknown ADR: ${id}`));
+        if (!adrIds.has(id)) errors.push(issue2("adr-reference-missing", path, `unknown ADR: ${id}`));
       }
-      if (metadata.source_prd !== void 0) {
-        if (typeof metadata.source_prd !== "string") {
-          errors.push(issue("source-prd-invalid", path, "source_prd must be a repository-relative path"));
-        } else {
-          const target = resolve(root, metadata.source_prd);
-          if (isAbsolute(metadata.source_prd) || !isInside(root, target)) {
-            errors.push(issue("source-prd-invalid", path, "source_prd escapes the workspace"));
-          } else if (!await exists(target)) {
-            errors.push(issue("source-prd-missing", path, `source_prd does not exist: ${metadata.source_prd}`));
-          }
-        }
+      const sourceInput = metadata.source ?? (metadata.source_prd !== void 0 ? {
+        kind: "product",
+        root: roots.productRoot && typeof metadata.source_prd === "string" && await exists(resolve5(roots.productRoot, normalizeArtifactPath(metadata.source_prd))) ? "product" : "dev",
+        prd_path: metadata.source_prd,
+        stories: sourceStories
+      } : null);
+      if (sourceInput && validateSources) {
+        const version = /^(v\d+\.\d+\.\d+)-/.exec(entry.name)?.[1];
+        const sourceResult = await resolveSourceRef(sourceInput, roots, {
+          version,
+          requireFiles: true,
+          legacy: metadata
+        });
+        errors.push(...sourceResult.errors.map((item) => issue2(item.code, path, item.message)));
+        warnings.push(...sourceResult.warnings.map((item) => issue2(item.code, path, item.message)));
       }
-      if (body.trim().length === 0) errors.push(issue("document-empty", path, "change body must not be empty"));
+      if (body.trim().length === 0) errors.push(issue2("document-empty", path, "change body must not be empty"));
       changes.push({
         id: metadata.id,
         path,
@@ -7613,10 +9241,10 @@ async function loadEngineering(root) {
   }
   const markdownFiles = (await walkFiles(engineeringRoot, errors, root)).filter((path) => path.endsWith(".md"));
   for (const absolute of markdownFiles) {
-    const path = toPosix(relative(root, absolute));
-    const text = await readFile(absolute, "utf8");
+    const path = toPosix2(relative3(root, absolute));
+    const text = await readFile5(absolute, "utf8");
     if (/(?:\bTODO\b|\bTBD\b|\[TODO[^\]]*\]|待补充)/i.test(text)) {
-      warnings.push(issue("placeholder-text", path, "document contains placeholder text"));
+      warnings.push(issue2("placeholder-text", path, "document contains placeholder text"));
     }
     for (const match of text.matchAll(/!?\[[^\]]*\]\(([^)]+)\)/g)) {
       let targetText = match[1].trim();
@@ -7625,18 +9253,18 @@ async function loadEngineering(root) {
       try {
         targetText = decodeURIComponent(targetText);
       } catch {
-        errors.push(issue("link-invalid", path, `link is not valid URI text: ${targetText}`));
+        errors.push(issue2("link-invalid", path, `link is not valid URI text: ${targetText}`));
         continue;
       }
-      const target = resolve(absolute, "..", targetText);
-      if (!isInside(engineeringRoot, target)) {
-        errors.push(issue("link-path-escape", path, `link escapes ai-docs/engineering: ${targetText}`));
+      const target = resolve5(absolute, "..", targetText);
+      if (!isInside2(engineeringRoot, target)) {
+        errors.push(issue2("link-path-escape", path, `link escapes ai-docs/engineering: ${targetText}`));
       } else if (!await exists(target)) {
-        errors.push(issue("broken-link", path, `link target does not exist: ${targetText}`));
+        errors.push(issue2("broken-link", path, `link target does not exist: ${targetText}`));
       } else {
-        const resolved = await realpath(target);
-        if (!isInside(engineeringRoot, resolved)) {
-          errors.push(issue("link-path-escape", path, `link resolves outside ai-docs/engineering: ${targetText}`));
+        const resolved = await realpath4(target);
+        if (!isInside2(engineeringRoot, resolved)) {
+          errors.push(issue2("link-path-escape", path, `link resolves outside ai-docs/engineering: ${targetText}`));
         }
       }
     }
@@ -7644,20 +9272,22 @@ async function loadEngineering(root) {
   specs.sort((a, b) => a.path.localeCompare(b.path));
   adrs.sort((a, b) => a.path.localeCompare(b.path));
   changes.sort((a, b) => a.path.localeCompare(b.path));
-  return { root, engineeringRoot, errors, warnings, specs, adrs, changes };
+  modules.sort((a, b) => a.id.localeCompare(b.id));
+  return { root, engineeringRoot, errors, warnings, specs, adrs, changes, modules };
 }
 function normalizeSelectionPath(root, input) {
   if (typeof input !== "string" || input.length === 0) throw new Error("selection paths must be non-empty strings");
-  const absolute = isAbsolute(input) ? resolve(input) : resolve(root, input);
-  if (!isInside(root, absolute)) throw new Error(`selection path escapes workspace: ${input}`);
-  const normalized = toPosix(relative(root, absolute));
+  const absolute = isAbsolute2(input) ? resolve5(input) : resolve5(root, input);
+  if (!isInside2(root, absolute)) throw new Error(`selection path escapes workspace: ${input}`);
+  const normalized = toPosix2(relative3(root, absolute));
   return normalized || ".";
 }
-async function checkTeamSpecs({ workspace, change } = {}) {
-  const root = await workspaceRoot(workspace);
-  const result = await loadEngineering(root);
+async function checkTeamSpecs({ workspace, devRoot, productRoot, change } = {}) {
+  const roots = await resolveWorkspaceRoots({ workspace, devRoot, productRoot });
+  const root = roots.devRoot;
+  const result = await loadEngineering(root, roots);
   if (change && !result.changes.some((item) => item.id === change)) {
-    result.errors.push(issue("change-not-found", `ai-docs/engineering/changes/${change}`, "requested change was not found"));
+    result.errors.push(issue2("change-not-found", `ai-docs/engineering/changes/${change}`, "requested change was not found"));
   }
   return {
     ok: result.errors.length === 0,
@@ -7666,27 +9296,37 @@ async function checkTeamSpecs({ workspace, change } = {}) {
     warnings: result.warnings,
     specs: result.specs,
     adrs: result.adrs,
-    changes: result.changes
+    changes: result.changes,
+    modules: result.modules
   };
 }
-async function selectTeamSpecs({ workspace, paths = [] } = {}) {
-  const root = await workspaceRoot(workspace);
+async function selectTeamSpecs({ workspace, devRoot, productRoot, paths = [] } = {}) {
+  const roots = await resolveWorkspaceRoots({ workspace, devRoot, productRoot });
+  const root = roots.devRoot;
   if (!Array.isArray(paths) || paths.length === 0) throw new Error("--paths requires at least one path");
   const normalizedPaths = paths.map((path) => normalizeSelectionPath(root, path));
-  const result = await loadEngineering(root);
+  const result = await loadEngineering(root, roots, { validateSources: false });
   const selected = [];
   for (const spec of result.specs) {
-    const validGlobs = spec.appliesTo.filter((glob) => !validateGlob(glob));
-    const matchedPaths = normalizedPaths.filter((path) => validGlobs.some((glob) => globToRegExp(glob).test(path)));
+    const validGlobs = spec.appliesTo.filter((glob) => !validateGlob2(glob));
+    const matchedPaths = normalizedPaths.filter((path) => validGlobs.some((glob) => globToRegExp2(glob).test(path)));
     if (matchedPaths.length > 0) selected.push({ ...spec, matchedPaths });
   }
+  const selectedSpecIds = new Set(selected.map((item) => item.id));
+  const selectedModuleIds = new Set(selected.map((item) => item.moduleId).filter(Boolean));
+  const modules = result.modules.filter((module) => {
+    if (selectedModuleIds.has(module.id) || module.specs.some((id) => selectedSpecIds.has(id))) return true;
+    const validGlobs = module.paths.filter((glob) => !validateGlob2(glob));
+    return normalizedPaths.some((path) => validGlobs.some((glob) => globToRegExp2(glob).test(path)));
+  });
   return {
     ok: result.errors.length === 0,
     workspace: root,
     paths: normalizedPaths,
     errors: result.errors,
     warnings: result.warnings,
-    specs: selected
+    specs: selected,
+    modules
   };
 }
 async function countFiles(root) {
@@ -7695,34 +9335,34 @@ async function countFiles(root) {
 }
 async function inspectSkillRoot(root) {
   if (!await exists(root)) return { root: null, topLevel: [], nestedSkillFiles: 0 };
-  const entries = await readdir(root, { withFileTypes: true });
+  const entries = await readdir4(root, { withFileTypes: true });
   const topLevel = [];
   let allSkillFiles = 0;
   for (const entry of entries) {
     if (!entry.isDirectory() || entry.isSymbolicLink()) continue;
-    if (await exists(resolve(root, entry.name, "SKILL.md"))) topLevel.push(entry.name);
+    if (await exists(resolve5(root, entry.name, "SKILL.md"))) topLevel.push(entry.name);
   }
   const files = await walkFiles(root);
-  allSkillFiles = files.filter((path) => path.endsWith(`${sep}SKILL.md`)).length;
+  allSkillFiles = files.filter((path) => path.endsWith(`${sep2}SKILL.md`)).length;
   topLevel.sort();
   return { root, topLevel, nestedSkillFiles: Math.max(0, allSkillFiles - topLevel.length) };
 }
 async function auditLegacyInstallation({ workspace } = {}) {
   const root = await workspaceRoot(workspace);
-  const installationPath = resolve(root, ".oec-ai", "installation.json");
+  const installationPath = resolve5(root, ".oec-ai", "installation.json");
   let installation = null;
   const errors = [];
   if (await exists(installationPath)) {
     try {
-      installation = JSON.parse(await readFile(installationPath, "utf8"));
+      installation = JSON.parse(await readFile5(installationPath, "utf8"));
     } catch (error) {
-      errors.push(issue("legacy-manifest-invalid", ".oec-ai/installation.json", error.message));
+      errors.push(issue2("legacy-manifest-invalid", ".oec-ai/installation.json", error.message));
     }
   }
-  const claudeSkills = await inspectSkillRoot(resolve(root, ".claude", "skills"));
-  const codexSkills = await inspectSkillRoot(resolve(root, ".codex", "skills"));
-  const claudeAgentFiles = (await walkFiles(resolve(root, ".claude", "agents"))).filter((path) => path.endsWith(".md")).length;
-  const codexAgentFiles = (await walkFiles(resolve(root, ".codex", "agents"))).filter((path) => path.endsWith(".toml")).length;
+  const claudeSkills = await inspectSkillRoot(resolve5(root, ".claude", "skills"));
+  const codexSkills = await inspectSkillRoot(resolve5(root, ".codex", "skills"));
+  const claudeAgentFiles = (await walkFiles(resolve5(root, ".claude", "agents"))).filter((path) => path.endsWith(".md")).length;
+  const codexAgentFiles = (await walkFiles(resolve5(root, ".codex", "agents"))).filter((path) => path.endsWith(".toml")).length;
   const managedFiles = Array.isArray(installation?.managedFiles) ? installation.managedFiles.filter((path) => typeof path === "string") : [];
   return {
     ok: errors.length === 0,
@@ -7749,7 +9389,7 @@ async function auditLegacyInstallation({ workspace } = {}) {
     },
     preservedProjectContent: {
       root: "ai-docs",
-      files: await countFiles(resolve(root, "ai-docs")),
+      files: await countFiles(resolve5(root, "ai-docs")),
       action: "preserve"
     },
     destructiveActions: []
@@ -7758,13 +9398,32 @@ async function auditLegacyInstallation({ workspace } = {}) {
 
 // scripts/spec-tool-cli.mjs
 function parseArguments(argv) {
-  const [command, ...rest] = argv;
-  const options = { command, paths: [], format: "text" };
+  const [command, maybeSubcommand, ...tail] = argv;
+  const isTask = command === "task";
+  const options = {
+    command,
+    subcommand: isTask ? maybeSubcommand : void 0,
+    paths: [],
+    signals: [],
+    format: "text"
+  };
+  const rest = isTask ? tail : [maybeSubcommand, ...tail].filter((value) => value !== void 0);
   for (let index = 0; index < rest.length; index += 1) {
     const argument = rest[index];
     if (argument === "--workspace") options.workspace = rest[++index];
+    else if (argument === "--dev-root") options.devRoot = rest[++index];
+    else if (argument === "--product-root") options.productRoot = rest[++index];
     else if (argument === "--change") options.change = rest[++index];
+    else if (argument === "--change-id") options.changeId = rest[++index];
+    else if (argument === "--task-ref") options.taskRef = rest[++index];
+    else if (argument === "--path") options.path = rest[++index];
+    else if (argument === "--version") options.version = rest[++index];
+    else if (argument === "--task-slug" || argument === "--task") options.taskSlug = rest[++index];
+    else if (argument === "--feature" || argument === "--feature-name") options.featureName = rest[++index];
+    else if (argument === "--stage") options.stage = rest[++index];
+    else if (argument === "--allow-missing") options.allowMissing = true;
     else if (argument === "--format") options.format = rest[++index];
+    else if (argument === "--signals") options.signals.push(...String(rest[++index] ?? "").split(","));
     else if (argument === "--paths") {
       while (rest[index + 1] && !rest[index + 1].startsWith("--")) options.paths.push(rest[++index]);
     } else {
@@ -7772,24 +9431,48 @@ function parseArguments(argv) {
     }
   }
   if (!["text", "json"].includes(options.format)) throw new Error("--format must be text or json");
+  if (command === "task" && !["resolve", "check"].includes(options.subcommand)) {
+    throw new Error("task command must be resolve or check");
+  }
   return options;
 }
-function textResult(command, result) {
-  const lines = [`${command}: ${result.ok ? "ok" : "blocked"}`];
+function textResult(command, result, subcommand) {
+  const label = subcommand ? `${command} ${subcommand}` : command;
+  const lines = [`${label}: ${result.ok ? "ok" : "blocked"}`];
   if (command === "select") {
     for (const spec of result.specs) lines.push(`- ${spec.id}: ${spec.path}`);
     if (result.specs.length === 0) lines.push("- no matching Specs");
+    if (result.modules?.length) lines.push(`- modules: ${result.modules.map((item) => item.id).join(", ")}`);
   } else if (command === "legacy-audit") {
     lines.push(`- manifest: ${result.installation ? result.installation.path : "not found"}`);
     lines.push(`- managed files: ${result.installation?.managedCount ?? 0}`);
     lines.push(`- preserved ai-docs files: ${result.preservedProjectContent.files}`);
+  } else if (command === "task" && subcommand === "resolve") {
+    if (result.ref) lines.push(`- taskRef: ${result.ref}`);
+    if (result.relativePath) lines.push(`- path: ${result.relativePath}`);
+    lines.push(`- exists: ${result.exists ? "yes" : "no"}`);
+    lines.push(`- compatibility: ${result.compatibility ?? "unknown"}`);
+    if (result.source?.kind) lines.push(`- source: ${result.source.kind}`);
+  } else if (command === "task" && subcommand === "check") {
+    lines.push(`- task: ${result.task?.ref ?? "unresolved"}`);
+    lines.push(`- stage: ${result.stage}`);
+    lines.push(`- errors: ${result.errors?.length ?? 0}`);
+    lines.push(`- warnings: ${result.warnings?.length ?? 0}`);
+  } else if (command === "remind") {
+    lines.push(`- level: ${result.level ?? "none"}`);
+    for (const candidate of result.candidates ?? []) {
+      lines.push(`- ${candidate.kind}: ${candidate.target} (${candidate.severity})`);
+      for (const reason of candidate.reasons ?? []) lines.push(`  reason: ${reason}`);
+    }
+    if ((result.candidates ?? []).length === 0) lines.push("- no durable Spec update candidate");
   } else {
     lines.push(`- Specs: ${result.specs.length}`);
     lines.push(`- ADRs: ${result.adrs.length}`);
     lines.push(`- changes: ${result.changes.length}`);
+    if (result.modules?.length) lines.push(`- modules: ${result.modules.length}`);
   }
-  for (const warning of result.warnings ?? []) lines.push(`warning ${warning.code} ${warning.path}: ${warning.message}`);
-  for (const error of result.errors ?? []) lines.push(`error ${error.code} ${error.path}: ${error.message}`);
+  for (const warning of result.warnings ?? []) lines.push(`warning ${warning.code} ${warning.path ?? ""}: ${warning.message}`);
+  for (const error of result.errors ?? []) lines.push(`error ${error.code} ${error.path ?? ""}: ${error.message}`);
   return `${lines.join("\n")}
 `;
 }
@@ -7799,9 +9482,12 @@ async function main(argv = process.argv.slice(2)) {
   if (options.command === "select") result = await selectTeamSpecs(options);
   else if (options.command === "check") result = await checkTeamSpecs(options);
   else if (options.command === "legacy-audit") result = await auditLegacyInstallation(options);
-  else throw new Error("command must be select, check, or legacy-audit");
+  else if (options.command === "remind") result = await findSpecReminders(options);
+  else if (options.command === "task" && options.subcommand === "resolve") result = await resolveTaskRef(options);
+  else if (options.command === "task" && options.subcommand === "check") result = await checkTaskArtifacts(options);
+  else throw new Error("command must be select, check, legacy-audit, remind, or task resolve/check");
   process.stdout.write(options.format === "json" ? `${JSON.stringify(result, null, 2)}
-` : textResult(options.command, result));
+` : textResult(options.command, result, options.subcommand));
   if (!result.ok) process.exitCode = 1;
 }
 main().catch((error) => {

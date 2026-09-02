@@ -1,6 +1,12 @@
 # Engineering knowledge
 
-This index points to the current engineering facts and durable decisions for this repository.
+This index points to the current engineering facts and durable decisions for this repository. Versioned task
+Spec/Design files remain under `ai-docs/versions/<version>/dev-task/<task-slug>/` and are not duplicated here.
+
+## Modules
+
+- `module-index.yaml` — include this entry only when stable module identity, ownership, or dependencies
+  need to be managed.
 
 ## Current Specs
 

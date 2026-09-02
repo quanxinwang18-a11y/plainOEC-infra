@@ -105,19 +105,19 @@ test('Claude and experimental Codex Agents keep explicit-use policy and matching
     assert.equal(claude.body, codex.instructions);
   }
   const implement = claudeAgent('implementer');
-  assert.match(compact(implement.metadata.description), /existing change ID/);
+  assert.match(compact(implement.metadata.description), /existing taskRef or legacy change ID/);
   assert.match(implement.body, /Tests: <command and pass\/fail\/not run>/);
   assert.doesNotMatch(implement.body, /## Implementation complete/);
   const check = claudeAgent('checker');
-  assert.match(compact(check.metadata.description), /may modify the working tree/);
+  assert.match(compact(check.metadata.description), /may modify code/);
   assert.match(compact(check.metadata.description), /Do not use for a read-only code review/);
   assert.match(check.body, /git status --short/);
   assert.match(check.body, /git diff HEAD --/);
   assert.match(check.body, /relevant untracked files/);
   assert.match(check.body, /Tests: <command and pass\/fail\/not run>/);
   const research = claudeAgent('researcher');
-  assert.match(compact(research.metadata.description), /existing change ID/);
-  assert.match(research.body, /Do not create or guess a change package/);
+  assert.match(compact(research.metadata.description), /existing taskRef or legacy change ID/);
+  assert.match(research.body, /Do not create or guess a task package/);
   const evaluate = claudeAgent('evaluator');
   assert.ok(evaluate.metadata.tools.includes('mcp__playwright__browser_navigate'));
   assert.ok(evaluate.metadata.tools.includes('mcp__playwright__browser_snapshot'));
@@ -143,7 +143,8 @@ test('skill descriptions make positive and negative judgment boundaries explicit
 
   assert.match(skill('manage-specs').metadata.description, /durable project engineering Specs and ADRs/);
   assert.match(skill('migrate-legacy-ai-docs').metadata.description, /user explicitly invokes/);
-  assert.match(skill('plan-change').metadata.description, /technical design or implementation plan/);
+  assert.match(skill('plan-change').metadata.description, /task-level Spec and Design/);
+  assert.match(skill('plan-change').metadata.description, /technical design/);
   assert.match(skill('plan-change').metadata.description, /small obvious fix/);
   assert.match(skill('challenge-decision').metadata.description, /user explicitly invokes/);
   assert.match(skill('challenge-decision').metadata.description, /ordinary planning/);
@@ -169,7 +170,9 @@ test('explicit engineering Skills stay manual-only and no Skill recreates the le
       'challenge-decision',
       'close-change',
       'delegate-agents',
+      'manage-specs',
       'migrate-legacy-ai-docs',
+      'prototype-decision',
       'run-long-coding',
     ].includes(name)) {
       assert.equal(item.metadata['disable-model-invocation'], true);
@@ -187,19 +190,19 @@ test('explicit engineering Skills stay manual-only and no Skill recreates the le
   assert.match(closing.body, /git commit -m .* -- <same exact paths>/);
 
   const delegation = skill('delegate-agents');
-  assert.match(delegation.body, /existing change ID and a concrete research question/);
-  assert.match(delegation.body, /make the first repository operation a direct existence/);
-  assert.match(delegation.body, /run no further tools/);
-  assert.match(delegation.body, /Never create or guess a change package/);
-  assert.match(delegation.body, /`researcher`[\s\S]*`implementer`[\s\S]*`checker`/);
+  assert.match(delegation.body, /existing taskRef and a concrete question/);
+  assert.match(delegation.body, /task existence/);
+  assert.match(delegation.body, /run no further repository tools/);
+  assert.match(delegation.body, /Never create or guess a task package/);
+  assert.match(delegation.body, /researcher[\s\S]*implementer[\s\S]*checker/);
   assert.match(delegation.body, /Treat a missing status as `partial`/);
   assert.match(delegation.body, /stop on `partial`, `failed`, or `blocked`/);
   assert.match(delegation.metadata['argument-hint'], /sequence/);
   assert.doesNotMatch(delegation.metadata['argument-hint'], /full/);
-  assert.match(delegation.body, /`researcher`[\s\S]*`implementer`[\s\S]*`checker`/);
+  assert.match(delegation.body, /researcher[\s\S]*implementer[\s\S]*checker/);
   assert.match(delegation.body, /Never run Agents concurrently in `sequence`/);
   assert.match(delegation.body, /automatic retry loop/);
-  assert.match(delegation.body, /Do not claim that the engineering change is closed/);
+  assert.match(delegation.body, /A sequence is coordination evidence, not task closure/);
 
   const delegationOpenai = YAML.parse(readFileSync(resolve(
     pluginRoot,
@@ -209,9 +212,9 @@ test('explicit engineering Skills stay manual-only and no Skill recreates the le
   assert.match(delegationOpenai.interface.default_prompt, /\$delegate-agents/);
 
   const orchestration = skill('run-long-coding');
-  assert.equal(orchestration.metadata['argument-hint'], '[existing change ID or currently confirmed change]');
-  assert.match(orchestration.body, /existing `ai-docs\/engineering\/changes\/<change-id>\/change\.md`/);
-  assert.match(orchestration.body, /Playwright tools are unavailable, report `blocked`/);
+  assert.equal(orchestration.metadata['argument-hint'], '[existing taskRef or currently confirmed change]');
+  assert.match(orchestration.body, /existing canonical `taskRef` or an explicitly confirmed legacy change ID/);
+  assert.match(orchestration.body, /required Playwright tools are unavailable, report `blocked`/);
   assert.match(orchestration.body, /Retain the returned Agent ID/);
   assert.match(orchestration.body, /five build-and-evaluate cycles by default/);
   assert.match(orchestration.body, /up to ten total cycles/);
@@ -263,6 +266,24 @@ test('public Skill and Agent identifiers use scoped concise names without an oec
   }
 });
 
+test('OEC Dev task assets expose one taskRef and paired Spec/Design contract', () => {
+  const planning = skill('plan-change');
+  assert.match(planning.body, /oec-spec task resolve/);
+  assert.match(planning.body, /oec-spec task check/);
+  assert.match(planning.body, /ai-docs\/versions\/vX\.Y\.Z\/dev-task/);
+  assert.match(planning.body, /task-artifact-contract/);
+  assert.match(planning.body, /Product Root/);
+  assert.match(readFileSync(resolve(pluginRoot, 'skills/plan-change/references/task-artifact-contract.md'), 'utf8'), /task_ref/);
+  assert.match(readFileSync(resolve(pluginRoot, 'skills/plan-change/assets/task-spec.md'), 'utf8'), /artifact: task-spec/);
+  assert.match(readFileSync(resolve(pluginRoot, 'skills/plan-change/assets/task-design.md'), 'utf8'), /artifact: task-design/);
+  const managing = skill('manage-specs');
+  assert.equal(managing.metadata['disable-model-invocation'], true);
+  assert.match(managing.body, /oec-spec remind/);
+  assert.match(skill('review-code').body, /oec-spec remind/);
+  assert.match(skill('close-change').body, /oec-spec task check/);
+  assert.match(skill('close-change').body, /oec-spec remind/);
+});
+
 test('team Spec assets encode conditional artifacts and safe project ownership', () => {
   const managing = skill('manage-specs');
   assert.match(managing.body, /absent category is better than an empty placeholder/);
@@ -274,12 +295,14 @@ test('team Spec assets encode conditional artifacts and safe project ownership',
     'skills/manage-specs/references/team-spec-contract.md',
   ), 'utf8');
   assert.match(contract, /specs\/.*system as it is now/s);
+  assert.match(contract, /requires `spec\.md` plus `design\.md`/);
   assert.match(contract, /Add `design\.md` only/);
   assert.match(contract, /Add `plan\.md` only/);
   assert.match(contract, /research\/.*conditional/);
   assert.match(contract, /Add `research\/` only/);
   assert.match(contract, /Add `evidence\.md` only/);
   assert.match(contract, /evidence\.md.*conditional/);
+  assert.match(contract, /Product Root.*DEV_ROOT/);
   assert.match(contract, /git add -- <exact team Spec, ADR, or change paths>/);
   assert.doesNotMatch(contract, /\.claude\/settings|\.codex\/skills|SessionStart|task\.py/);
 });

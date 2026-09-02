@@ -1,5 +1,6 @@
 ---
 id: SPEC-example
+module_id: example-module
 applies_to:
   - src/example/**
 ---

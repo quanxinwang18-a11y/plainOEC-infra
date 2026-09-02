@@ -48,17 +48,19 @@ selection, ownership, or a distinct invariant benefits.
 
 | Legacy task artifact | Current treatment |
 |---|---|
-| `README.md` or `spec.md` | Active goal, scope, source PRD, acceptance, and risk may enter `change.md`; stable facts enter Specs |
-| `design.md` or `spec-delta.md` | Active material tradeoffs may enter `design.md`; durable accepted choices may enter ADRs |
-| `tasks.md` | Do not migrate by default; routine task decomposition belongs to the current coding session |
-| `implementation-plan.md` | Use `plan.md` only when ordering, coordination, rollback, or high-risk verification must remain durable |
-| `verification.md` | Copy only commands and results actually observed for the active change into `evidence.md` |
-| `debug-notes.md` | Proven lasting facts may enter a Spec; unresolved residual risk may enter active change evidence |
-| `code-review/*.md` | Do not migrate scores or generic comments; carry forward only unresolved material defects in active context |
-| `sync-status.md` or `dev-state.yaml` | No current Engineering equivalent; preserve as workflow history |
+| `README.md` or `spec.md` | Preserve the versioned task package in place; new managed tasks use `spec.md` as the task context. Stable facts may be proposed for `engineering/specs/` |
+| `design.md` | Preserve the versioned task Design in place; new managed tasks require the paired `design.md`. Durable accepted choices may be proposed as ADRs |
+| `spec-delta.md` | Preserve as history; carry only verified contract changes into the task pair or a current Spec |
+| `tasks.md` | Preserve as history; create for a new task only when independent work items need persistence |
+| `implementation-plan.md` | Preserve as history; create only when ordering, coordination, rollback, or high-risk verification must remain durable |
+| `verification.md` | Preserve as history; create for a new task only when observed evidence must be delivered persistently |
+| `debug-notes.md` | Preserve as history; proven lasting facts may enter a Spec and unresolved residual risk may enter task evidence |
+| `code-review/*.md` | Preserve scores and comments as history; carry forward only unresolved material defects |
+| `sync-status.md` or `dev-state.yaml` | Preserve as workflow history; do not recreate the legacy state machine |
 
-Never infer the current development phase from file presence. Current Engineering has no replacement
-for the legacy Dev state machine.
+The canonical resolver recognizes both versioned `versioned:<version>/<task-slug>` packages and
+unversioned `change:<change-id>` packages. It does not infer a development phase from file presence,
+rename legacy files automatically, or create a second copy under `ai-docs/engineering/changes/`.
 
 ## Release and test artifacts
 

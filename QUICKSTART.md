@@ -8,7 +8,7 @@
 | Plugin | 作用 | 主要组件 | 外部副作用 | 依赖关系 |
 | --- | --- | --- | --- | --- |
 | `oec-product` | PRD 编写、需求评审和 E3 发布 | 1 Agent + 3 Skills | 发布时受控写 E3 | 自动依赖 `oec-e3` |
-| `oec-engineering` | 团队工程知识、技术方案、诊断、代码评审、长时 Web/全栈开发和收口 | 11 Skills + 4 Agents + `oec-spec` | 无默认外部写入 | 无平台强依赖 |
+| `oec-engineering` | OEC Dev 模块上下文、任务 Spec/Design、团队工程知识、诊断、代码评审和可选长时开发 | 11 Skills + 4 Agents + `oec-spec` | 无默认外部写入 | 无平台强依赖 |
 | `oec-e3` | PRD 发布、研发任务和进度 | 10 MCP Tools | 受控写 E3 | 可独立安装，也被 Product 依赖 |
 | `oec-pipeline` | 运行已有 dev/test 流水线 | 4 MCP Tools | 受控启动流水线 | 独立安装 |
 | `oec-common` | HTML Slides | 1 Skill | 无远端业务写入 | 独立安装 |
@@ -102,8 +102,17 @@ claude plugin install \
 只读评审当前工作区 diff，优先报告会改变行为、兼容性或数据完整性的问题。
 ```
 
-也可以直接描述非平凡技术方案或困难故障；相关 Skill 按场景发现。安装 Engineering 不要求所有任务
-创建 change package、使用 Agent、执行 TDD 或 closing。
+对于来自 PRD、Story 或 HANDOFF 的研发任务，使用 `plan-change` 创建：
+
+```text
+ai-docs/versions/vX.Y.Z/dev-task/<task-slug>/spec.md
+ai-docs/versions/vX.Y.Z/dev-task/<task-slug>/design.md
+```
+
+任务身份统一使用 `versioned:vX.Y.Z/<task-slug>` 或 `change:YYYY-MM-DD-<slug>`。Product/Dev 双空间、
+结构化校验和提醒规则见 `docs/architecture/oec-dev-contract-implementation-plan.md`。也可以直接描述非
+平凡技术方案或困难故障；相关 Skill 按场景发现。安装 Engineering 不要求普通任务使用 Agent、执行
+TDD 或创建完整文档包。
 
 #### 可选
 

@@ -1,68 +1,63 @@
 ---
 name: close-change
-description: Finalizes a completed code change by checking real verification evidence, reconciling durable team Specs or ADRs, recording residual risk, and optionally committing exact files. Use only when the user explicitly asks to close or finish engineering work. Do not use to deploy, update E3, implement unfinished code, or force documentation onto a small fix.
-argument-hint: "[change ID or completed change]"
+description: Finalizes a completed code change by checking real verification evidence, validating an optional taskRef, reconciling durable team Specs or ADRs, recording residual risk, and optionally committing exact files. Use only when the user explicitly asks to close or finish engineering work. Do not use to deploy, update E3, implement unfinished code, or force documentation onto a small fix.
+argument-hint: "[taskRef, change ID, or completed change]"
 disable-model-invocation: true
 ---
 
 # Close change
 
-Close only the change the user identifies. Inspect the actual diff and working tree before deciding
-what belongs to it; preserve unrelated user changes and never broaden the commit boundary for
-convenience.
+Close only the change the user identifies. Preserve unrelated user changes and never broaden the
+commit boundary for convenience.
 
-## Establish evidence
+## Establish context and evidence
 
-Identify the validation commands relevant to the changed behavior from repository configuration and
-path-scoped team Specs. Run safe, targeted checks that have not already produced trustworthy current
-results. Report failures and unexecuted checks honestly; an Agent statement is not test evidence.
+1. Run `git status --short` and inspect the complete diff, including untracked files.
+2. If a taskRef is supplied, resolve it with the bundled runtime and validate its task artifacts:
 
-If the change has a persisted directory under `ai-docs/engineering/changes/<change-id>/`, record
-only observed commands, results, environment limits, and residual risk in `evidence.md`. Adapt
-[assets/evidence.md](assets/evidence.md); do not add an evidence file to an ordinary small fix merely
-to satisfy this Skill.
+```bash
+oec-spec task resolve --dev-root "$DEV_ROOT" --product-root "$PRODUCT_ROOT" \
+  --task-ref <taskRef> --format json
+oec-spec task check --dev-root "$DEV_ROOT" --product-root "$PRODUCT_ROOT" \
+  --task-ref <taskRef> --stage close --format json
+```
+
+3. Run fresh, relevant tests, typecheck, lint, and any runtime checks named by the task Design or
+   repository Specs. Report passed, failed, and unexecuted checks honestly. A failed or incomplete
+   verification cannot be reported as closed.
+4. Run `oec-spec select --workspace "$DEV_ROOT" --paths <changed paths> --format json` and compare
+   selected Specs and accepted ADRs with the final behavior.
+5. Run the read-only freshness check:
+
+```bash
+oec-spec remind --workspace "$DEV_ROOT" --paths <changed paths> \
+  [--task-ref <taskRef>] --signals <observed signals> --format json
+```
+
+Present reminder candidates as suggestions. Do not update a Team Spec or ADR without explicit user
+confirmation.
 
 ## Reconcile durable knowledge
 
-Before reconciling, confirm that key verification has happened against the final diff:
+Update a current-state Spec only when a stable responsibility, interface, invariant, failure mode, or
+verified command changed. Add an ADR only when a durable choice constrains later work. Leave knowledge
+unchanged for internal implementation details or already documented behavior.
 
-- Run the project's test command if tests have not already produced trustworthy current results.
-- If the change touches a Spec's responsibility, verify the implementation matches the Spec's
-  invariants.
-- If the user explicitly invoked TDD or code-review earlier, confirm those results are still valid
-  against the final diff.
+For a versioned task, keep `spec.md` and `design.md` at:
 
-A change is not closed until the final diff has a review appropriate to its risk. A main-session
-self-review is sufficient for a small, local change without a persisted change package. For a
-persisted change package that crosses modules or changes a public interface, data, compatibility,
-or migration behavior, ask the user to dispatch the `checker` subagent with the change ID for a
-fresh-context review. If the user declines, record that explicit waiver and the residual review risk
-in `evidence.md`. Here, independent means isolated from the implementation context; it does not imply
-a different model, organization, permission boundary, or security sandbox.
+```text
+ai-docs/versions/vX.Y.Z/dev-task/<task-slug>/
+```
 
-Run `oec-spec select --workspace "$PWD" --paths <changed paths> --format json`. Compare the selected
-Specs and accepted ADRs with the implemented behavior:
-
-- Update a Spec only when a stable responsibility, interface, invariant, failure mode, or verified
-  command changed.
-- Add an ADR only when a durable technical choice will constrain later work.
-- Leave team knowledge unchanged when the diff is an internal implementation detail or restores
-  already-documented behavior.
-- Never copy transient implementation steps, review commentary, or speculative future work into a
-  current-state Spec.
-
-Run `oec-spec check --workspace "$PWD"` after any engineering-document change. Contract errors block
-closure. Warnings and residual risks must remain visible.
+For an unversioned change, keep the existing `ai-docs/engineering/changes/<change-id>/` contract.
+Do not create a second copy of the task documents. Write `verification.md` only when the task profile
+or user requires persisted evidence.
 
 ## Present and commit
 
-Summarize:
-
-- behavior changed and acceptance evidence;
-- checks passed, failed, and not run;
-- team Specs, ADRs, or evidence changed, or why none were needed;
-- the exact code and documentation paths proposed for the change commit;
-- unrelated working-tree paths that will remain untouched.
+Summarize behavior, acceptance evidence, checks, reminder candidates, durable documents changed (or
+why none were needed), residual risk, exact code and engineering-document paths, and unrelated paths
+that remain untouched.
 
 Only after explicit confirmation, stage the exact proposed files:
 
@@ -71,6 +66,5 @@ git add -- <exact code and engineering-document paths>
 git commit -m "<focused message>" -- <same exact paths>
 ```
 
-Do not use `git add -A`, include product PRDs without separate authorization, rewrite history,
-deploy, create releases, or write E3, SAE, UTP, Git hosting, or Feishu state. A failed or materially
-incomplete verification cannot be reported as closed.
+Do not use `git add -A`, include Product PRDs without separate authorization, rewrite history, deploy,
+or write E3, Pipeline, SAE, UTP, or remote Git state.

@@ -1,0 +1,7 @@
+schema_version: 1
+modules:
+  - id: example-module
+    title: Example module
+    owner: example-team
+    paths:
+      - src/example/**

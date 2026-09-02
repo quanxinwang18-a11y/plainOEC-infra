@@ -24,9 +24,11 @@
 当前 release candidate `plainOEC-infra@3.0.2` 已经完成第一阶段原生化：
 
 - Product：显式 PM Agent + 三个以用户目标划分并带跨域负向边界的 PRD Skills。
-- Engineering：十一个聚焦工程 Skills + 四个显式使用的可选 Agent；旧 `ai-docs` 迁移、工程决策挑战、
-  Agent 委派、长时 Web 编码与工程收口只允许用户触发，不创建默认接管主线程的通用 Dev Agent，也不
-  注入 SessionStart 上下文。
+- Engineering：十一个聚焦工程 Skills + 四个显式使用的可选 Agent；在不恢复总控流程的前提下，补充
+  版本化任务的 `taskRef`、`spec.md`/`design.md`、Product/Dev 双空间来源和只读 Spec reminder。旧
+  `ai-docs` 迁移、工程决策挑战、Spec 写入、Agent 委派、长时 Web 编码与工程收口只允许用户触发，
+  不创建默认接管主线程的通用 Dev Agent，也不注入 SessionStart 上下文。详细实施事实源为
+  `docs/architecture/oec-dev-contract-implementation-plan.md`。
 - E3：独立 MCP-only Plugin，提供十个受控工具。
 - Pipeline：独立 MCP-only Plugin，提供四个既有流水线工具。
 - Common：一个零运行时依赖的 HTML-first 幻灯片 Skill。

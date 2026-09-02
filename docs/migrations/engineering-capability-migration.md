@@ -4,6 +4,10 @@
 > `79356008b9961c3e8a70c57e2fe5c9cf0c7ce424`，以及隔离临时目录中实际执行的
 > `role=dev` 初始化结果。旧版本为 `oec-ai@0.2.2`。文中明确区分编辑源码、Plugin
 > payload 和研发业务仓库的最终配置，不把构建前目录当作开发者真实加载的结构。
+>
+> 本文记录迁移基线和历史取舍。后续在保留“普通编码归主 Session、无总控流程”原则的前提下，任务
+> `taskRef`、版本化 `spec.md`/`design.md`、双空间来源和 Spec reminder 的当前实施契约，以
+> `docs/architecture/oec-dev-contract-implementation-plan.md` 为准。
 
 ## 1. 结论
 

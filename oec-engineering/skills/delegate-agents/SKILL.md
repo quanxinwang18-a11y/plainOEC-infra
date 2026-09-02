@@ -1,69 +1,54 @@
 ---
 name: delegate-agents
-description: Routes a bounded engineering change to a researcher, implementer, or checker, including an explicitly requested one-pass sequence. Do not use for ordinary coding, research, review, planning, closing, long-running runtime evaluation, or automatic workflow orchestration.
-argument-hint: "[change-id] <research|implement|check|sequence> [question]"
+description: Routes a bounded engineering change identified by a canonical taskRef or legacy change ID to a researcher, implementer, or checker, including an explicitly requested one-pass sequence. Do not use for ordinary coding, research, review, planning, closing, long-running runtime evaluation, or automatic workflow orchestration.
+argument-hint: "[taskRef] <research|implement|check|sequence> [question]"
 disable-model-invocation: true
 ---
 
 # Delegate agents
 
-Coordinate host-native delegation from the main session. Do not perform the delegated research,
-implementation, or check yourself, and do not load Agent Markdown files by path.
+Coordinate host-native delegation from the main session. Do not perform delegated work yourself, load
+Agent Markdown files by path, or turn delegation into a workflow engine.
 
 ## Select a mode
 
 Require one explicit mode. If it is absent or ambiguous, show the argument hint and stop.
 
-- `research`: require an existing change ID and a concrete research question; dispatch
-  `researcher`, then report its result.
-- `implement`: require an existing change ID; dispatch `implementer`, then report its result.
-- `check`: require a non-empty current working-tree diff; dispatch `checker`. A change ID is
-  optional and supplies additional context when present.
-- `sequence`: require an existing change ID and a concrete research question; run `researcher`, then
-  `implementer`, then `checker`, strictly in that order.
+- `research`: require an existing taskRef and a concrete question; dispatch `researcher`.
+- `implement`: require an existing taskRef; dispatch `implementer`.
+- `check`: require a non-empty current working-tree diff; a taskRef is optional.
+- `sequence`: require an existing taskRef and a concrete research question; run
+  `researcher → implementer → checker` strictly in that order.
+
+Legacy change IDs are accepted only as resolver aliases. Before dispatch, normalize and retain the
+canonical taskRef.
 
 ## Preflight
 
-For `research`, `implement`, and `sequence`, make the first repository operation a direct existence
-check for `ai-docs/engineering/changes/<change-id>/change.md`. Do not inspect Git status, other
-Skills, or surrounding directories until it succeeds. If it does not exist, report `blocked` in the
-next response and run no further tools. Never create or guess a change package.
+For `research`, `implement`, and `sequence`, make the first repository operation a task existence
+check through:
 
-For `check`, run `git status --short` and confirm there are staged, unstaged, or untracked changes.
-If there is no diff to inspect, report `blocked` and stop.
+```bash
+oec-spec task resolve --dev-root "$DEV_ROOT" --product-root "$PRODUCT_ROOT" \
+  --task-ref <taskRef> --format json
+```
 
-Before `sequence`, run `git status --short`. Proceed with pre-existing changes only when the user has
-explicitly confirmed that every listed path belongs to the same change or is safe to coexist with
-it. Never stash, reset, clean, stage, or commit those paths.
+If it does not resolve to an existing task, report `blocked` and run no further repository tools.
+Never create or guess a task package. For `check`, run `git status --short` and require staged,
+unstaged, or untracked changes.
 
-## Dispatch
+Before `sequence`, confirm that every pre-existing changed path belongs to the same task or is safe to
+coexist. Never stash, reset, clean, stage, or commit those paths.
 
-Use the host's native Agent delegation and select the exact Agent name. Give the Agent only the
-change ID, selected mode, and research question when applicable; the Agent loads its persisted
-change context and team Specs itself.
+## Dispatch and reporting
 
-Treat a missing status as `partial`. Continue a `sequence` flow only when the previous Agent reports
-`complete` with the verification required by its own contract:
+Give each Agent only the canonical taskRef, selected mode, and research question when applicable.
+Agents load their own task Spec/Design and selected Specs. Treat a missing status as `partial`.
+Continue a sequence only when the previous Agent reports `complete` with its required verification;
+stop on `partial`, `failed`, or `blocked`, or on a finding requiring a design/boundary decision.
 
-1. After research, read the reported research files. If a finding requires a design, boundary, or
-   compatibility decision, stop and return control to the main session so the change package can
-   be updated.
-2. After implementation, stop on `partial`, `failed`, or `blocked`; do not dispatch the check.
-3. After the check, surface judgment issues to the main session. Do not send them back to the
-   implementation Agent automatically.
+Never run Agents concurrently in `sequence`, create an automatic retry loop, modify delegated task
+artifacts yourself, close the task, or write E3, Pipeline, deployment, or remote Git state. A sequence is coordination evidence, not task closure; `close-change` remains a separate explicit action.
 
-Never run Agents concurrently in `sequence`, create an automatic retry loop, modify the delegated
-artifacts yourself, close the change, or write E3, Pipeline, SAE, UTP, deployment, or remote Git
-state.
-
-## Report
-
-Return a compact coordination report containing:
-
-- selected mode and change ID, if any;
-- each dispatched Agent and its reported status;
-- research files, changed files, fixes, and verification evidence reported by the Agents;
-- the stop reason and next required main-session or user action.
-
-Do not claim that the engineering change is closed. Final evidence reconciliation and any exact-path
-commit remain the responsibility of `close-change`.
+Return a compact report containing the canonical taskRef, selected mode, each Agent status, research
+files, changed files, fixes, verification evidence, stop reason, and next main-session action.

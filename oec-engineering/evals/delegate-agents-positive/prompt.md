@@ -7,4 +7,4 @@ timeout_seconds: 300
 allowed_tools: [Read, Glob, Grep, Skill]
 ---
 
-使用 /oec-engineering:delegate-agents 2026-08-26-cache-race sequence，先研究“共享状态下是否存在跨实例竞态”，再严格串行实现和独立检查。
+使用 /oec-engineering:delegate-agents change:2026-08-26-cache-race sequence，先研究“共享状态下是否存在跨实例竞态”，再严格串行实现和独立检查。
