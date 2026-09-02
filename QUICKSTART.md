@@ -8,7 +8,7 @@
 | Plugin | 作用 | 主要组件 | 外部副作用 | 依赖关系 |
 | --- | --- | --- | --- | --- |
 | `oec-product` | PRD 编写、需求评审和 E3 发布 | 1 Agent + 3 Skills | 发布时受控写 E3 | 自动依赖 `oec-e3` |
-| `oec-dev` | OEC Dev 任务执行、Specs、决策、诊断和代码评审 | 10 Skills + 4 Agents + 1 SessionStart Hook + `oec-spec` | 无默认外部写入 | 无平台强依赖 |
+| `oec-dev` | OEC Dev 任务执行、Specs、决策、诊断和代码评审 | 10 Skills + 1 bootstrap Skill + 4 Agents + 1 SessionStart Hook + `oec-spec` | 无默认外部写入 | 无平台强依赖 |
 | `oec-dev-beta` | 实验性 Web/全栈长时实现与运行态验收 | 1 experimental Skill | 可能进行多轮本地 Agent 调度 | 依赖宿主已发现的 Engineering 能力 |
 | `oec-e3` | PRD 发布、研发任务和进度 | 10 MCP Tools | 受控写 E3 | 可独立安装，也被 Product 依赖 |
 | `oec-pipeline` | 运行已有 dev/test 流水线 | 4 MCP Tools | 受控启动流水线 | 独立安装 |

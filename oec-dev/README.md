@@ -38,10 +38,11 @@ claude plugin install oec-dev-beta@plainOEC-infra --scope user
 
 `oec-dev-beta` 要求先具备本 Plugin 的 Agent 和 `oec-spec`；它不会复制这些文件或 runtime。
 
-## 十个 Skills
+## Bootstrap 与十个工作 Skills
 
-所有 Engineering Skills 都可以由模型根据自然语言目标发现；描述中的负向边界仍然有效，自动发现
-不等于每个任务都必须调用。
+`using-oec-dev` 是在 SessionStart 注入的 bootstrap Skill，负责要求模型先匹配并调用适用的 Skill；
+它不是业务能力入口。其余十个 Engineering Skills 都可以由模型根据自然语言目标发现；描述中的负向
+边界仍然有效，自动发现不等于每个任务都必须调用。
 
 ```text
 /oec-dev:decision-challenge
@@ -272,5 +273,5 @@ claude plugin validate --strict ./oec-dev
 git diff --check
 ```
 
-当前 1.9.1 是候选版本。自动测试、bundle、Plugin validation、真实 Agent 发现和真实 Playwright
+当前 1.9.2 是候选版本。自动测试、bundle、Plugin validation、真实 Agent 发现和真实 Playwright
 旅程是不同证据等级；不能用其中一项替代另一项。

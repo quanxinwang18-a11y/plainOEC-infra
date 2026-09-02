@@ -51,7 +51,7 @@ test('Marketplace versions and native Plugin boundaries are internally consisten
   }
   assert.deepEqual((await manifest('oec-product')).dependencies, [{ name: 'oec-e3', version: '~1.0.0' }]);
   assert.equal(await skillCount('oec-product'), 3);
-  assert.equal(await skillCount('oec-dev'), 10);
+  assert.equal(await skillCount('oec-dev'), 11);
   assert.equal(await skillCount('oec-dev-beta'), 1);
   assert.equal(await skillCount('oec-e3'), 0);
   assert.equal(await skillCount('oec-pipeline'), 0);

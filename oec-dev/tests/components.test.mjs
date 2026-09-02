@@ -50,6 +50,7 @@ function compact(value) {
   return value.replace(/\s+/g, ' ').trim();
 }
 
+const bootstrapSkill = 'using-oec-dev';
 const expectedSkills = [
   'change-close',
   'change-implement',
@@ -63,10 +64,10 @@ const expectedSkills = [
   'test-first',
 ];
 
-test('engineering plugin exposes ten native Skills, four Agents, and one static bootstrap Hook', () => {
+test('engineering plugin exposes ten task Skills, one bootstrap Skill, four Agents, and one static Hook', () => {
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-dev');
-  assert.equal(manifest.version, '1.9.1');
+  assert.equal(manifest.version, '1.9.2');
   // Agents and Skills are auto-discovered from directories, not declared in plugin.json.
   for (const key of ['skills', 'agents', 'mcpServers', 'commands', 'hooks']) assert.equal(key in manifest, false);
 
@@ -74,7 +75,8 @@ test('engineering plugin exposes ten native Skills, four Agents, and one static 
     .filter((entry) => entry.isDirectory() && existsSync(resolve(pluginRoot, 'skills', entry.name, 'SKILL.md')))
     .map((entry) => entry.name)
     .sort();
-  assert.deepEqual(discovered, expectedSkills);
+  assert.deepEqual(discovered, [...expectedSkills, bootstrapSkill].sort());
+  assert.equal(existsSync(resolve(pluginRoot, `skills/${bootstrapSkill}/SKILL.md`)), true);
   assert.equal(existsSync(resolve(pluginRoot, 'skills/delegate-agents')), false);
   assert.equal(existsSync(resolve(pluginRoot, 'skills/web-task-run')), false);
 
@@ -128,17 +130,20 @@ test('SessionStart injects bounded behavioral guidance without duplicating capab
   assert.deepEqual(Object.keys(payload), ['hookSpecificOutput']);
   assert.equal(payload.hookSpecificOutput.hookEventName, 'SessionStart');
   const context = payload.hookSpecificOutput.additionalContext;
-  assert.match(context, /^<oec-dev>/);
+  assert.match(context, /^<EXTREMELY-IMPORTANT>/);
   assert.match(context, /If the user is unsure what to do/);
-  assert.match(context, /check available Skills before acting/);
-  assert.match(context, /PRD, Story, or HANDOFF/);
+  assert.match(context, /using-oec-dev/);
+  assert.match(context, /Before any response or action/);
+  assert.match(context, /change-plan/);
+  assert.match(context, /change-implement/);
+  assert.match(context, /never make the user act as the router/);
   assert.match(context, /before any business-code edit/);
   assert.match(context, /proactively identify the durable document that may need review/);
   assert.match(context, /smallest sufficient change/);
   assert.match(context, /observable success criteria/);
-  assert.ok(context.length <= 1800, `SessionStart context is too large: ${context.length} characters`);
-  assert.ok(context.trim().split(/\s+/).length <= 250, 'SessionStart context exceeds the word budget');
-  for (const name of [...expectedSkills, 'change-checker', 'web-evaluator', 'task-implementer', 'task-researcher']) {
+  assert.ok(context.length <= 5000, `SessionStart context is too large: ${context.length} characters`);
+  assert.ok(context.trim().split(/\s+/).length <= 600, 'SessionStart context exceeds the word budget');
+  for (const name of [...expectedSkills.filter((name) => !['change-plan', 'change-implement'].includes(name)), 'change-checker', 'web-evaluator', 'task-implementer', 'task-researcher']) {
     assert.equal(context.includes(name), false, `SessionStart must not duplicate capability metadata: ${name}`);
   }
   assert.doesNotMatch(context, /oec-spec|ai-docs|taskRef|Skill count|Agent count/);
@@ -211,6 +216,10 @@ test('skill descriptions make positive and negative judgment boundaries explicit
   assert.match(skill('change-plan').metadata.description, /technical design/);
   assert.match(skill('change-plan').metadata.description, /Required first planning step/);
   assert.match(skill('change-plan').body, /planning gate before business-code/);
+  const bootstrap = readFileSync(resolve(pluginRoot, `skills/${bootstrapSkill}/SKILL.md`), 'utf8');
+  assert.match(bootstrap, /Before any response or action/);
+  assert.match(bootstrap, /PRD.*change-plan/s);
+  assert.match(bootstrap, /ready.*change-implement/s);
   assert.match(skill('change-plan').metadata.description, /small obvious fix/);
   assert.match(skill('decision-challenge').metadata.description, /asks to challenge/);
   assert.match(skill('decision-challenge').metadata.description, /ordinary planning/);

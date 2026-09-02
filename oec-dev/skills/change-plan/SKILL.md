@@ -73,4 +73,6 @@ oec-spec remind --workspace "$DEV_ROOT" --paths <affected paths> \
 ```
 
 Do not implement code, create E3 tasks, update Team Specs, or commit as part of this Skill. Reminders
-never write documents.
+never write documents. When the original request was to implement the PRD-backed task, a successful
+ready check hands control back to the main session to invoke `change-implement`; do not make the user
+repeat the implementation request.

@@ -1,6 +1,6 @@
 # OEC Dev 契约与实施计划
 
-- **Status**: Implemented candidate — Engineering 1.9.1 and Dev Beta 0.1.0 follow-up pending commit and release decision
+- **Status**: Implemented candidate — Engineering 1.9.2 and Dev Beta 0.1.0 follow-up pending commit and release decision
 - **Owner**: `oec-dev` / OEC Dev
 - **Scope**: `plainOEC-infra/oec-dev` (stable execution) and `plainOEC-infra/oec-dev-beta` (experimental long-running orchestration)
 - **Last updated**: 2026-09-02
@@ -26,6 +26,7 @@ OEC Dev 是一个模块感知的工程上下文和交付能力，不是固定的
 5. 通过静态 SessionStart 提示强化不确定性管理、Skill 匹配、Spec 复核和验证闭环；
 6. 为已有 ready 任务提供轻量的 `change-implement` Main Session 执行入口。
 7. 对来自 PRD/Story/HANDOFF 的非平凡实现请求提供明确的规划门，避免需求文档被直接当作代码修改授权。
+8. 通过 SessionStart 注入 bootstrap Skill，让模型在首次行动前遵循 Skill 发现和任务交接规则。
 
 ### 1.2 保留的设计原则
 
@@ -35,7 +36,7 @@ OEC Dev 是一个模块感知的工程上下文和交付能力，不是固定的
 - Team Specs 描述长期当前事实，不能替代任务 Spec；
 - E3/Pipeline 仍由独立 MCP 处理外部副作用；
 - Plugin 安装不创建项目 `.claude`、`.codex` 或 `ai-docs`；
-- SessionStart 只注入稳定行为约束，不承载能力清单、项目扫描、任务选择或状态；
+- SessionStart 注入 `using-oec-dev` bootstrap 的稳定行为约束，不承载项目扫描、任务选择或状态；
 - 所有写入都遵循业务仓库所有权和显式路径确认。
 
 ### 1.3 非目标
@@ -509,10 +510,11 @@ SessionStart 只提示模型主动识别复核时机。Direct Coding 不调用�
 
 ### 7.1 Skill 可见性
 
-稳定 `oec-dev` 保留十个面向用户目标的 Skill，不新增总控 Router：
+稳定 `oec-dev` 保留一个 SessionStart bootstrap 和十个面向用户目标的工作 Skill，不新增总控 Router：
 
 | Skill | Model invocation | 责任 |
 | --- | --- | --- |
+| `using-oec-dev` | SessionStart bootstrap；不作为业务任务入口 | 要求相关 Skill 先于响应或行动，并保持规划到实现的交接 |
 | `change-plan` | 可自动发现；PRD/Story/非平凡实现请求的首个规划门 | 解析来源并管理任务 Spec/Design |
 | `change-implement` | 可自动发现，仅限已有且 ready 的任务 | 在 Main Session 按任务边界实现并验证；PRD-only 请求先回到规划门 |
 | `code-review` | 可自动发现 | 只读 Review，并调用 reminder |

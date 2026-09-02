@@ -4,6 +4,14 @@
 
 **BREAKING RC CHANGE:** align the public Dev identity and names before the first stable release.
 
+## 1.9.2
+
+- Inject a dedicated `using-oec-dev` bootstrap Skill at SessionStart, following the established
+  using-superpowers pattern.
+- Require relevant Skill invocation before repository exploration or editing.
+- Preserve the original implementation intent across planning and implementation without requiring the
+  user to manually route between Skills.
+
 ## 1.9.1
 
 - Add an explicit PRD-to-implementation planning gate for non-trivial work.
