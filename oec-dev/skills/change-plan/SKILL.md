@@ -28,7 +28,9 @@ oec-spec task resolve --dev-root "$DEV_ROOT" --product-root "$PRODUCT_ROOT" \
 3. For a Product task, read the PRD/Child PRD and `HANDOFF.yaml` from Product Root (`PRODUCT_ROOT`) only. Record
    repository, revision, relative paths, featureName, and Story IDs; never copy the Product document.
 4. Run `oec-spec select --workspace "$DEV_ROOT" --paths <affected paths> --format json` and read the
-   returned Specs and accepted ADRs.
+   returned Specs and accepted ADRs. If `ai-docs/Spec` does not exist, selection is an empty-context
+   warning, not a planning blocker; continue using repository evidence and the PRD. Do not invoke
+   `spec-manage` unless the user explicitly asks to initialize durable Team Specs.
 
 Read [references/task-artifact-contract.md](references/task-artifact-contract.md) and use the
 provided assets. If identity, source, module, or acceptance meaning is ambiguous, ask only the

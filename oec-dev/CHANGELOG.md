@@ -4,6 +4,11 @@
 
 **BREAKING RC CHANGE:** align the public Dev identity and names before the first stable release.
 
+## 1.9.3
+
+- Allow path-scoped Team Spec selection to continue with an empty context when `ai-docs/Spec/` is absent.
+- Keep missing Team Specs as an explicit warning while allowing PRD task planning to generate its own task pair.
+
 ## 1.9.2
 
 - Inject a dedicated `using-oec-dev` bootstrap Skill at SessionStart, following the established

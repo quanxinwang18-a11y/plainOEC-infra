@@ -1,6 +1,6 @@
 # 平台 Plugin 层级与 MCP 迁移设计
 
-> 当前候选实现：Marketplace `3.1.0`、`oec-product@3.0.3`、`oec-dev@1.9.2`、`oec-dev-beta@0.1.0`、
+> 当前候选实现：Marketplace `3.1.0`、`oec-product@3.0.3`、`oec-dev@1.9.3`、`oec-dev-beta@0.1.0`、
 > `oec-e3@1.0.2`、`oec-pipeline@1.0.2`、`oec-common@0.3.0`。本文区分“代码和自动验证已完成”与“真实外部平台已验收”；
 > SAE、UTP 和 `oec-testing` 仍未进入 Marketplace。
 
@@ -76,7 +76,7 @@ flowchart TB
 | Plugin | Agent | Skills | Hook | MCP | 责任 |
 | --- | ---: | ---: | ---: | ---: | --- |
 | `oec-product@3.0.3` | 1 | 3 | 0 | 0 | PRD 领域知识和发布语义 |
-| `oec-dev@1.9.2` | 4 | 11 | 1 | 0 | 稳定 OEC Dev 任务执行、Specs、模块上下文和工程辅助；含一个 SessionStart bootstrap |
+| `oec-dev@1.9.3` | 4 | 11 | 1 | 0 | 稳定 OEC Dev 任务执行、Specs、模块上下文和工程辅助；含一个 SessionStart bootstrap |
 | `oec-dev-beta@0.1.0` | 0 | 1 | 0 | 0 | 实验性长时 Web/full-stack 编排；复用宿主 Engineering 能力 |
 | `oec-e3@1.0.2` | 0 | 0 | 0 | 1 | E3 PRD 发布与研发任务执行 |
 | `oec-pipeline@1.0.2` | 0 | 0 | 0 | 1 | 既有 dev/test 流水线受控执行 |

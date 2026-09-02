@@ -109,6 +109,18 @@ test('select returns repository-wide and path-matched Specs without unrelated mo
   assert.deepEqual(result.paths, ['services/payment/src/Settlement.java']);
 });
 
+test('select remains usable when the optional Team Spec root is absent', async () => {
+  const workspace = await mkdtemp(join(tmpdir(), 'oec-spec-no-team-root-'));
+  const result = await selectTeamSpecs({
+    workspace,
+    paths: ['backend/service/Example.java'],
+  });
+  assert.equal(result.ok, true, JSON.stringify(result.errors, null, 2));
+  assert.deepEqual(result.specs, []);
+  assert.deepEqual(result.modules, []);
+  assert.equal(result.warnings.some((item) => item.code === 'engineering-root-missing'), true);
+});
+
 test('check reports deterministic contract failures', async () => {
   const workspace = await validFixture();
   await writeFiles(workspace, {

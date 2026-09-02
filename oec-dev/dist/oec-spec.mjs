@@ -9095,7 +9095,7 @@ async function loadModuleIndex2(engineeringRoot, specIds, errors) {
   }
   return modules;
 }
-async function loadEngineering(root, roots = { devRoot: root, productRoot: null }, { validateSources = true } = {}) {
+async function loadEngineering(root, roots = { devRoot: root, productRoot: null }, { validateSources = true, requireRoot = true } = {}) {
   const engineeringRoot = resolve5(root, "ai-docs", "Spec");
   const errors = [];
   const warnings = [];
@@ -9104,7 +9104,8 @@ async function loadEngineering(root, roots = { devRoot: root, productRoot: null 
   const changes = [];
   const modules = [];
   if (!await exists(engineeringRoot)) {
-    errors.push(issue2("engineering-root-missing", "ai-docs/Spec", "team engineering root does not exist"));
+    const missingRoot = issue2("engineering-root-missing", "ai-docs/Spec", "team engineering root does not exist");
+    (requireRoot ? errors : warnings).push(missingRoot);
     return { root, engineeringRoot, errors, warnings, specs, adrs, changes, modules };
   }
   const indexPath = resolve5(engineeringRoot, "README.md");
@@ -9305,7 +9306,7 @@ async function selectTeamSpecs({ workspace, devRoot, productRoot, paths = [] } =
   const root = roots.devRoot;
   if (!Array.isArray(paths) || paths.length === 0) throw new Error("--paths requires at least one path");
   const normalizedPaths = paths.map((path) => normalizeSelectionPath(root, path));
-  const result = await loadEngineering(root, roots, { validateSources: false });
+  const result = await loadEngineering(root, roots, { validateSources: false, requireRoot: false });
   const selected = [];
   for (const spec of result.specs) {
     const validGlobs = spec.appliesTo.filter((glob) => !validateGlob2(glob));

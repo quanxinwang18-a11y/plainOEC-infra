@@ -67,7 +67,7 @@ const expectedSkills = [
 test('engineering plugin exposes ten task Skills, one bootstrap Skill, four Agents, and one static Hook', () => {
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-dev');
-  assert.equal(manifest.version, '1.9.2');
+  assert.equal(manifest.version, '1.9.3');
   // Agents and Skills are auto-discovered from directories, not declared in plugin.json.
   for (const key of ['skills', 'agents', 'mcpServers', 'commands', 'hooks']) assert.equal(key in manifest, false);
 

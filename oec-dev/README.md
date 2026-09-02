@@ -198,7 +198,8 @@ DEV_ROOT
 ```
 
 Product PRD、Child PRD 和 `HANDOFF.yaml` 只从 `PRODUCT_ROOT` 读取；任务文档、Team Specs 和 ADR 只写入
-`DEV_ROOT`。根目录通过 `--dev-root`、`--product-root` 或兼容的 `--workspace` 明确提供，不能在多个
+`DEV_ROOT`。`ai-docs/Spec/` 是可选的长期工程知识根；缺少它不会阻止 PRD 任务生成 Spec/Design，只有
+用户明确维护团队工程知识时才使用 `spec-manage` 初始化。根目录通过 `--dev-root`、`--product-root` 或兼容的 `--workspace` 明确提供，不能在多个
 候选目录中静默选择。
 
 ## oec-spec runtime
