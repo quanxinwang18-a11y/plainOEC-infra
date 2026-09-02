@@ -6,7 +6,7 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const pluginRoot = resolve(import.meta.dirname, '..');
-const checkerBundle = resolve(pluginRoot, 'skills/write-prd/runtime/check-artifacts.mjs');
+const artifactCheckerBundle = resolve(pluginRoot, 'skills/prd-write/runtime/check-artifacts.mjs');
 
 async function fixture() {
   const workspace = await mkdtemp(join(tmpdir(), 'oec-bundle-artifacts-'));
@@ -52,17 +52,17 @@ sub_prds:
   return { workspace, increment: join(workspace, 'ai-docs/versions/v1.2.3/prd/prd-v1.2.3.md') };
 }
 
-test('committed checker bundle has no development path or external runtime import', async () => {
-  const content = await readFile(checkerBundle, 'utf8');
+test('committed artifact checker bundle has no development path or external runtime import', async () => {
+  const content = await readFile(artifactCheckerBundle, 'utf8');
   assert.doesNotMatch(content, new RegExp(pluginRoot.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   const imports = [...content.matchAll(/^import .* from "([^"]+)";/gm)].map((match) => match[1]);
   assert.equal(imports.every((specifier) => specifier.startsWith('node:')), true, imports.join(', '));
 });
 
 test('bundled artifact checker works without node_modules for valid and invalid fixtures', async () => {
-  const isolated = await mkdtemp(join(tmpdir(), 'prd-checker-bundle-'));
+  const isolated = await mkdtemp(join(tmpdir(), 'prd-artifact-checker-bundle-'));
   const executable = join(isolated, 'check-artifacts.mjs');
-  await copyFile(checkerBundle, executable);
+  await copyFile(artifactCheckerBundle, executable);
   const value = await fixture();
   const args = ['--workspace', value.workspace, '--version', 'v1.2.3', '--stage', 'pre-publish', '--json'];
 

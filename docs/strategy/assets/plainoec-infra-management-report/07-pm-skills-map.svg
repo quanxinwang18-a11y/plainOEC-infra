@@ -65,7 +65,7 @@
     <rect x="512" y="176" width="760" height="178" rx="24" fill="#fff" stroke="#117b88" stroke-width="3"/>
   </g>
   <rect x="512" y="176" width="16" height="178" rx="8" fill="url(#teal)"/>
-  <text x="560" y="225" class="navy code" font-size="28" font-weight="800">write-prd</text>
+  <text x="560" y="225" class="navy code" font-size="28" font-weight="800">prd-write</text>
   <text x="560" y="261" fill="#0f7d89" font-size="22" font-weight="700">写需求：建立产品需求的单一事实来源</text>
   <text x="560" y="298" class="muted" font-size="20">根 PRD · 子 PRD · Story · HANDOFF · 验收条件</text>
   <rect x="1050" y="211" width="176" height="42" rx="21" fill="#e5f5f3"/>
@@ -75,7 +75,7 @@
     <rect x="512" y="382" width="760" height="178" rx="24" fill="#fff" stroke="#2a6eb2" stroke-width="3"/>
   </g>
   <rect x="512" y="382" width="16" height="178" rx="8" fill="url(#blue)"/>
-  <text x="560" y="431" class="navy code" font-size="28" font-weight="800">review-prd</text>
+  <text x="560" y="431" class="navy code" font-size="28" font-weight="800">prd-review</text>
   <text x="560" y="467" fill="#1c63a6" font-size="22" font-weight="700">审需求：只读红队评审，不直接改文件</text>
   <text x="560" y="504" class="muted" font-size="20">发现歧义 · 冲突 · 不可测试验收 · 越权技术设计</text>
   <rect x="1050" y="417" width="176" height="42" rx="21" fill="#eaf1fb"/>
@@ -85,7 +85,7 @@
     <rect x="512" y="588" width="760" height="178" rx="24" fill="#fff" stroke="#dd9107" stroke-width="3"/>
   </g>
   <rect x="512" y="588" width="16" height="178" rx="8" fill="url(#amber)"/>
-  <text x="560" y="637" class="navy code" font-size="26" font-weight="800">publish-prd-to-e3</text>
+  <text x="560" y="637" class="navy code" font-size="26" font-weight="800">prd-toe3</text>
   <text x="560" y="673" fill="#bd7400" font-size="22" font-weight="700">发需求：校验产物，经人工确认后受控写入 E3</text>
   <text x="560" y="710" class="muted" font-size="20">prepare → Human confirm → execute → status</text>
   <rect x="1050" y="623" width="176" height="42" rx="21" fill="#fff1d5"/>
@@ -107,7 +107,7 @@
   <text x="1477" y="487" class="muted" font-size="19" text-anchor="middle">问题清单</text>
   <text x="1477" y="515" class="muted" font-size="19" text-anchor="middle">不产生远端写入</text>
   <text x="1477" y="656" class="navy" font-size="21" font-weight="800" text-anchor="middle">受控发布</text>
-  <text x="1477" y="693" class="muted" font-size="19" text-anchor="middle">E3 对象 / mapping</text>
+  <text x="1477" y="693" class="muted" font-size="19" text-anchor="middle">E3 对象 / record</text>
   <text x="1477" y="721" class="muted" font-size="19" text-anchor="middle">status 回读</text>
 
   <rect x="70" y="826" width="1532" height="66" rx="18" fill="#f0f3f5" stroke="#d8e0e5"/>

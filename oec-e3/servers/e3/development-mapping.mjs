@@ -4,18 +4,25 @@ import { dirname, join } from 'node:path';
 import YAML from 'yaml';
 
 export function developmentMappingRelativePath(changeId) {
+  return `ai-docs/Spec/integrations/e3/development-tasks/${changeId}.yaml`;
+}
+
+export function legacyDevelopmentMappingRelativePath(changeId) {
   return `ai-docs/integrations/e3/development/${changeId}.yaml`;
 }
 
 export async function readDevelopmentMapping(workspace, changeId) {
   const path = developmentMappingRelativePath(changeId);
-  try {
-    const value = YAML.parse(await readFile(join(workspace, path), 'utf8'));
-    return { path, mapping: value && typeof value === 'object' ? value : null };
-  } catch (error) {
-    if (error.code === 'ENOENT') return { path, mapping: null };
-    throw new Error(`Unable to read E3 development mapping: ${error.message}`);
+  const paths = [path, legacyDevelopmentMappingRelativePath(changeId)];
+  for (const candidate of paths) {
+    try {
+      const value = YAML.parse(await readFile(join(workspace, candidate), 'utf8'));
+      return { path: candidate, mapping: value && typeof value === 'object' ? value : null, legacyPath: candidate !== path };
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw new Error(`Unable to read E3 development task record: ${error.message}`);
+    }
   }
+  return { path, mapping: null, legacyPath: false };
 }
 
 export async function writeDevelopmentMapping(workspace, changeId, mapping) {

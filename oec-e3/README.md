@@ -3,7 +3,7 @@
 `oec-e3` 是 MCP-only Claude Code Plugin，负责受门禁保护的 E3 平台操作。它没有 Agent、Skill、
 Command、Hook、默认 settings 或通用 CRUD surface。
 
-Plugin 提供四个 PRD 发布工具，以及六个研发任务规划、需求选择、创建/复用、进度和状态验证工具。
+Plugin 提供四个 PRD 发布工具，以及六个研发任务规划、需求选择、创建/复用、进度和状态验证工具。产品发布结果保存为 E3 publication record，研发任务结果保存为 E3 development task record。
 `oec-product@3.x` 声明 `oec-e3@~1.0.0` 为原生依赖，因此安装 Product 会加载这一 Server，不会再
 内嵌第二套 E3 runtime。
 
@@ -29,6 +29,15 @@ execute_task_progress
 get_development_task_status
 ```
 
+项目侧记录：
+
+```text
+ai-docs/integrations/e3/publications/<version>.yaml
+ai-docs/Spec/integrations/e3/development-tasks/<changeId>.yaml
+```
+
+新的 record 路径由 Server 写入；旧 mapping 路径仍可只读恢复，避免已有 E3 身份丢失。
+
 面向用户时优先描述目标，不直接调用 `execute_*`：
 
 ```text
@@ -42,7 +51,7 @@ get_development_task_status
 所有远端写入都来自短期不可变 plan，并要求宿主人类交互。Server 不提供通用 E3 CRUD、缺陷/测试
 请求工作流、任意字段编辑或任意 payload。在同一 Plugin Data 内，PRD publication 按 canonical
 workspace 与 version 串行，研发任务创建和 progress 按 canonical workspace 与 change ID 串行；并发
-竞争者返回 partial 并要求查询 status 后重试，不会同时创建对象或重复写 worklog。资源锁只存在于
+竞争者返回 partial 并要求查询 status 后重试，不会同时创建对象或重复写 worklog。项目仓库中的 publication record 和 development task record 只保存远端身份、关联和恢复所需信息；资源锁只存在于
 Plugin Data，不进入业务仓库，也不声称协调使用不同 Plugin Data 的独立安装。
 
 ## 当前证据

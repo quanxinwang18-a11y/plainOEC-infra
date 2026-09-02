@@ -33,7 +33,7 @@ localId:     DEV-2608211059
 
 ## 4. 研发任务结果
 
-1. 通过 PRD mapping 精确复用刚发布的系统需求作为父需求。
+1. 通过 PRD record 精确复用刚发布的系统需求作为父需求。
 2. prepare/execute 创建一条带唯一 `localId` 的研发任务，mapping 返回 `synced`。
 3. 再次 prepare 的创建数为 0、复用数为 1。
 4. 依次执行并回读：

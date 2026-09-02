@@ -298,23 +298,23 @@ Marketplace 将领域知识与平台执行分开：
 Marketplace: plainOEC-infra
 ├── Plugin: oec-product
 │   └── PM Agent / PRD Skills / oec-e3 dependency
-├── Plugin: oec-engineering
+├── Plugin: oec-dev
 │   ├── 10 model-discoverable Skills
 │   ├── 4 optional Agents
 │   └── deterministic oec-spec runtime
-├── Plugin: dev-beta
-│   └── 1 explicit experimental run-long-coding Skill
+├── Plugin: oec-dev-beta
+│   └── 1 explicit experimental web-task-run Skill
 ├── Plugin: oec-e3
 │   └── PRD publication + development task MCP
 └── Plugin: oec-pipeline
     └── existing dev/test pipeline MCP
 ```
 
-`oec-engineering` 的稳定能力由主 Coding Agent 执行，十个 Skills 只在精确用户目标下改变判断；它
+`oec-dev` 的稳定能力由主 Coding Agent 执行，十个 Skills 只在精确用户目标下改变判断；它
 不依赖 E3 或 Pipeline，开发者只在需要外部平台能力时单独安装对应 Plugin。1.9.0 提供四个可选 Agent，
-所有稳定 Skills 均可由模型发现，写入和 commit 仍有独立确认。新增 `develop-change` 负责已有 ready
+所有稳定 Skills 均可由模型发现，写入和 commit 仍有独立确认。新增 `change-implement` 负责已有 ready
 任务的轻量 Main Session 执行，不创建任务状态或固定流程。长时 Web 编排不再属于稳定 Plugin，而由
-独立 `dev-beta` 提供；它复用宿主的 Agent 和 `oec-spec`，不复制文件或 runtime。Claude 通过一个不含
+独立 `oec-dev-beta` 提供；它复用宿主的 Agent 和 `oec-spec`，不复制文件或 runtime。Claude 通过一个不含
 能力元数据的静态 SessionStart Hook 注入行为边界。
 
 ## 6. OEC 团队 Spec 闭环
@@ -323,7 +323,7 @@ Trellis 最值得采用的不是强制任务状态机，而是“项目长期事
 继续使用既有 `ai-docs` 资产根：
 
 ```text
-ai-docs/engineering/
+ai-docs/Spec/
 ├── README.md
 ├── specs/                         # 当前真实状态
 ├── decisions/                     # ADR
@@ -354,8 +354,8 @@ flowchart LR
 |---|---|---|
 | `oec-dev-task` | 删除 | 与现代 Coding Agent 和 Superpowers 类能力重叠 |
 | `oec-dev-flow` | 删除编排 | E3 任务主链和既有流水线已迁入独立平台 MCP；SAE 尚未准入 |
-| `develop-change` | 新增稳定入口 | 对已有 ready task 提供 Main Session 轻量实现和最新验证，不创建第二套状态机 |
-| `run-long-coding` | 移至 `dev-beta` | 需要 Playwright、多轮 Agent 调度和非生产 Web 目标，不进入稳定 Engineering |
+| `change-implement` | 新增稳定入口 | 对已有 ready task 提供 Main Session 轻量实现和最新验证，不创建第二套状态机 |
+| `web-task-run` | 移至 `oec-dev-beta` | 需要 Playwright、多轮 Agent 调度和非生产 Web 目标，不进入稳定 Engineering |
 | `oec-architecture-design` | 迁移 | 显式迁移 Skill 将有效事实导入 Specs、决策导入 ADR；变更方案进入 planning Skill |
 | `oec-detail-design` | 合并 | 成为 planning Skill 的条件产物 |
 | `code-view`、`oec-code-review` | 合并 | 单一只读代码评审 Skill |
@@ -368,7 +368,7 @@ flowchart LR
 
 ## 8. 安装、项目配置和迁移边界
 
-开发者通过 Marketplace 安装 `oec-engineering`，Plugin 安装本身不写项目 `.claude`、`.codex` 或
+开发者通过 Marketplace 安装 `oec-dev`，Plugin 安装本身不写项目 `.claude`、`.codex` 或
 `ai-docs`。明确的自然语言 Spec 管理意图可以触发管理 Skill，但只有在用户确认精确文件计划后才创建
 项目资产。
 
@@ -397,7 +397,7 @@ flowchart LR
 
 迁移成功必须证明：
 
-- Claude Code 原生发现 10 个稳定 Skills 和 4 个可选 Agent；实验性长时 Skill 独立在 `dev-beta`，不发现 Dev Orchestrator、Commands 或 MCP。
+- Claude Code 原生发现 10 个稳定 Skills 和 4 个可选 Agent；实验性长时 Skill 独立在 `oec-dev-beta`，不发现 Dev Orchestrator、Commands 或 MCP。
 - 普通实现和简单缺陷不会被强制进入 planning、TDD 或 closing。
 - 技术方案、TDD、困难诊断、代码评审和 Spec 沉淀分别命中唯一能力。
 - 路径作用域选择、Spec/ADR/变更引用和旧配置审计可确定性执行。
@@ -406,26 +406,26 @@ flowchart LR
 - 前端小修复可以直接完成，不生成无意义任务包。
 - 现有 `oec-product` 全部测试继续通过。
 
-E3、Pipeline、SAE、UTP 和真实部署不属于 `oec-engineering@1.9.0` 验收范围。长时 Web/Playwright
-流程属于 `dev-beta@0.1.0`，也必须单独验收。E3 与 Pipeline 即使由同一 Marketplace 分发，也保持独立
+E3、Pipeline、SAE、UTP 和真实部署不属于 `oec-dev@1.9.0` 验收范围。长时 Web/Playwright
+流程属于 `oec-dev-beta@0.1.0`，也必须单独验收。E3 与 Pipeline 即使由同一 Marketplace 分发，也保持独立
 Plugin 和独立证据；SAE/UTP 在类型化接口与非生产 E2E 完成前，不以 Markdown、mock 或静态测试宣称旧
 平台能力已复现。
 
 ## 10. 当前实现状态
 
-`oec-engineering@1.9.0` 已按上述边界实现：
+`oec-dev@1.9.0` 已按上述边界实现：
 
-- 10 个原生、可由模型发现的 Skills，包含 `develop-change`；4 个可选 Agent，1 个静态 Hook，0 MCP，
+- 10 个原生、可由模型发现的 Skills，包含 `change-implement`；4 个可选 Agent，1 个静态 Hook，0 MCP，
   0 Command。固定 Agent 委派和长时 Web 编排不在稳定 Plugin 内。
 - `oec-spec` source、CLI、可执行入口和无依赖 bundle。
 - Spec/ADR/change contract、路径选择、链接与引用校验、旧安装只读审计。
 - Java/Spring 和前端路径 fixture、bundle 隔离执行及正负触发 cases。
-- `develop-change` 的 ready task 边界、Main Session 执行和禁止默认 Agent/commit 约束已有组件测试。
+- `change-implement` 的 ready task 边界、Main Session 执行和禁止默认 Agent/commit 约束已有组件测试。
 - `oec-product` 回归测试、稳定 Engineering 测试和 Dev Beta 组件测试在同一根测试命令中执行。
 
 工程 Plugin 本身没有实施外部写操作，也没有自动清理任何旧项目资产。Marketplace 另有：
 
-- `dev-beta@0.1.0`：一个显式的实验性长时 Web/Playwright Skill；复用 Engineering 宿主能力，真实
+- `oec-dev-beta@0.1.0`：一个显式的实验性长时 Web/Playwright Skill；复用 Engineering 宿主能力，真实
   Agent/Playwright outcome 尚待验收。
 - `oec-e3@1.0.2`：四个 PRD 发布工具和六个研发任务工具；研发任务真实 E3 验收单独记录，补丁版本的
   身份 fail-closed 行为尚待明确授权的真实写入复验。

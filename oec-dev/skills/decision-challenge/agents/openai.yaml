@@ -1,0 +1,4 @@
+interface:
+  display_name: "Decision Challenge"
+  short_description: "Pressure-test a technical decision with evidence"
+  default_prompt: "Use $decision-challenge to challenge this technical decision before planning or implementation."

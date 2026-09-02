@@ -58,9 +58,9 @@
   <text x="190" y="432" class="label">oec-product</text>
   <text x="190" y="470" class="status">已实现</text>
   <text x="190" y="500" class="status">PM Agent + PRD Skills</text>
-  <text x="400" y="432" class="label">oec-engineering</text>
+  <text x="400" y="432" class="label">oec-dev</text>
   <text x="400" y="470" class="status">已实现</text>
-  <text x="400" y="500" class="status">稳定 Skills；长时能力见 dev-beta</text>
+  <text x="400" y="500" class="status">稳定 Skills；长时能力见 oec-dev-beta</text>
   <text x="610" y="432" class="label">oec-testing</text>
   <text x="610" y="470" class="status">审计后建设</text>
   <text x="610" y="500" class="status">不预设 Skill 数量</text>

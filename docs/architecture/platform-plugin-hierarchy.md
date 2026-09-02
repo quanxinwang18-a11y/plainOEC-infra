@@ -1,6 +1,6 @@
 # 平台 Plugin 层级与 MCP 迁移设计
 
-> 当前候选实现：Marketplace `3.1.0`、`oec-product@3.0.3`、`oec-engineering@1.9.0`、`dev-beta@0.1.0`、
+> 当前候选实现：Marketplace `3.1.0`、`oec-product@3.0.3`、`oec-dev@1.9.0`、`oec-dev-beta@0.1.0`、
 > `oec-e3@1.0.2`、`oec-pipeline@1.0.2`、`oec-common@0.3.0`。本文区分“代码和自动验证已完成”与“真实外部平台已验收”；
 > SAE、UTP 和 `oec-testing` 仍未进入 Marketplace。
 
@@ -30,8 +30,8 @@ flowchart TB
 
     subgraph D["模型侧能力 Plugins"]
         P["oec-product<br/>PM Agent + Product Skills"]
-        E["oec-engineering<br/>Stable Engineering Skills + Agents"]
-        B["dev-beta<br/>Experimental long-running Skill"]
+        E["oec-dev<br/>Stable Engineering Skills + Agents"]
+        B["oec-dev-beta<br/>Experimental long-running Skill"]
         C["oec-common<br/>HTML Slides Skill"]
         T["oec-testing<br/>未来评估"]
     end
@@ -76,8 +76,8 @@ flowchart TB
 | Plugin | Agent | Skills | Hook | MCP | 责任 |
 | --- | ---: | ---: | ---: | ---: | --- |
 | `oec-product@3.0.3` | 1 | 3 | 0 | 0 | PRD 领域知识和发布语义 |
-| `oec-engineering@1.9.0` | 4 | 10 | 1 | 0 | 稳定 OEC Dev 任务执行、Specs、模块上下文和工程辅助 |
-| `dev-beta@0.1.0` | 0 | 1 | 0 | 0 | 实验性长时 Web/full-stack 编排；复用宿主 Engineering 能力 |
+| `oec-dev@1.9.0` | 4 | 10 | 1 | 0 | 稳定 OEC Dev 任务执行、Specs、模块上下文和工程辅助 |
+| `oec-dev-beta@0.1.0` | 0 | 1 | 0 | 0 | 实验性长时 Web/full-stack 编排；复用宿主 Engineering 能力 |
 | `oec-e3@1.0.2` | 0 | 0 | 0 | 1 | E3 PRD 发布与研发任务执行 |
 | `oec-pipeline@1.0.2` | 0 | 0 | 0 | 1 | 既有 dev/test 流水线受控执行 |
 | `oec-common@0.3.0` | 0 | 1 | 0 | 0 | 零依赖 HTML-first 幻灯片 |
@@ -93,14 +93,14 @@ plainOEC-infra/
 ├── oec-product/
 │   ├── agents/product-manager.md
 │   └── skills/{writing,reviewing,publishing}-prds*/
-├── oec-engineering/
+├── oec-dev/
 │   ├── skills/
 │   ├── agents/
 │   ├── bin/oec-spec
 │   └── dist/oec-spec.mjs
-├── dev-beta/
+├── oec-dev-beta/
 │   ├── .claude-plugin/plugin.json
-│   └── skills/run-long-coding/
+│   └── skills/web-task-run/
 ├── oec-e3/
 │   ├── .mcp.json
 │   ├── servers/e3/
@@ -115,7 +115,7 @@ plainOEC-infra/
     └── skills/create-slides/
 ```
 
-共享 artifact contract 不是 Claude 组件、公共 references 层或运行时 npm 包。Product checker 和
+共享 artifact contract 不是 Claude 组件、公共 references 层或运行时 npm 包。Product artifact checker 和
 E3 Server 在构建时导入同一实现，再分别生成无外部依赖的 bundle，避免重复门禁逻辑或平台 Plugin
 反向导入 Product Plugin。
 
@@ -125,47 +125,47 @@ E3 Server 在构建时导入同一实现，再分别生成无外部依赖的 bun
 
 ```text
 product-manager Agent
-├── 预加载 write-prd
-├── 预加载 review-prd
-└── 不预加载 publish-prd-to-e3
+├── 预加载 prd-write
+├── 预加载 prd-review
+└── 不预加载 prd-toe3
 
-publish-prd-to-e3
+prd-toe3
 └── 显式调用 oec-e3 MCP
 ```
 
-Publishing Skill 保留 HANDOFF、子 PRD、版本不可变和结果表达等产品语义。OAuth、API、mapping、
+Publishing Skill 保留 HANDOFF、子 PRD、版本不可变和结果表达等产品语义。OAuth、API、publication record、
 plan、幂等和远端校验全部属于 `oec-e3`。
 
 ### Engineering
 
-`oec-engineering` 不创建总控 Dev Agent，也不依赖 E3 或 Pipeline。普通编码继续由 Claude Code 主 Agent
+`oec-dev` 不创建总控 Dev Agent，也不依赖 E3 或 Pipeline。普通编码继续由 Claude Code 主 Agent
 完成；十个 Skills 补充任务级 `Spec`/`Design`、团队 Specs、模块上下文、任务执行、决策、TDD、诊断、
 迁移、只读评审和收口方法。所有稳定 Skills 都可由精确自然语言目标发现；本地写入和 commit 仍有
 独立确认门。版本化任务的 `spec.md`/`design.md` 位于 `ai-docs/versions/<version>/dev-task/<task-slug>/`，
 统一身份由 `oec-spec task resolve` 处理。Claude SessionStart 只注入静态行为约束，不扫描项目或承担
 Router；Spec reminder 只读且不创建项目状态。
 
-`dev-beta` 是独立的实验性 Plugin，只提供 `run-long-coding`。它要求宿主已经发现 `oec-engineering`
-的 `implementer`、`checker`、`evaluator` 和 `oec-spec`，不复制这些文件或 runtime；Skill 保持显式调用，
+`oec-dev-beta` 是独立的实验性 Plugin，只提供 `web-task-run`。它要求宿主已经发现 `oec-dev`
+的 `task-implementer`、`change-checker`、`web-evaluator` 和 `oec-spec`，不复制这些文件或 runtime；Skill 保持显式调用，
 只面向本地或内部非生产 Web/full-stack 目标。
 
 开发者按需组合：
 
 ```bash
-claude plugin install oec-engineering@plainOEC-infra
-claude plugin install dev-beta@plainOEC-infra
+claude plugin install oec-dev@plainOEC-infra
+claude plugin install oec-dev-beta@plainOEC-infra
 claude plugin install oec-e3@plainOEC-infra
 claude plugin install oec-pipeline@plainOEC-infra
 ```
 
 ## 5. 实验性 Dev Beta 边界
 
-`dev-beta` 不拥有新的 Agent、MCP、Hook 或 runtime。`run-long-coding` 只在用户明确调用时启动，
-先校验已有 taskRef、任务 Spec/Design、Playwright 和非生产目标，再复用宿主的 `implementer` 与
-`evaluator`，通过 bounded cycles 完成运行态验证，最后可复用 `checker`。它不创建项目状态、提交、
+`oec-dev-beta` 不拥有新的 Agent、MCP、Hook 或 runtime。`web-task-run` 只在用户明确调用时启动，
+先校验已有 taskRef、任务 Spec/Design、Playwright 和非生产目标，再复用宿主的 `task-implementer` 与
+`web-evaluator`，通过 bounded cycles 完成运行态验证，最后可复用 `change-checker`。它不创建项目状态、提交、
 部署或更新 E3/Pipeline。
 
-稳定 `oec-engineering` 的 `develop-change` 只负责 Main Session 的轻量任务执行；它不自动转入 Beta
+稳定 `oec-dev` 的 `change-implement` 只负责 Main Session 的轻量任务执行；它不自动转入 Beta
 长时循环。两者的职责和发布周期独立。
 
 ## 6. E3 平台边界
@@ -182,7 +182,7 @@ get_prd_publish_status
 ```
 
 roots、artifact gate、workspace/space/fingerprint 绑定、精确查询、partial checkpoint、远端漂移阻断
-和 status 只读语义已经迁入 `oec-e3`。共享 artifact contract 在构建时分别进入 Product checker 与
+和 status 只读语义已经迁入 `oec-e3`。共享 artifact contract 在构建时分别进入 Product artifact checker 与
 E3 bundle，不形成运行时跨 Plugin 文件依赖。
 
 Product 安装后能够看到 E3 的全部 10 个工具，而不只看到四个 publication tools。这是当前有意接受
@@ -279,19 +279,22 @@ ${CLAUDE_PLUGIN_DATA}/
 └── runtime/
 ```
 
-业务仓库只保存需要团队审计和恢复的资产：
+业务仓库只保存需要团队审计和恢复的资产。Product Root 与 Dev Root 的目录边界如下：
 
 ```text
-ai-docs/
-├── product/
-├── engineering/
-└── integrations/e3/
-    ├── vX.Y.Z.yaml
-    └── development/<changeId>.yaml
+Product Root
+├── ai-docs/prd/
+├── ai-docs/versions/*/prd/
+└── ai-docs/integrations/e3/publications/<version>.yaml
+
+Dev Root
+├── ai-docs/Spec/
+├── ai-docs/Spec/integrations/e3/development-tasks/<changeId>.yaml
+└── ai-docs/versions/*/dev-task/
 ```
 
 Token、空间选择、plan 和 Pipeline 运行时状态不得进入 Git。旧 Product Plugin Data 中的凭证不自动
-跨 Plugin 复制；升级后重新授权，已有项目 mapping 继续用于远端身份验证和幂等恢复。
+跨 Plugin 复制；升级后重新授权，已有项目 publication record 继续用于远端身份验证和幂等恢复。
 
 ## 10. 分发和版本
 
@@ -315,12 +318,12 @@ plugin-scoped 身份会变化，因此 Product 使用主版本升级。
 
 | 阶段 | 状态 | 证据边界 |
 | --- | --- | --- |
-| 共享 PRD artifact contract | 已完成 | Product checker 与 E3 gate 同源并分别 bundle |
+| 共享 PRD artifact contract | 已完成 | Product artifact checker 与 E3 gate 同源并分别 bundle |
 | 四个 PRD 发布工具迁入 `oec-e3` | 已完成 | 既有回归保留；真实 PRD 证据继承自 2.2.0 |
 | 六个研发任务工具 | 已验收 | 自动测试、mock journey 与“OBU-AI提效组”真实主链均完成 |
 | 四个 Pipeline 工具 | 已实现 | 自动测试和 mock/integration 已完成；未执行真实 Pipeline |
 | Product dependency cutover | 已完成 | Product 0 MCP；隔离安装自动解析 E3 dependency |
-| Engineering 1.9.0 task execution | 已完成 | `develop-change`、十个稳定 Skills、四个 Agent 和静态 Hook |
+| Engineering 1.9.0 task execution | 已完成 | `change-implement`、十个稳定 Skills、四个 Agent 和静态 Hook |
 | Dev Beta 0.1.0 | 已实现 | 单个显式长时 Skill；复用宿主 Agent/runtime，真实 Web outcome 待验收 |
 | Common HTML Slides | 已完成 | 1 个零依赖 Skill；真实浏览器验证 overview、hash 与键盘导航 |
 | SAE、UTP 准入 | 审计中 | 不创建空 Plugin，不进入 Marketplace |
@@ -333,5 +336,5 @@ Server 并存期。
 E3 验收而改变，仍需另行获得目标仓库、流水线和授权后才能形成真实证据。
 
 当前 patch 只形成 release candidate：`oec-e3@1.0.2` 的账号归属、`oec-pipeline@1.0.2` 的单 POST
-不变量和 `dev-beta@0.1.0` 的宿主运行边界都有自动测试，但尚未完成明确授权的真实非生产复验。仓库 LICENSE/notice 的 Owner 决定也是
+不变量和 `oec-dev-beta@0.1.0` 的宿主运行边界都有自动测试，但尚未完成明确授权的真实非生产复验。仓库 LICENSE/notice 的 Owner 决定也是
 正式发布前置，因此本轮不创建或推送新 tag。

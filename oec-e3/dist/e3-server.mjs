@@ -29157,6 +29157,9 @@ import { randomBytes as randomBytes2 } from "node:crypto";
 import { mkdir as mkdir3, readFile as readFile2, rename as rename2, writeFile as writeFile2 } from "node:fs/promises";
 import { dirname as dirname3, join as join4 } from "node:path";
 function mappingRelativePath(version2) {
+  return `ai-docs/integrations/e3/publications/${version2}.yaml`;
+}
+function legacyMappingRelativePath(version2) {
   return `ai-docs/integrations/e3/${version2}.yaml`;
 }
 function newMapping({ version: version2, handoffPath, fingerprint, config: config2, artifacts, warnings = [] }) {
@@ -29210,13 +29213,16 @@ function normalizeMapping(raw) {
 }
 async function readMapping(workspace, version2) {
   const relativePath = mappingRelativePath(version2);
-  try {
-    const value = import_yaml2.default.parse(await readFile2(join4(workspace, relativePath), "utf8"));
-    return { path: relativePath, mapping: normalizeMapping(value) };
-  } catch (error2) {
-    if (error2.code === "ENOENT") return { path: relativePath, mapping: null };
-    throw new Error(`Unable to read E3 mapping: ${error2.message}`);
+  const paths = [relativePath, legacyMappingRelativePath(version2)];
+  for (const path of paths) {
+    try {
+      const value = import_yaml2.default.parse(await readFile2(join4(workspace, path), "utf8"));
+      return { path, mapping: normalizeMapping(value), legacyPath: path !== relativePath };
+    } catch (error2) {
+      if (error2.code !== "ENOENT") throw new Error(`Unable to read E3 record: ${error2.message}`);
+    }
   }
+  return { path: relativePath, mapping: null, legacyPath: false };
 }
 async function writeMapping(workspace, version2, mapping) {
   const relativePath = mappingRelativePath(version2);
@@ -29496,7 +29502,7 @@ function mappingCompatibility(mapping, artifacts, config2) {
       adoption: true,
       warnings: [{
         code: "legacy-mapping-adoption",
-        message: "Legacy E3 mapping has no artifact fingerprint and will be adopted as schema v2 only after confirmation"
+        message: "Legacy E3 record has no artifact fingerprint and will be adopted as schema v2 only after confirmation"
       }]
     };
   }
@@ -29787,7 +29793,7 @@ var PublisherService = class {
       const current = await readMapping(workspace, artifacts.version);
       return {
         status: "partial",
-        mappingPath: current.path,
+        recordPath: current.path,
         counts: mappingCounts(current.mapping),
         errors: ["E3 publication for this workspace version is already executing; query status and retry this plan after it finishes"]
       };
@@ -29802,7 +29808,7 @@ var PublisherService = class {
       } catch (error2) {
         return {
           status: "blocked",
-          mappingPath: existing.path,
+          recordPath: existing.path,
           counts: mappingCounts(existing.mapping),
           errors: [error2.message]
         };
@@ -29849,13 +29855,13 @@ var PublisherService = class {
         }
         mapping.sync_state = mappingIsComplete(mapping) ? "published" : "partial";
         checkpoint = await writeMapping(workspace, artifacts.version, mapping);
-        return { status: checkpoint.mapping.sync_state, mappingPath: checkpoint.path, changes, counts: mappingCounts(checkpoint.mapping) };
+        return { status: checkpoint.mapping.sync_state, recordPath: checkpoint.path, changes, counts: mappingCounts(checkpoint.mapping) };
       } catch (error2) {
         mapping.sync_state = "partial";
         mapping.last_error = error2.message;
         checkpoint = await writeMapping(workspace, artifacts.version, mapping);
         const status = /remote-object-drift|Ambiguous E3/i.test(error2.message) ? "blocked" : "partial";
-        return { status, mappingPath: checkpoint.path, changes, counts: mappingCounts(checkpoint.mapping), errors: [error2.message] };
+        return { status, recordPath: checkpoint.path, changes, counts: mappingCounts(checkpoint.mapping), errors: [error2.message] };
       }
     } finally {
       await releaseLock();
@@ -29865,9 +29871,9 @@ var PublisherService = class {
     const workspace = await resolveAuthorizedWorkspace(workspaceUri, roots);
     const artifacts = await loadValidatedPublishArtifacts(workspace, version2);
     const { path, mapping } = await readMapping(workspace, artifacts.version);
-    if (!mapping) return { status: "blocked", mappingPath: path, errors: ["E3 mapping does not exist"] };
+    if (!mapping) return { status: "blocked", recordPath: path, errors: ["E3 record does not exist"] };
     if (mapping.artifact_fingerprint && mapping.artifact_fingerprint !== artifacts.fingerprint) {
-      return { status: "blocked", mappingPath: path, errors: ["Mapping artifact fingerprint does not match current PRDs"] };
+      return { status: "blocked", recordPath: path, errors: ["E3 publication record fingerprint does not match current PRDs"] };
     }
     const config2 = await loadConfig(workspace, this.dataDirectory);
     const mappedSpace = mapping.product_space;
@@ -29876,21 +29882,21 @@ var PublisherService = class {
     if (!verificationSpace?.id) {
       return {
         status: "blocked",
-        mappingPath: path,
-        errors: ["legacy-mapping-space-unknown: legacy E3 mapping has no product space and this workspace is not configured"]
+        recordPath: path,
+        errors: ["legacy-mapping-space-unknown: legacy E3 record has no product space and this workspace is not configured"]
       };
     }
     const warnings = [];
     if (mappedSpace?.id && config2?.productSpace?.id && String(mappedSpace.id) !== String(config2.productSpace.id)) {
       warnings.push({
         code: "workspace-config-differs-from-mapping",
-        message: "The workspace configuration differs from this version mapping; status used the mapped product space"
+        message: "The workspace configuration differs from this publication record; status used the recorded product space"
       });
     }
     if (legacyMapping) {
       warnings.push({
         code: "legacy-mapping-adoption",
-        message: "Legacy E3 mapping is identity-verified but is not bound to the current artifact fingerprint and product space"
+        message: "Legacy E3 publication record is identity-verified but is not bound to the current artifact fingerprint and product space"
       });
     }
     const spaceId = verificationSpace.id;
@@ -29936,7 +29942,7 @@ var PublisherService = class {
       }
     }
     const status = drifted ? "blocked" : complete && mappingIsComplete(mapping) && !legacyMapping ? "published" : "partial";
-    return { status, mappingPath: path, counts: mappingCounts(mapping), objects, warnings };
+    return { status, recordPath: path, counts: mappingCounts(mapping), objects, warnings };
   }
 };
 
@@ -29946,17 +29952,23 @@ import { randomBytes as randomBytes4 } from "node:crypto";
 import { mkdir as mkdir5, readFile as readFile4, rename as rename4, writeFile as writeFile4 } from "node:fs/promises";
 import { dirname as dirname5, join as join6 } from "node:path";
 function developmentMappingRelativePath(changeId) {
+  return `ai-docs/Spec/integrations/e3/development-tasks/${changeId}.yaml`;
+}
+function legacyDevelopmentMappingRelativePath(changeId) {
   return `ai-docs/integrations/e3/development/${changeId}.yaml`;
 }
 async function readDevelopmentMapping(workspace, changeId) {
   const path = developmentMappingRelativePath(changeId);
-  try {
-    const value = import_yaml4.default.parse(await readFile4(join6(workspace, path), "utf8"));
-    return { path, mapping: value && typeof value === "object" ? value : null };
-  } catch (error2) {
-    if (error2.code === "ENOENT") return { path, mapping: null };
-    throw new Error(`Unable to read E3 development mapping: ${error2.message}`);
+  const paths = [path, legacyDevelopmentMappingRelativePath(changeId)];
+  for (const candidate of paths) {
+    try {
+      const value = import_yaml4.default.parse(await readFile4(join6(workspace, candidate), "utf8"));
+      return { path: candidate, mapping: value && typeof value === "object" ? value : null, legacyPath: candidate !== path };
+    } catch (error2) {
+      if (error2.code !== "ENOENT") throw new Error(`Unable to read E3 development task record: ${error2.message}`);
+    }
   }
+  return { path, mapping: null, legacyPath: false };
 }
 async function writeDevelopmentMapping(workspace, changeId, mapping) {
   const path = developmentMappingRelativePath(changeId);
@@ -30063,7 +30075,7 @@ function normalizeSource(source = {}) {
   const prdVersion = source.prdVersion;
   const featureName = source.featureName;
   if (requirementId && (prdVersion || featureName)) {
-    throw new Error("source must identify a requirement directly or through a PRD mapping, not both");
+    throw new Error("source must identify a requirement directly or through a PRD record, not both");
   }
   if (Boolean(prdVersion) !== Boolean(featureName)) {
     throw new Error("source.prdVersion and source.featureName must be provided together");
@@ -30195,12 +30207,12 @@ async function requirementFromSource(client, workspace, config2, source = {}) {
   if (!requirementId && source.prdVersion && source.featureName) {
     const { mapping } = await readMapping(workspace, source.prdVersion);
     if (mapping?.product_space?.id && String(mapping.product_space.id) !== String(config2.productSpace.id)) {
-      throw new Error("PRD mapping belongs to a different E3 product space");
+      throw new Error("PRD record belongs to a different E3 product space");
     }
     const mapped = mapping?.requirements?.find((item) => item.featureName === source.featureName);
     requirementId = mapped?.e3_requirement?.id;
     expectedTitle = mapped?.e3_requirement?.title;
-    if (!requirementId) throw new Error("PRD mapping has no requirement for the requested featureName");
+    if (!requirementId) throw new Error("PRD record has no requirement for the requested featureName");
   }
   if (!requirementId) return { metadata, requirement: null };
   const requirement = await client.getRequirement(config2.productSpace.id, metadata.workItemId, requirementId);
@@ -30267,7 +30279,7 @@ var DevelopmentTaskService = class {
       counts: inspected.counts,
       planToken,
       expiresAt: new Date(plan.expiresAt).toISOString(),
-      mappingPath: inspected.path
+      recordPath: inspected.path
     };
   }
   async prepare({ workspaceUri, changeId, source, tasks }, roots) {
@@ -30383,7 +30395,7 @@ var DevelopmentTaskService = class {
       return {
         status: "partial",
         changeId: plan.changeId,
-        mappingPath: current.path,
+        recordPath: current.path,
         errors: ["E3 development work for this workspace change is already executing; query status and retry this plan after it finishes"]
       };
     }
@@ -30437,13 +30449,13 @@ var DevelopmentTaskService = class {
         }
         mapping.sync_state = developmentMappingComplete(mapping) ? "synced" : "partial";
         checkpoint = await writeDevelopmentMapping(workspace, plan.changeId, mapping);
-        return { status: checkpoint.mapping.sync_state, changeId: plan.changeId, mappingPath: checkpoint.path, changes };
+        return { status: checkpoint.mapping.sync_state, changeId: plan.changeId, recordPath: checkpoint.path, changes };
       } catch (error2) {
         mapping.sync_state = "partial";
         mapping.last_error = error2.message;
         checkpoint = await writeDevelopmentMapping(workspace, plan.changeId, mapping);
         const status = /remote-object-drift|Ambiguous|changed|mismatch/i.test(error2.message) ? "blocked" : "partial";
-        return { status, changeId: plan.changeId, mappingPath: checkpoint.path, changes, errors: [error2.message] };
+        return { status, changeId: plan.changeId, recordPath: checkpoint.path, changes, errors: [error2.message] };
       }
     } finally {
       await releaseLock();
@@ -30463,7 +30475,7 @@ var DevelopmentTaskService = class {
     if (!config2?.productSpace || !config2?.pompProject) {
       return { status: "blocked", changeId, errors: ["E3 workspace configuration is incomplete"] };
     }
-    if (!stored.mapping) return { status: "blocked", changeId, errors: ["Development task mapping does not exist"] };
+    if (!stored.mapping) return { status: "blocked", changeId, errors: ["E3 development task record does not exist"] };
     try {
       assertMappingIdentity(stored.mapping, config2, { ...stored.mapping.requirement, changeId });
       const snapshots = [];
@@ -30525,10 +30537,10 @@ var DevelopmentTaskService = class {
         })),
         planToken,
         expiresAt: new Date(plan.expiresAt).toISOString(),
-        mappingPath: stored.path
+        recordPath: stored.path
       };
     } catch (error2) {
-      return { status: "blocked", changeId, mappingPath: stored.path, errors: [error2.message] };
+      return { status: "blocked", changeId, recordPath: stored.path, errors: [error2.message] };
     }
   }
   async executeProgress({ planToken }, roots) {
@@ -30552,13 +30564,13 @@ var DevelopmentTaskService = class {
       return {
         status: "partial",
         changeId: plan.changeId,
-        mappingPath: current.path,
+        recordPath: current.path,
         errors: ["E3 development work for this workspace change is already executing; query status and retry this plan after it finishes"]
       };
     }
     try {
       let stored = await readDevelopmentMapping(workspace, plan.changeId);
-      if (!stored.mapping) throw new Error("Development task mapping disappeared after progress prepare");
+      if (!stored.mapping) throw new Error("E3 development task record disappeared after progress prepare");
       assertMappingIdentity(stored.mapping, config2, { ...plan.requirement, changeId: plan.changeId });
       const changes = [];
       try {
@@ -30620,10 +30632,10 @@ var DevelopmentTaskService = class {
           changes.push({ localId: update.localId, taskId: remote.id, action });
           stored = await writeDevelopmentMapping(workspace, plan.changeId, stored.mapping);
         }
-        return { status: "synced", changeId: plan.changeId, mappingPath: stored.path, changes };
+        return { status: "synced", changeId: plan.changeId, recordPath: stored.path, changes };
       } catch (error2) {
         const status = /drift|mismatch|terminal|terminated|completed/i.test(error2.message) ? "blocked" : "partial";
-        return { status, changeId: plan.changeId, mappingPath: stored.path, changes, errors: [error2.message] };
+        return { status, changeId: plan.changeId, recordPath: stored.path, changes, errors: [error2.message] };
       }
     } finally {
       await releaseLock();
@@ -30633,11 +30645,11 @@ var DevelopmentTaskService = class {
     if (!CHANGE_ID_PATTERN.test(changeId ?? "")) return { status: "blocked", errors: ["Invalid changeId"] };
     const workspace = await resolveAuthorizedWorkspace(workspaceUri, roots);
     const stored = await readDevelopmentMapping(workspace, changeId);
-    if (!stored.mapping) return { status: "partial", changeId, mappingPath: stored.path, tasks: [], errors: ["Development task mapping does not exist"] };
+    if (!stored.mapping) return { status: "partial", changeId, recordPath: stored.path, tasks: [], errors: ["E3 development task record does not exist"] };
     const spaceId = stored.mapping.product_space?.id;
     const requirementId = stored.mapping.requirement?.id;
     if (!spaceId || !requirementId) {
-      return { status: "blocked", changeId, mappingPath: stored.path, tasks: [], errors: ["Development mapping identity is incomplete"] };
+      return { status: "blocked", changeId, recordPath: stored.path, tasks: [], errors: ["E3 development task record identity is incomplete"] };
     }
     const tasks = [];
     for (const mapped of stored.mapping.tasks ?? []) {
@@ -30669,7 +30681,7 @@ var DevelopmentTaskService = class {
       }
     }
     const state = tasks.some((task) => task.state === "drifted") ? "blocked" : tasks.some((task) => task.state === "missing") || tasks.length === 0 ? "partial" : "synced";
-    return { status: state, changeId, mappingPath: stored.path, productSpace: stored.mapping.product_space, requirement: stored.mapping.requirement, tasks };
+    return { status: state, changeId, recordPath: stored.path, productSpace: stored.mapping.product_space, requirement: stored.mapping.requirement, tasks };
   }
 };
 
@@ -30730,7 +30742,7 @@ function createE3McpServer({ service, developmentService } = {}) {
   }, guarded(async (input) => publisher.execute(input, await rootsFor(mcpServer))));
   mcpServer.registerTool("get_prd_publish_status", {
     title: "Verify PRD publication",
-    description: "Read the local mapping and verify its E3 requirements and tasks.",
+    description: "Read the local E3 publication record and verify its requirements and tasks.",
     inputSchema: {
       workspaceUri: string2().url().describe("A file URI returned by MCP roots/list"),
       version: string2().regex(/^v\d+\.\d+\.\d+$/)
@@ -30798,7 +30810,7 @@ function createE3McpServer({ service, developmentService } = {}) {
   }, guarded(async (input) => development.executeProgress(input, await rootsFor(mcpServer))));
   mcpServer.registerTool("get_development_task_status", {
     title: "Verify E3 development tasks",
-    description: "Read a development mapping and verify task identity, parent linkage, status, and current worklog in E3.",
+    description: "Read an E3 development task record and verify task identity, parent linkage, status, and current worklog.",
     inputSchema: {
       workspaceUri: string2().url().describe("A file URI returned by MCP roots/list"),
       changeId: string2().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{1,127}$/)

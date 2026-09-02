@@ -32,8 +32,8 @@ contract 为准；策略、迁移、评审和历史验收不能覆盖当前实�
 | Plugin | README | Changelog |
 | --- | --- | --- |
 | Product | [oec-product](../oec-product/README.md) | [版本](../oec-product/CHANGELOG.md) |
-| Engineering | [oec-engineering](../oec-engineering/README.md) | [版本](../oec-engineering/CHANGELOG.md) |
-| Dev Beta | [dev-beta](../dev-beta/README.md) | [版本](../dev-beta/CHANGELOG.md) |
+| Engineering | [oec-dev](../oec-dev/README.md) | [版本](../oec-dev/CHANGELOG.md) |
+| Dev Beta | [oec-dev-beta](../oec-dev-beta/README.md) | [版本](../oec-dev-beta/CHANGELOG.md) |
 | E3 | [oec-e3](../oec-e3/README.md) | [版本](../oec-e3/CHANGELOG.md) |
 | Pipeline | [oec-pipeline](../oec-pipeline/README.md) | [版本](../oec-pipeline/CHANGELOG.md) |
 | Common | [oec-common](../oec-common/README.md) | [版本](../oec-common/CHANGELOG.md) |

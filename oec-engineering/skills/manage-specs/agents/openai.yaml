@@ -1,4 +1,0 @@
-interface:
-  display_name: "Manage Specs"
-  short_description: "Manage durable team Specs and ADRs"
-  default_prompt: "Use $manage-specs to initialize, update, or review durable engineering knowledge."

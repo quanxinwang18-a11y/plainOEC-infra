@@ -97,7 +97,7 @@ Skill。**
 2. **组件错位**：身份、知识、阶段、脚本和平台 API 都被称为 Skill。
 3. **分发错位**：Plugin cache 与项目副本形成双状态源，安装、升级和卸载不对称。
 4. **模型判断错位**：固定阶段、重复路由、固定确认和固定产物会把小任务扩大成完整流程。
-5. **平台执行错位**：OAuth、候选选择、payload、重试、mapping 和最终状态由 Prompt、模型与多个脚本
+5. **平台执行错位**：OAuth、候选选择、payload、重试、record 和最终状态由 Prompt、模型与多个脚本
    共同承担。
 
 关键表述：**问题不以节省 token 为主要论据，而在于冗余或中性指令会改变模型对任务规模、下一步和
@@ -169,14 +169,14 @@ MCP Tool 适合：
 当前结构包含六个独立分发单元：
 
 - `oec-product@3.0.3`：1 Agent、3 Skills、0 MCP；明确依赖 `oec-e3`。
-- `oec-engineering@1.9.0`：10 个可自动发现的稳定 Skills、4 个可选 Agent、1 个静态 SessionStart 行为 Hook、0 MCP；普通编码仍由主 Coding Agent 负责。
-- `dev-beta@0.1.0`：1 个显式实验性 Skill；复用宿主 Engineering 的 Agent 和 `oec-spec`，不复制文件或 runtime。
+- `oec-dev@1.9.0`：10 个可自动发现的稳定 Skills、4 个可选 Agent、1 个静态 SessionStart 行为 Hook、0 MCP；普通编码仍由主 Coding Agent 负责。
+- `oec-dev-beta@0.1.0`：1 个显式实验性 Skill；复用宿主 Engineering 的 Agent 和 `oec-spec`，不复制文件或 runtime。
 - `oec-e3@1.0.2`：1 MCP Server、10 Tools；负责 PRD 发布和研发任务主链。
 - `oec-pipeline@1.0.2`：1 MCP Server、4 Tools；只运行既有 dev/test 流水线。
 - `oec-common@0.3.0`：1 Skill、0 Agent、0 MCP；提供零依赖 HTML-first 幻灯片。
 
-稳定 Engineering 新增 `develop-change` 作为已有 ready task 的轻量 Main Session 执行入口；固定 Agent
-委派和长时编排不再进入稳定 Plugin。长时 Web 编排隔离到 `dev-beta`，并保持显式调用。
+稳定 Engineering 新增 `change-implement` 作为已有 ready task 的轻量 Main Session 执行入口；固定 Agent
+委派和长时编排不再进入稳定 Plugin。长时 Web 编排隔离到 `oec-dev-beta`，并保持显式调用。
 
 强调两种关系：
 

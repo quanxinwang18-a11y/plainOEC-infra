@@ -18,14 +18,14 @@ test('product manager is explicit, inherits the model, and preloads only write a
   assert.equal(metadata.name, 'product-manager');
   assert.equal(metadata.model, 'inherit');
   assert.match(metadata.description, /explicitly asks/);
-  assert.deepEqual(metadata.skills, ['write-prd', 'review-prd']);
+  assert.deepEqual(metadata.skills, ['prd-write', 'prd-review']);
   assert.doesNotMatch(body, /SKILL\.md|\.mcp\.json|OAuth|HTTP API|retry loop/i);
 });
 
 test('skills have distinct positive triggers and E3 publishing is manual-only', () => {
-  const writing = frontmatter('skills/write-prd/SKILL.md');
-  const reviewing = frontmatter('skills/review-prd/SKILL.md');
-  const publishing = frontmatter('skills/publish-prd-to-e3/SKILL.md');
+  const writing = frontmatter('skills/prd-write/SKILL.md');
+  const reviewing = frontmatter('skills/prd-review/SKILL.md');
+  const publishing = frontmatter('skills/prd-toe3/SKILL.md');
   for (const item of [writing, reviewing, publishing]) {
     assert.match(item.metadata.description, /Do not use/i);
   }
@@ -42,15 +42,15 @@ test('skills have distinct positive triggers and E3 publishing is manual-only', 
   assert.match(publishing.body, /original `spaceId`.*selected `pompProjectCode`/s);
   assert.match(publishing.body, /published-version-changed/);
   assert.match(publishing.body, /remote-object-drift/);
-  assert.match(publishing.body, /git add -- <mappingPath>/);
-  assert.match(publishing.body, /git commit -m .* -- <mappingPath>/);
+  assert.match(publishing.body, /git add -- <recordPath>/);
+  assert.match(publishing.body, /git commit -m .* -- <recordPath>/);
   assert.match(publishing.body, /Never stage plugin data, credentials, configuration, selection, or\s+plan files/s);
   assert.doesNotMatch(publishing.body, /oauth|token file|https?:\/\/|JSON payload|node .*\.mjs|retry/i);
 });
 
 test('each Product Skill carries executable positive and negative eval cases', () => {
   const prompts = [];
-  for (const name of ['write-prd', 'review-prd', 'publish-prd-to-e3']) {
+  for (const name of ['prd-write', 'prd-review', 'prd-toe3']) {
     for (const polarity of ['positive', 'negative']) {
       const directory = `evals/${name}-${polarity}`;
       const prompt = frontmatter(`${directory}/prompt.md`);
@@ -75,21 +75,21 @@ test('each Product Skill carries executable positive and negative eval cases', (
 test('model-facing capability text does not depend on the OEC label', () => {
   const paths = [
     'agents/product-manager.md',
-    'skills/write-prd/SKILL.md',
-    'skills/write-prd/references/artifact-contract.md',
-    'skills/write-prd/references/product-language.md',
-    'skills/write-prd/references/versioning.md',
-    'skills/review-prd/SKILL.md',
-    'skills/review-prd/references/review-rubric.md',
-    'skills/publish-prd-to-e3/SKILL.md',
-    'skills/publish-prd-to-e3/references/publish-contract.md',
+    'skills/prd-write/SKILL.md',
+    'skills/prd-write/references/artifact-contract.md',
+    'skills/prd-write/references/product-language.md',
+    'skills/prd-write/references/versioning.md',
+    'skills/prd-review/SKILL.md',
+    'skills/prd-review/references/review-rubric.md',
+    'skills/prd-toe3/SKILL.md',
+    'skills/prd-toe3/references/publish-contract.md',
   ];
   for (const path of paths) {
     const content = readFileSync(resolve(pluginRoot, path), 'utf8');
     assert.doesNotMatch(content, /\bOEC\b/, `${path} must describe the capability without an OEC label`);
   }
 
-  const writing = frontmatter('skills/write-prd/SKILL.md');
+  const writing = frontmatter('skills/prd-write/SKILL.md');
   assert.match(writing.metadata.description, /versioned PRDs/);
   assert.match(writing.metadata.description, /child PRDs/);
   assert.match(writing.metadata.description, /HANDOFF artifacts/);
@@ -97,10 +97,10 @@ test('model-facing capability text does not depend on the OEC label', () => {
 
 test('writing assets cover the product SSOT and use safe exact-path commit syntax', () => {
   for (const path of [
-    'skills/write-prd/assets/root-prd.md',
-    'skills/write-prd/assets/root-prd-changelog.md',
+    'skills/prd-write/assets/root-prd.md',
+    'skills/prd-write/assets/root-prd-changelog.md',
   ]) assert.equal(existsSync(resolve(pluginRoot, path)), true, `${path} must exist`);
-  const contract = readFileSync(resolve(pluginRoot, 'skills/write-prd/references/artifact-contract.md'), 'utf8');
+  const contract = readFileSync(resolve(pluginRoot, 'skills/prd-write/references/artifact-contract.md'), 'utf8');
   assert.match(contract, /git add -- <explicit PRD and HANDOFF paths>/);
   assert.match(contract, /git commit -m "docs\(prd\): \.\.\." -- <same explicit paths>/);
   assert.doesNotMatch(contract, /git commit -- .* -m/);
@@ -128,10 +128,10 @@ test('plugin relies on native discovery and has no forbidden root component fram
   }
   assert.equal(existsSync(resolve(pluginRoot, '.mcp.json')), false);
   assert.equal(existsSync(resolve(pluginRoot, 'dist/e3-server.mjs')), false);
-  assert.equal(existsSync(resolve(pluginRoot, 'skills/write-prd/runtime/check-artifacts.mjs')), true);
+  assert.equal(existsSync(resolve(pluginRoot, 'skills/prd-write/runtime/check-artifacts.mjs')), true);
 });
 
 test('public Product identifiers use concise scoped names without an oec prefix', () => {
-  for (const name of ['write-prd', 'review-prd', 'publish-prd-to-e3']) assert.doesNotMatch(name, /^oec-/);
+  for (const name of ['prd-write', 'prd-review', 'prd-toe3']) assert.doesNotMatch(name, /^oec-/);
   assert.equal(frontmatter('agents/product-manager.md').metadata.name, 'product-manager');
 });

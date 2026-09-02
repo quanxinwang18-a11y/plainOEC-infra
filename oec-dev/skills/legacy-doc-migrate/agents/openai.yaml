@@ -1,0 +1,4 @@
+interface:
+  display_name: "Legacy Doc Migrate"
+  short_description: "Migrate verified legacy engineering knowledge"
+  default_prompt: "Use $legacy-doc-migrate to migrate this repository's legacy ai-docs without deleting the source files."

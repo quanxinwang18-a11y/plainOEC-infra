@@ -39,7 +39,7 @@
   <text x="285" y="318" class="body">业务规则与产物模板</text>
   <text x="285" y="378" class="body">通用阶段状态机</text>
   <text x="285" y="438" class="body">解析、校验和格式化脚本</text>
-  <text x="285" y="498" class="body">OAuth、HTTP、重试和 mapping</text>
+  <text x="285" y="498" class="body">OAuth、HTTP、重试和 record</text>
   <text x="285" y="558" class="body">项目架构、命令和历史事实</text>
   <text x="285" y="650" class="note">一个入口同时承担六种不同责任</text>
 

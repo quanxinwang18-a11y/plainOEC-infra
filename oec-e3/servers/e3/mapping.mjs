@@ -4,6 +4,10 @@ import { dirname, join } from 'node:path';
 import YAML from 'yaml';
 
 export function mappingRelativePath(version) {
+  return `ai-docs/integrations/e3/publications/${version}.yaml`;
+}
+
+export function legacyMappingRelativePath(version) {
   return `ai-docs/integrations/e3/${version}.yaml`;
 }
 
@@ -60,13 +64,16 @@ export function normalizeMapping(raw) {
 
 export async function readMapping(workspace, version) {
   const relativePath = mappingRelativePath(version);
-  try {
-    const value = YAML.parse(await readFile(join(workspace, relativePath), 'utf8'));
-    return { path: relativePath, mapping: normalizeMapping(value) };
-  } catch (error) {
-    if (error.code === 'ENOENT') return { path: relativePath, mapping: null };
-    throw new Error(`Unable to read E3 mapping: ${error.message}`);
+  const paths = [relativePath, legacyMappingRelativePath(version)];
+  for (const path of paths) {
+    try {
+      const value = YAML.parse(await readFile(join(workspace, path), 'utf8'));
+      return { path, mapping: normalizeMapping(value), legacyPath: path !== relativePath };
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw new Error(`Unable to read E3 record: ${error.message}`);
+    }
   }
+  return { path: relativePath, mapping: null, legacyPath: false };
 }
 
 export async function writeMapping(workspace, version, mapping) {

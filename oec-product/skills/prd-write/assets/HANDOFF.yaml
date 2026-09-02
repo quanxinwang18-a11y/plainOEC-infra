@@ -1,0 +1,38 @@
+schema_version: 4
+prd_version: "vX.Y.Z"
+generated_at: "<ISO-8601>"
+generator: "oec-product:prd-write"
+source_increment: "ai-docs/versions/vX.Y.Z/prd/prd-vX.Y.Z.md"
+ssot: "ai-docs/prd/prd-all.md"
+
+sub_prds:
+  - featureName: "exampleFeature"
+    file: "ai-docs/versions/vX.Y.Z/prd/prd-vX.Y.Z-exampleFeature.md"
+    title: "Example feature"
+    priority: "P0"
+    estimate: "M"
+    related_sections: []
+    stories:
+      - id: "US-001"
+        title: "Example story"
+        source_section: "用户故事"
+    depends_on: []
+    pending_decisions: []
+
+quality_gate:
+  total_sub_prds: 1
+  total_pending_decisions: 0
+  blocking_decisions: []
+  warnings: []
+
+path_invariants:
+  no_sub_prds_directory: true
+  only_one_increment_prd: true
+  sub_prds_are_siblings_of_increment: true
+  no_process_artifacts_in_prd_dir: true
+  child_prd_feature_name_case: "lowerCamelCase"
+
+e3_sync_contract:
+  one_child_prd_to_one_system_requirement: true
+  child_prd_story_to_requirement_task: true
+  source_of_truth: "sub_prds"

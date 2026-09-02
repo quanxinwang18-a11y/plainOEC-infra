@@ -196,8 +196,8 @@ Human 负责无法从仓库读取的产品选择、风险承受、不可逆操�
 | Plugin | Agent | Skill | MCP Server | Tools | 责任 |
 | --- | ---: | ---: | ---: | ---: | --- |
 | `oec-product` | 1 | 3 | 0 | 0 | PRD 编写、评审和发布语义 |
-| `oec-engineering` | 4 | 10 | 0 | 0 | 稳定任务执行、团队工程知识和聚焦工程方法 |
-| `dev-beta` | 0 | 1 | 0 | 0 | 实验性长时 Web/full-stack 编排 |
+| `oec-dev` | 4 | 10 | 0 | 0 | 稳定任务执行、团队工程知识和聚焦工程方法 |
+| `oec-dev-beta` | 0 | 1 | 0 | 0 | 实验性长时 Web/full-stack 编排 |
 | `oec-e3` | 0 | 0 | 1 | 10 | PRD 发布和研发任务平台操作 |
 | `oec-pipeline` | 0 | 0 | 1 | 4 | 既有 dev/test 流水线运行 |
 | `oec-common` | 0 | 1 | 0 | 0 | HTML-first 幻灯片 |
@@ -232,7 +232,7 @@ Marketplace 为 OEC 组织级能力提供统一发现、依赖解析、安装、
 
 ### 5.2 当前组成
 
-Marketplace 分发 `oec-product`、`oec-engineering`、`dev-beta`、`oec-e3`、`oec-pipeline` 和 `oec-common`。
+Marketplace 分发 `oec-product`、`oec-dev`、`oec-dev-beta`、`oec-e3`、`oec-pipeline` 和 `oec-common`。
 每个 entry（市场入口）都指向同仓库内独立 Plugin 目录，并与 Plugin manifest（插件清单）保持一致。
 
 ### 5.3 分发机制
@@ -250,7 +250,7 @@ Marketplace 分发 `oec-product`、`oec-engineering`、`dev-beta`、`oec-e3`、`
 - 六个 Plugin 可以独立安装、升级和卸载。
 - 平台权限和领域知识不再共用发布周期。
 - Plugin cache 成为安装 payload 的单一真相源。
-- 业务仓库只保存项目真正拥有的 PRD、mapping、Specs、ADR 和 change evidence。
+- 业务仓库只保存项目真正拥有的 PRD、integration records、Specs、ADR 和 change evidence。
 - 发布与升级通过 Marketplace entry 和 Plugin manifest 双向校验。
 
 ### 5.5 非目标
@@ -279,15 +279,15 @@ Product 管理产品需求从编写、评审到经确认发布 E3 的语义闭�
 | 类型 | 名称 | 责任 |
 | --- | --- | --- |
 | Agent | `product-manager` | 显式 PM 身份 |
-| Skill | `write-prd` | 创建产品需求 SSOT |
-| Skill | `review-prd` | 只读红队评审 |
-| Skill | `publish-prd-to-e3` | 显式发布到 E3 |
+| Skill | `prd-write` | 创建产品需求 SSOT |
+| Skill | `prd-review` | 只读红队评审 |
+| Skill | `prd-toe3` | 显式发布到 E3 |
 | Runtime | artifact checker | 确定性检查 PRD/HANDOFF 结构 |
 
 ### 6.3 `product-manager` Agent
 
-`product-manager` 只在用户明确要求产品经理身份时使用。它预加载 `write-prd` 和 `review-prd`，不
-预加载 `publish-prd-to-e3`。Agent 负责产品行为、用户故事、验收条件、范围、优先级、pending decisions、版本产物
+`product-manager` 只在用户明确要求产品经理身份时使用。它预加载 `prd-write` 和 `prd-review`，不
+预加载 `prd-toe3`。Agent 负责产品行为、用户故事、验收条件、范围、优先级、pending decisions、版本产物
 和 changelog。
 
 API、数据库 schema、部署和代码架构属于 Engineering，除非它们直接构成产品可见约束。Agent 不会
@@ -295,27 +295,27 @@ API、数据库 schema、部署和代码架构属于 Engineering，除非它们�
 
 ### 6.4 三个 Product Skills
 
-`write-prd` 创建和维护根 PRD、子 PRD、Story、acceptance criteria、HANDOFF、版本和 changelog。
+`prd-write` 创建和维护根 PRD、子 PRD、Story、acceptance criteria、HANDOFF、版本和 changelog。
 它将产品需求作为 SSOT，不把工程设计写成产品事实。
 
-`review-prd` 对现有产物执行只读红队评审，重点检查歧义、冲突、不可测试验收条件、越权技术设计
+`prd-review` 对现有产物执行只读红队评审，重点检查歧义、冲突、不可测试验收条件、越权技术设计
 和未决业务决定。它不修改文件，也不发布 E3。
 
-`publish-prd-to-e3` 是 manual-only Skill。它验证 finalized artifacts、子 PRD 与 HANDOFF，展示
+`prd-toe3` 是 manual-only Skill。它验证 finalized artifacts、子 PRD 与 HANDOFF，展示
 准备结果并等待 Human 确认，然后调用 E3 工具。普通写作或评审不能自动产生远端副作用。
 
 ![PM 以显式身份按目标调用写作、评审和发布三个 Product Skills，并保持产物、人工门禁和远端状态边界](assets/plainoec-infra-management-report/07-pm-skills-map.png)
 
-*图：`product-manager` 提供产品经理身份，但不把三个 Skill 串成强制流程。`write-prd` 维护需求单一事实
-来源，`review-prd` 只读找问题，`publish-prd-to-e3` 仅在用户明确发布并确认后调用 E3。*
+*图：`product-manager` 提供产品经理身份，但不把三个 Skill 串成强制流程。`prd-write` 维护需求单一事实
+来源，`prd-review` 只读找问题，`prd-toe3` 仅在用户明确发布并确认后调用 E3。*
 
 ### 6.5 输入、输出与状态归属
 
 输入包括产品目标、已确认业务规则、用户故事、验收条件、项目资料和现有版本。输出包括产品版本目录、
-根 PRD、子 PRD、HANDOFF 和 changelog。发布后，项目仓库保存可审计的 E3 mapping；OAuth token、
+根 PRD、子 PRD、HANDOFF 和 changelog。发布后，项目仓库保存可审计的 E3 record；OAuth token、
 workspace config、selection 和 plan 保存在 E3 Plugin Data。
 
-Product 和 E3 共用一份 build-time PRD artifact contract。Product checker 与 E3 gate 分别生成自足
+Product 和 E3 共用一份 build-time PRD artifact contract。Product artifact checker 与 E3 gate 分别生成自足
 bundle，不在运行时跨 Plugin 读取源码，也不维护两套规则。
 
 ### 6.6 与 E3 和 Engineering 的关系
@@ -327,7 +327,7 @@ status、远端 ID、父子关系、checkpoint 和漂移验证。Engineering 通
 ![产品目标经过编写、评审、人工确认和 E3 受控发布，并将项目产物、本地运行状态和远端对象分开保存](assets/plainoec-infra-management-report/04-product-e3-flow.png)
 
 *图：Product 负责需求语义，E3 负责受控副作用。prepare、Human confirmation、execute 和 status 是
-不同证据阶段；status 从 E3 远端 read-back。PRD/HANDOFF/mapping、OAuth/selection/plan 和远端对象
+不同证据阶段；status 从 E3 远端 read-back。PRD/HANDOFF/integration record、OAuth/selection/plan 和远端对象
 分别属于 Project Repo、Plugin Data 与 E3，三者不能互相替代。*
 
 ### 6.7 管理价值
@@ -348,7 +348,7 @@ status、远端 ID、父子关系、checkpoint 和漂移验证。Engineering 通
 
 ### 6.9 当前证据与缺口
 
-Product 组件结构、触发边界、artifact contract、checker bundle 和隔离安装已经自动验证。PRD 发布
+Product 组件结构、触发边界、artifact contract、artifact checker bundle 和隔离安装已经自动验证。PRD 发布
 主链有历史真实非生产证据。该证据不能自动证明当前身份边界；配置/认证账号与真实 owner 一致性仍需
 在唯一授权非生产对象上复验。
 
@@ -421,7 +421,7 @@ closing 和 commit 均可根据用户目标和证据省略。
 项目拥有的工程事实位于：
 
 ```text
-ai-docs/engineering/
+ai-docs/Spec/
 ├── README.md
 ├── module-index.yaml      # 可选模块元数据
 ├── specs/                 # 系统当前事实
@@ -509,102 +509,102 @@ Specs 和可选模块，并拒绝 workspace 外路径。它减少无关上下文
 
 `check` 与 `task check` 只能证明结构符合 contract，不能证明文档中的技术判断正确。`legacy-audit` 枚举
 旧 `ai-docs` 与 managed configuration，不修改源文件，不删除 `.oec-ai`、`.claude` 或 `.codex`，也不
-采用 E3 mapping。
+采用 E3 record。
 
 ### 7.6 十个稳定 Engineering Skills
 
 #### 7.6.1 团队知识类
 
-`manage-specs` 在明确的自然语言意图要求初始化、更新或协调团队工程知识时创建 current-state Specs、
+`spec-manage` 在明确的自然语言意图要求初始化、更新或协调团队工程知识时创建 current-state Specs、
 ADRs 和必要 change context；也可以在 `remind` 模式报告潜在受影响的长期事实。它先检查代码、配置、
 测试和正式决定，只写有证据的事实。缺少真实内容时不创建空模板，也不将普通实现计划写成团队 Spec。
 写入前仍展示精确文件并等待用户确认。
 
-`migrate-legacy-ai-docs` 可由明确的自然语言迁移意图发现。它从旧 `ai-docs` 抽取仍被当前代码证明
-的事实和仍有效的决定，而不是复制目录树。旧文件保持原位；Product PRD、E3 mapping、历史 workflow
+`legacy-doc-migrate` 可由明确的自然语言迁移意图发现。它从旧 `ai-docs` 抽取仍被当前代码证明
+的事实和仍有效的决定，而不是复制目录树。旧文件保持原位；Product PRD、E3 record、历史 workflow
 state、生成评分和 managed configuration 不在此 Skill 中清理或迁移。
 
 #### 7.6.2 决策与规划类
 
-`challenge-decision` 可自动发现，但仅在明确的决策挑战意图下用于压力测试一个技术决定。
+`decision-challenge` 可自动发现，但仅在明确的决策挑战意图下用于压力测试一个技术决定。
 它先从仓库获取可发现事实，再将假设、Human choices 和依赖选择分开，只询问当前 decision frontier。
 结果是支持、拒绝、延期或阻塞的决定记录，不会自动创建任务、计划或代码。
 
-`prototype-decision` 创建最小 throwaway artifact，回答一个交互、行为或状态设计问题。Human 通过
+`design-prototype` 创建最小 throwaway artifact，回答一个交互、行为或状态设计问题。Human 通过
 真实观察选择方案。如果测试、benchmark、命令或源码读取能更直接回答，就不创建原型。原型不自动
 升级为生产实现，也不默认写入生产路径。
 
-`plan-change` 用于明确的 OEC Dev、PRD、Story、HANDOFF 或非平凡变更。它先通过 `taskRef` resolver
+`change-plan` 用于明确的 OEC Dev、PRD、Story、HANDOFF 或非平凡变更。它先通过 `taskRef` resolver
 固定 Product/Dev 来源和受影响模块，再在版本化 `dev-task` 目录创建 `spec.md` + `design.md`。小改动
 仍只在对话中规划；任务文档的存在不规定编码顺序。planning 本身不修改业务代码、外部平台或 Git 历史。
 
-`develop-change` 是与规划分离的轻量执行入口，只接受已有且通过 `task check --stage ready` 的任务。
+`change-implement` 是与规划分离的轻量执行入口，只接受已有且通过 `task check --stage ready` 的任务。
 它先解析 taskRef、选择相关 Specs/ADR，再由 Main Session 在 Change Boundary 内实现并运行最新测试、
 typecheck 和 lint。它不创建任务包、状态文件或 implementation plan，不默认派发 Agent，不调用
 E3/Pipeline，也不自动 close 或 commit。
 
 #### 7.6.3 实现方法与诊断类
 
-`develop-test-first` 只在用户明确要求 TDD、test-first 或 red-green-refactor 时使用。它按窄纵向
+`test-first` 只在用户明确要求 TDD、test-first 或 red-green-refactor 时使用。它按窄纵向
 slice 工作，确认测试因缺失行为而失败，再实现最小代码并回归。它不替代仓库现有测试策略，不要求先写
 完所有测试，也不因为普通变更“需要测试”而自动触发。
 
-`diagnose-failure` 用于难复现、flaky、性能回退、重复修复失败或根因不清的故障。第一产物是可重复
+`failure-debug` 用于难复现、flaky、性能回退、重复修复失败或根因不清的故障。第一产物是可重复
 区分成功与失败的信号，然后用最便宜观察区分可证伪假设。三个不同修复尝试仍失败时停止堆叠补丁，
 重新检查架构或假设。明显的局部错误不需要该 Skill。
 
-单个 `researcher`、`implementer`、`checker` 或 `evaluator` 直接使用宿主 `@` picker。稳定
-Engineering 不提供固定 Agent 顺序或长时编排；实验性 `run-long-coding` 由独立的 `dev-beta` Plugin
+单个 `task-researcher`、`task-implementer`、`change-checker` 或 `web-evaluator` 直接使用宿主 `@` picker。稳定
+Engineering 不提供固定 Agent 顺序或长时编排；实验性 `web-task-run` 由独立的 `oec-dev-beta` Plugin
 提供，并保持显式调用、Playwright preflight、五轮默认上限和十轮绝对上限。Dev Beta 不复制 Agent、
 `oec-spec` 或 runtime，也不创建项目状态、提交或关闭任务。
 
 #### 7.6.4 评审与收口类
 
-`review-code` 对 working-tree diff、commit、branch 或 PR 执行只读、风险优先评审。每个
+`code-review` 对 working-tree diff、commit、branch 或 PR 执行只读、风险优先评审。每个
 finding 必须给出紧凑位置、触发输入、系统后果和最小修正方向。没有实质问题时不生成 filler，也不
 修改代码、创建 review artifact、stage 或 commit。
 
-`close-change` 可自动发现，但仅在明确的收口意图下检查最终 diff、实际测试证据、相关 Specs、ADRs 和残余
+`change-close` 可自动发现，但仅在明确的收口意图下检查最终 diff、实际测试证据、相关 Specs、ADRs 和残余
 风险。只有稳定责任或决定变化时才更新团队知识；Skill 调用不等于 commit 授权，用户仍需单独确认
 exact-path commit。它不部署、不创建 release、不更新 E3、SAE、UTP 或远端 Git 状态。
 
 ![Dev 由主 Session 承担普通编码，并按团队知识、决策规划、任务执行、实现诊断和评审收口选择十个稳定 Engineering Skills](assets/plainoec-infra-management-report/09-dev-skills-map.png)
 
-*图：十个稳定 Skill 是按目标调用的工程增量，不是 Dev 总控流程。`develop-change` 提供已有任务的轻量
-执行入口；实验性长时编排被隔离到 `dev-beta`；`oec-spec` runtime 和四个可选 Agent 是辅助组件。*
+*图：十个稳定 Skill 是按目标调用的工程增量，不是 Dev 总控流程。`change-implement` 提供已有任务的轻量
+执行入口；实验性长时编排被隔离到 `oec-dev-beta`；`oec-spec` runtime 和四个可选 Agent 是辅助组件。*
 
 ### 7.7 Skill 选择边界
 
 | 用户意图 | 适合能力 | 不应使用 |
 | --- | --- | --- |
 | 小型明确修复 | 主 Session | planning、TDD、closing |
-| 非平凡技术方案 | `plan-change` | Product PRD Skill |
-| 已有 ready 任务的实现 | `develop-change` | 创建新任务包、普通小修复 |
-| 压力测试技术决定 | `challenge-decision` | 普通 planning |
-| 比较交互或状态方案 | `prototype-decision` | 生产实现 |
-| 明确 test-first | `develop-test-first` | 普通“补测试” |
-| 难复现或反复失败 | `diagnose-failure` | 简单局部错误 |
-| 审查代码 diff | `review-code` | PRD review |
+| 非平凡技术方案 | `change-plan` | Product PRD Skill |
+| 已有 ready 任务的实现 | `change-implement` | 创建新任务包、普通小修复 |
+| 压力测试技术决定 | `decision-challenge` | 普通 planning |
+| 比较交互或状态方案 | `design-prototype` | 生产实现 |
+| 明确 test-first | `test-first` | 普通“补测试” |
+| 难复现或反复失败 | `failure-debug` | 简单局部错误 |
+| 审查代码 diff | `code-review` | PRD review |
 | 有边界的单 Agent 研究、实现或检查 | 宿主 `@` picker | 固定 Agent 顺序编排 |
-| 实验性长时 Web/full-stack change | `/dev-beta:run-long-coding` | 小型修改、非 Web 或生产操作 |
-| 显式完成工程变更 | `close-change` | 未完成实现 |
+| 实验性长时 Web/full-stack change | `/oec-dev-beta:web-task-run` | 小型修改、非 Web 或生产操作 |
+| 显式完成工程变更 | `change-close` | 未完成实现 |
 
 ### 7.8 四个 Engineering Agents
 
-Engineering 保留 `implementer`、`evaluator`、`checker` 和 `researcher`。它们是宿主原生可选 Agent，不是
+Engineering 保留 `task-implementer`、`web-evaluator`、`change-checker` 和 `task-researcher`。它们是宿主原生可选 Agent，不是
 slash commands。用户可以通过自然语言或 `@` picker 使用。description 表达
 explicit-use 设计意图，但不能被描述成宿主级绝对硬保证。
 
-单个 `researcher`、`implementer`、`checker` 或 `evaluator` 通过宿主 picker 直接派发。稳定
-Engineering 不提供固定 Agent 顺序；实验性 `dev-beta` 可以在自身 Skill 内复用宿主 Agent，但不改变
+单个 `task-researcher`、`task-implementer`、`change-checker` 或 `web-evaluator` 通过宿主 picker 直接派发。稳定
+Engineering 不提供固定 Agent 顺序；实验性 `oec-dev-beta` 可以在自身 Skill 内复用宿主 Agent，但不改变
 Agent 权限，也不允许 Agent 派生其他 Agent。
 
 四个 Agent 都禁止 commit、push、merge、Git staging 和继续派生 Agent。它们不会自动成为普通编码
 必经阶段。
 
-#### `implementer`
+#### `task-implementer`
 
-`implementer` 接受 canonical taskRef 或 legacy change ID，并从解析后的 `spec.md`/`design.md`（或旧
+`task-implementer` 接受 canonical taskRef 或 legacy change ID，并从解析后的 `spec.md`/`design.md`（或旧
 `change.md`）和路径相关 Specs 加载干净上下文。taskRef 或任务上下文缺失时必须 blocked，不能自行
 创建或猜测任务包。
 
@@ -612,18 +612,18 @@ Agent 只在声明 boundary 内修改代码。如果真实范围扩大，停止�
 Design 指定的测试；未指定时发现最小相关测试，并运行适用 typecheck 和 lint。相关测试未运行、跳过或
 失败时只能报告 partial/failed，不能输出 implementation complete。
 
-#### `checker`
+#### `change-checker`
 
-`checker` 使用 `git status --short`、`git diff HEAD --` 和 relevant untracked files 覆盖 staged、
+`change-checker` 使用 `git status --short`、`git diff HEAD --` 和 relevant untracked files 覆盖 staged、
 unstaged 与 untracked 变更。它读取可选 taskRef、任务 Spec/Design、路径相关 Specs，并运行相关测试、
 typecheck 和 lint；没有 taskRef 时可以检查普通 diff，但不创建任务上下文。
 
 Agent 可以修复缺失类型、lint 违规等明确机械问题；架构选择、权衡和不清晰的 Spec 解释只报告给主
-Session。它不修改 `ai-docs/engineering/`，不将 Agent 观点写成持久团队事实。
+Session。它不修改 `ai-docs/Spec/`，不将 Agent 观点写成持久团队事实。
 
-#### `evaluator`
+#### `web-evaluator`
 
-`evaluator` 接受已有 taskRef 或 legacy change ID、从任务 `AC-NNN` 派生且保留 ID 的运行态 checklist，
+`web-evaluator` 接受已有 taskRef 或 legacy change ID、从任务 `AC-NNN` 派生且保留 ID 的运行态 checklist，
 以及本地或明确授权的内部非生产目标。它只使用用户或团队预先连接的 Playwright MCP，实际操作运行中的
 Web 应用，并分别对产品深度、功能、视觉
 和代码质量给出 `PASS`、`FAIL` 或 `NOT_APPLICABLE`。完整 finding 必须包含复现步骤、预期、实际、
@@ -631,14 +631,14 @@ Playwright/API/状态证据以及是否仍在 change boundary 内。Agent 可以
 修改源码、测试代码、Product/Engineering 文档或 Git；Playwright 缺失时必须 blocked，不能用静态测试
 替代运行态验收。
 
-#### `researcher`
+#### `task-researcher`
 
-`researcher` 必须获得已有 taskRef，只写解析后的任务 `research/`：
+`task-researcher` 必须获得已有 taskRef，只写解析后的任务 `research/`：
 
 ```text
 ai-docs/versions/vX.Y.Z/dev-task/<task-slug>/research/*.md
 或
-ai-docs/engineering/changes/<change-id>/research/*.md
+ai-docs/Spec/changes/<change-id>/research/*.md
 ```
 
 内部研究引用源码路径；外部研究优先主来源并注明版本和 caveat。Agent 不修改代码、Spec、ADR、
@@ -647,9 +647,9 @@ ai-docs/engineering/changes/<change-id>/research/*.md
 ### 7.9 Engineering 协作关系
 
 Engineering 有一条简单路径和一条按风险展开的非平凡路径。简单变更由主 Session 直接实现并验证；
-非平凡变更才按需组合 Specs、challenge、prototype、planning、develop-change、Research/Implement
+非平凡变更才按需组合 Specs、challenge、prototype、planning、change-implement、Research/Implement
 Agent、验证和评审。单个 Agent 通过宿主 `@` picker 选择；稳定 Plugin 不提供固定 Agent 顺序。实验性
-长时 Web 编排由 `dev-beta` 单独提供，不能成为稳定 Engineering 的默认步骤。
+长时 Web 编排由 `oec-dev-beta` 单独提供，不能成为稳定 Engineering 的默认步骤。
 
 这些组件是可选能力，不是自动 workflow。简单任务始终走最短路径，Agent、TDD、review 和 closing
 都不是必经阶段。E3、Pipeline 和部署也不属于 Engineering closure 的默认步骤。
@@ -687,14 +687,14 @@ Engineering 不建设 Dev 总控 Agent、全局工作流状态机、测试 Dispa
 TDD、review 或完整文档包，也不承担部署、E3、SAE、UTP 或远端 Git 写入。版本化 OEC Dev 任务只对
 `spec.md` + `design.md` 的路径和结构负责；编码顺序仍由 Main Session 决定。
 
-当前稳定实现包含 10 Skills、4 Agents、1 个静态 Hook、0 MCP、0 Command；实验性 `dev-beta` 另含
+当前稳定实现包含 10 Skills、4 Agents、1 个静态 Hook、0 MCP、0 Command；实验性 `oec-dev-beta` 另含
 1 个显式 Skill。Claude Agent Markdown 与实验性 Codex TOML instructions parity 已自动验证；SessionStart
 提示不包含能力元数据、项目扫描或任务选择；`oec-spec` bundle、路径选择、taskRef、任务 contract、
 双空间来源、reminder 和 legacy audit 均通过隔离执行验证。稳定 Skills 已统一为 model-discoverable，
 本地写入和 commit 仍由各自安全门控制。
 
 Codex Agent 的真实发现、`oec-spec` PATH 和完整运行旅程仍未完成宿主验收，因此不能将实验性 TOML
-描述为完整双宿主支持。`dev-beta` 的真实 Agent/Playwright outcome 也仍待验收。
+描述为完整双宿主支持。`oec-dev-beta` 的真实 Agent/Playwright outcome 也仍待验收。
 
 ## 8. E3 模块
 
@@ -742,13 +742,13 @@ prepare 验证完整 PRD artifact contract，并将 workspace、产品空间、�
 标题和父子关系漂移会阻断，不会自动创建替代对象。
 
 发布版本产生任何 E3 ID 后即与原产物和空间绑定。内容变化需要新版本；partial checkpoint 可以在
-不重复已知对象的前提下恢复。status 使用 mapping 中记录的历史空间进行只读验证，不因当前 workspace
+不重复已知对象的前提下恢复。status 使用 publication record 中记录的历史空间进行只读验证，不因当前 workspace
 配置变化而改写归属。
 
 ### 8.5 研发任务边界
 
 研发任务工具选择已有需求，创建或复用 Story 对应任务，并支持 start、worklog、complete 和只读
-status。任务 identity 一旦写入 mapping 就不能静默替换。进度计划与创建计划类型分离，不能交叉执行。
+status。任务 identity 一旦写入 development task record 就不能静默替换。进度计划与创建计划类型分离，不能交叉执行。
 
 任务工具不复制 Product requirement，也不把 Engineering change package 变成 E3 状态。主 Session
 根据用户目标决定是否组合这些平台动作。
@@ -762,7 +762,7 @@ status。任务 identity 一旦写入 mapping 就不能静默替换。进度计�
 | selection token | E3 Plugin Data |
 | immutable plan/checkpoint | E3 Plugin Data |
 | PRD、子 PRD、HANDOFF | 产品仓库 |
-| E3 mapping | 产品仓库 |
+| E3 record | 产品仓库 |
 | requirement、Story、task | E3 远端平台 |
 
 ### 8.7 管理价值
@@ -906,7 +906,7 @@ letterbox、计数、overview 和 print styles。
 ### 10.4 状态、管理价值和非目标
 
 HTML deck 是用户项目或明确输出目录中的普通文件；Common 不拥有 Plugin Data、远端状态或业务
-mapping。其价值是以零运行时依赖提供稳定可交付 shell，同时保持与 Product 原型和演示平台分离。
+integration record。其价值是以零运行时依赖提供稳定可交付 shell，同时保持与 Product 原型和演示平台分离。
 
 Common 不生成 PPTX、视频或 GIF，不承担 Product 原型，不自动安装前端框架，也不成为所有视觉任务
 的总路由器。
@@ -942,9 +942,9 @@ grader 与 with/without 消融；在该证据形成前，不以 Skill 数量或 
 - small fix 不应触发 planning、TDD 或 closing。
 - Product 的外部发布 Skill 不应由模型自动调用；稳定 Engineering Skills 应由精确自然语言意图发现。
 
-当前 `publish-prd-to-e3` 仍是 Product 的 manual-only Skill。Engineering 的十个稳定 Skills 均可由模型
-发现；`challenge-decision`、`prototype-decision`、`migrate-legacy-ai-docs` 和 `close-change` 仍通过
-正文安全门和独立确认保护本地写入。实验性 `/dev-beta:run-long-coding` 保持 manual-only。
+当前 `prd-toe3` 仍是 Product 的 manual-only Skill。Engineering 的十个稳定 Skills 均可由模型
+发现；`decision-challenge`、`design-prototype`、`legacy-doc-migrate` 和 `change-close` 仍通过
+正文安全门和独立确认保护本地写入。实验性 `/oec-dev-beta:web-task-run` 保持 manual-only。
 
 ### 11.3 Eval 运行边界
 

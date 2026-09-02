@@ -1,0 +1,4 @@
+interface:
+  display_name: "Design Prototype"
+  short_description: "Build a throwaway artifact for one design decision"
+  default_prompt: "Use $design-prototype to build a disposable prototype for this engineering decision."

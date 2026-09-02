@@ -8,8 +8,8 @@
 | Plugin | 作用 | 主要组件 | 外部副作用 | 依赖关系 |
 | --- | --- | --- | --- | --- |
 | `oec-product` | PRD 编写、需求评审和 E3 发布 | 1 Agent + 3 Skills | 发布时受控写 E3 | 自动依赖 `oec-e3` |
-| `oec-engineering` | OEC Dev 任务执行、Specs、决策、诊断和代码评审 | 10 Skills + 4 Agents + 1 SessionStart Hook + `oec-spec` | 无默认外部写入 | 无平台强依赖 |
-| `dev-beta` | 实验性 Web/全栈长时实现与运行态验收 | 1 experimental Skill | 可能进行多轮本地 Agent 调度 | 依赖宿主已发现的 Engineering 能力 |
+| `oec-dev` | OEC Dev 任务执行、Specs、决策、诊断和代码评审 | 10 Skills + 4 Agents + 1 SessionStart Hook + `oec-spec` | 无默认外部写入 | 无平台强依赖 |
+| `oec-dev-beta` | 实验性 Web/全栈长时实现与运行态验收 | 1 experimental Skill | 可能进行多轮本地 Agent 调度 | 依赖宿主已发现的 Engineering 能力 |
 | `oec-e3` | PRD 发布、研发任务和进度 | 10 MCP Tools | 受控写 E3 | 可独立安装，也被 Product 依赖 |
 | `oec-pipeline` | 运行已有 dev/test 流水线 | 4 MCP Tools | 受控启动流水线 | 独立安装 |
 | `oec-common` | HTML Slides | 1 Skill | 无远端业务写入 | 独立安装 |
@@ -25,7 +25,7 @@
 使用 user scope 安装不会因为安装 Plugin 就在业务仓库创建 `.claude`、`.codex` 或 `ai-docs`。安装 `oec-product` 时，Claude Code 会自动解析并安装其 `oec-e3@~1.0.0` 依赖；这表示 E3 工具可用，不表示
 普通 PRD 写作会自动发布。
 
-`dev-beta` 不复制 `oec-engineering` 的 Agent 或 runtime。没有稳定 Engineering Plugin 时，长时 Skill
+`oec-dev-beta` 不复制 `oec-dev` 的 Agent 或 runtime。没有稳定 Engineering Plugin 时，长时 Skill
 会因缺少宿主能力而停止。`oec-e3` 与 `oec-pipeline` 是受控平台能力，必须有明确 Owner、授权对象、
 宿主 Human confirmation 和独立 status/read-back。
 
@@ -90,7 +90,7 @@ E3 发布必须显式调用 Product 的 publishing Skill，并经过准备、计
 
 ```bash
 claude plugin install \
-  oec-engineering@plainOEC-infra \
+  oec-dev@plainOEC-infra \
   --scope user
 ```
 
@@ -100,14 +100,14 @@ claude plugin install \
 只读评审当前工作区 diff，优先报告会改变行为、兼容性或数据完整性的问题。
 ```
 
-对于来自 PRD、Story 或 HANDOFF 的非平凡研发任务，使用 `plan-change` 创建：
+对于来自 PRD、Story 或 HANDOFF 的非平凡研发任务，使用 `change-plan` 创建：
 
 ```text
 ai-docs/versions/vX.Y.Z/dev-task/<task-slug>/spec.md
 ai-docs/versions/vX.Y.Z/dev-task/<task-slug>/design.md
 ```
 
-已有任务需要实现时，直接描述 canonical `taskRef` 和实现目标，`develop-change` 会先检查任务身份、
+已有任务需要实现时，直接描述 canonical `taskRef` 和实现目标，`change-implement` 会先检查任务身份、
 Spec/Design 和相关 Team Specs，再在 Main Session 中实现和验证。
 
 任务身份统一使用 `versioned:vX.Y.Z/<task-slug>` 或 `change:YYYY-MM-DD-<slug>`。Product/Dev 双空间、
@@ -118,15 +118,15 @@ Spec/Design 和相关 Team Specs，再在 Main Session 中实现和验证。
 - 需要实验性长时 Web/full-stack 流程时安装：
 
 ```bash
-claude plugin install dev-beta@plainOEC-infra --scope user
+claude plugin install oec-dev-beta@plainOEC-infra --scope user
 ```
 
 - 需要演示交付时安装 `oec-common`。
 - 团队确实需要 repository-owned 工程事实时，可以用自然语言要求初始化或维护 Team Specs；所有写入仍需确认精确文件。
-- 需要隔离实现、fresh-eyes 或有边界研究时，使用 `@implementer`、`@checker` 或 `@researcher`。
-- 需要 Web 运行态验收时，使用 `@evaluator`，并提供已配置的 Playwright MCP 和非生产目标。
+- 需要隔离实现、fresh-eyes 或有边界研究时，使用 `@task-implementer`、`@change-checker` 或 `@task-researcher`。
+- 需要 Web 运行态验收时，使用 `@web-evaluator`，并提供已配置的 Playwright MCP 和非生产目标。
 
-`dev-beta` 只在明确的已有 Web/full-stack taskRef 上使用，不属于普通 Dev 流程，也不自动提交或关闭任务。
+`oec-dev-beta` 只在明确的已有 Web/full-stack taskRef 上使用，不属于普通 Dev 流程，也不自动提交或关闭任务。
 
 #### 受控
 
@@ -165,8 +165,8 @@ claude plugin install \
 #### 可选
 
 - 实际承担产品责任时选择 `oec-product`。
-- 实际承担工程责任时选择 `oec-engineering`。
-- 只在需要实验性 Web 编排时选择 `dev-beta`。
+- 实际承担工程责任时选择 `oec-dev`。
+- 只在需要实验性 Web 编排时选择 `oec-dev-beta`。
 
 #### 受控
 
@@ -178,8 +178,8 @@ claude plugin install \
 ```bash
 claude plugin list
 claude plugin details oec-product
-claude plugin details oec-engineering
-claude plugin details dev-beta
+claude plugin details oec-dev
+claude plugin details oec-dev-beta
 claude plugin details oec-common
 ```
 
@@ -194,8 +194,8 @@ project scope；Claude Code 会管理项目 `.claude/settings.json`，不要手�
 普通能力可以按安装 scope 卸载：
 
 ```bash
-claude plugin uninstall oec-engineering --scope user
-claude plugin uninstall dev-beta --scope user
+claude plugin uninstall oec-dev --scope user
+claude plugin uninstall oec-dev-beta --scope user
 claude plugin uninstall oec-common --scope user
 ```
 
@@ -211,7 +211,7 @@ claude plugin uninstall oec-product --scope user
 卸载 E3 或 Pipeline 前先决定是否保留 Plugin Data。需要保留 OAuth、workspace 配置、selection、plan、
 lock 或恢复线索时使用 `--keep-data`；不要在 unknown/partial 状态未核对前删除平台数据。
 
-项目中由团队确认创建的 PRD、Specs、ADRs、change 和 mapping 是项目自己的 Git 资产，不会因为卸载
+项目中由团队确认创建的 PRD、Specs、ADRs、change 和 integration record 是项目自己的 Git 资产，不会因为卸载
 Plugin 自动删除。
 
 ## 6. 下一步
@@ -219,8 +219,8 @@ Plugin 自动删除。
 - 项目首页与当前发布状态：[README](README.md)
 - 完整文档分类：[docs/README](docs/README.md)
 - Product 详情：[oec-product/README](oec-product/README.md)
-- Engineering 详情：[oec-engineering/README](oec-engineering/README.md)
-- Dev Beta 详情：[dev-beta/README](dev-beta/README.md)
+- Engineering 详情：[oec-dev/README](oec-dev/README.md)
+- Dev Beta 详情：[oec-dev-beta/README](oec-dev-beta/README.md)
 - E3 权限与验收边界：[oec-e3/README](oec-e3/README.md)
 - Pipeline 权限与恢复边界：[oec-pipeline/README](oec-pipeline/README.md)
 - Common 输出契约：[oec-common/README](oec-common/README.md)

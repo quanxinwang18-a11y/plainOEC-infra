@@ -292,7 +292,7 @@ function mappingCompatibility(mapping, artifacts, config) {
       adoption: true,
       warnings: [{
         code: 'legacy-mapping-adoption',
-        message: 'Legacy E3 mapping has no artifact fingerprint and will be adopted as schema v2 only after confirmation',
+        message: 'Legacy E3 record has no artifact fingerprint and will be adopted as schema v2 only after confirmation',
       }],
     };
   }
@@ -602,7 +602,7 @@ export class PublisherService {
       const current = await readMapping(workspace, artifacts.version);
       return {
         status: 'partial',
-        mappingPath: current.path,
+        recordPath: current.path,
         counts: mappingCounts(current.mapping),
         errors: ['E3 publication for this workspace version is already executing; query status and retry this plan after it finishes'],
       };
@@ -617,7 +617,7 @@ export class PublisherService {
     } catch (error) {
       return {
         status: 'blocked',
-        mappingPath: existing.path,
+        recordPath: existing.path,
         counts: mappingCounts(existing.mapping),
         errors: [error.message],
       };
@@ -667,13 +667,13 @@ export class PublisherService {
       }
       mapping.sync_state = mappingIsComplete(mapping) ? 'published' : 'partial';
       checkpoint = await writeMapping(workspace, artifacts.version, mapping);
-      return { status: checkpoint.mapping.sync_state, mappingPath: checkpoint.path, changes, counts: mappingCounts(checkpoint.mapping) };
+      return { status: checkpoint.mapping.sync_state, recordPath: checkpoint.path, changes, counts: mappingCounts(checkpoint.mapping) };
     } catch (error) {
       mapping.sync_state = 'partial';
       mapping.last_error = error.message;
       checkpoint = await writeMapping(workspace, artifacts.version, mapping);
       const status = /remote-object-drift|Ambiguous E3/i.test(error.message) ? 'blocked' : 'partial';
-      return { status, mappingPath: checkpoint.path, changes, counts: mappingCounts(checkpoint.mapping), errors: [error.message] };
+      return { status, recordPath: checkpoint.path, changes, counts: mappingCounts(checkpoint.mapping), errors: [error.message] };
     }
     } finally {
       await releaseLock();
@@ -684,9 +684,9 @@ export class PublisherService {
     const workspace = await resolveAuthorizedWorkspace(workspaceUri, roots);
     const artifacts = await loadValidatedPublishArtifacts(workspace, version);
     const { path, mapping } = await readMapping(workspace, artifacts.version);
-    if (!mapping) return { status: 'blocked', mappingPath: path, errors: ['E3 mapping does not exist'] };
+    if (!mapping) return { status: 'blocked', recordPath: path, errors: ['E3 record does not exist'] };
     if (mapping.artifact_fingerprint && mapping.artifact_fingerprint !== artifacts.fingerprint) {
-      return { status: 'blocked', mappingPath: path, errors: ['Mapping artifact fingerprint does not match current PRDs'] };
+      return { status: 'blocked', recordPath: path, errors: ['E3 publication record fingerprint does not match current PRDs'] };
     }
     const config = await loadConfig(workspace, this.dataDirectory);
     const mappedSpace = mapping.product_space;
@@ -695,8 +695,8 @@ export class PublisherService {
     if (!verificationSpace?.id) {
       return {
         status: 'blocked',
-        mappingPath: path,
-        errors: ['legacy-mapping-space-unknown: legacy E3 mapping has no product space and this workspace is not configured'],
+        recordPath: path,
+        errors: ['legacy-mapping-space-unknown: legacy E3 record has no product space and this workspace is not configured'],
       };
     }
     const warnings = [];
@@ -704,13 +704,13 @@ export class PublisherService {
         && String(mappedSpace.id) !== String(config.productSpace.id)) {
       warnings.push({
         code: 'workspace-config-differs-from-mapping',
-        message: 'The workspace configuration differs from this version mapping; status used the mapped product space',
+        message: 'The workspace configuration differs from this publication record; status used the recorded product space',
       });
     }
     if (legacyMapping) {
       warnings.push({
         code: 'legacy-mapping-adoption',
-        message: 'Legacy E3 mapping is identity-verified but is not bound to the current artifact fingerprint and product space',
+        message: 'Legacy E3 publication record is identity-verified but is not bound to the current artifact fingerprint and product space',
       });
     }
     const spaceId = verificationSpace.id;
@@ -764,6 +764,6 @@ export class PublisherService {
     const status = drifted
       ? 'blocked'
       : (complete && mappingIsComplete(mapping) && !legacyMapping ? 'published' : 'partial');
-    return { status, mappingPath: path, counts: mappingCounts(mapping), objects, warnings };
+    return { status, recordPath: path, counts: mappingCounts(mapping), objects, warnings };
   }
 }

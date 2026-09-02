@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
   <title id="title">Product 与 E3 的构建期共享 artifact contract</title>
-  <desc id="desc">根级 artifact contract 在构建时分别进入 Product checker bundle 与 E3 server bundle，运行时两侧自足且不跨 Plugin 读取文件。</desc>
+  <desc id="desc">根级 artifact contract 在构建时分别进入 Product artifact checker bundle 与 E3 server bundle，运行时两侧自足且不跨 Plugin 读取文件。</desc>
   <defs>
     <style>
       text { font-family: Kaiti SC; fill: #273142; }

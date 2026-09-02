@@ -2,7 +2,7 @@
 
 `plainOEC-infra` 是面向 Claude Code 的 OEC 组织级 Marketplace：领域 Plugin 提供 Product、
 Engineering 和内容交付能力，平台 Plugin 用确定性 MCP 处理 E3 与 Pipeline 的认证、远端副作用、
-幂等、恢复和状态回读；实验性 `dev-beta` 提供独立的长时 Web/全栈编排能力。
+幂等、恢复和状态回读；实验性 `oec-dev-beta` 提供独立的长时 Web/全栈编排能力。
 
 > **当前状态：release candidate，尚未正式发布。**
 >
@@ -14,8 +14,8 @@ Engineering 和内容交付能力，平台 Plugin 用确定性 MCP 处理 E3 与
 | Plugin | 作用 | 组件 | 外部副作用 | 依赖 |
 | --- | --- | --- | --- | --- |
 | `oec-product` | PRD 编写、需求评审和 E3 发布 | 1 Agent + 3 Skills | 发布时受控写 E3 | 自动依赖 `oec-e3` |
-| `oec-engineering` | OEC Dev 任务执行、Specs、决策、诊断和代码评审 | 10 Skills + 4 Agents + 1 SessionStart Hook + `oec-spec` | 无默认外部写入 | 无平台强依赖 |
-| `dev-beta` | 实验性 Web/全栈长时实现与运行态验收 | 1 experimental Skill | 可能进行多轮本地 Agent 调度 | 依赖宿主已发现的 Engineering 能力 |
+| `oec-dev` | OEC Dev 任务执行、Specs、决策、诊断和代码评审 | 10 Skills + 4 Agents + 1 SessionStart Hook + `oec-spec` | 无默认外部写入 | 无平台强依赖 |
+| `oec-dev-beta` | 实验性 Web/全栈长时实现与运行态验收 | 1 experimental Skill | 可能进行多轮本地 Agent 调度 | 依赖宿主已发现的 Engineering 能力 |
 | `oec-e3` | PRD 发布、研发任务、进度和状态 | 1 MCP Server / 10 Tools | 受控写 E3 | 可独立安装，也被 Product 依赖 |
 | `oec-pipeline` | 发现并运行已有 dev/test 流水线 | 1 MCP Server / 4 Tools | 受控启动流水线 | 独立安装 |
 | `oec-common` | 可演讲、概览和打印的 HTML Slides | 1 Skill | 无远端业务写入 | 独立安装 |
@@ -41,7 +41,7 @@ Marketplace 只负责发现和分发。Plugin 可独立安装、升级和卸载�
 | 角色 | 首选 | 可选 | 受控 |
 | --- | --- | --- | --- |
 | 产品 | `oec-product` | `oec-common` | 通过 Product 显式使用 E3 发布 |
-| 研发 | `oec-engineering` | `dev-beta`、`oec-common`、可选 Agents | 按任务安装 `oec-e3` 或 `oec-pipeline` |
+| 研发 | `oec-dev` | `oec-dev-beta`、`oec-common`、可选 Agents | 按任务安装 `oec-e3` 或 `oec-pipeline` |
 | 其他 | 有演示交付时使用 `oec-common` | 承担产品或工程责任时再选择对应 Plugin | 只有平台 Owner/授权操作人才使用 E3/Pipeline |
 
 安装、首个使用场景、验证和回退命令见 [QUICKSTART](QUICKSTART.md)。每个 Plugin 的完整能力与边界见
@@ -59,15 +59,15 @@ Marketplace 只负责发现和分发。Plugin 可独立安装、升级和卸载�
 5. **按风险展开。** 小改动保持最短路径；高风险工作才增加 Specs、任务文档、独立 review 和 evidence。
 6. **提示词只保留行为约束。** Engineering 的 SessionStart 只注入静态 Engineering 行为提示，不复制能力元数据、不扫描项目，也不承担
    Router 或状态管理。
-7. **实验能力隔离。** 长时 Web 编排不进入稳定 Engineering Plugin，单独由 `dev-beta` 管理。
+7. **实验能力隔离。** 长时 Web 编排不进入稳定 Engineering Plugin，单独由 `oec-dev-beta` 管理。
 8. **证据等级不可互换。** 源码、静态测试、bundle、Connected、真实非生产验收和生产可用是不同声明。
 
 ## 安装边界
 
 - user scope 安装不会要求业务仓库安装 npm 依赖，也不会手工复制 Plugin payload。
-- 安装 `oec-engineering` 本身不会创建项目 `.claude`、`.codex` 或 `ai-docs`。
+- 安装 `oec-dev` 本身不会创建项目 `.claude`、`.codex` 或 `ai-docs`。
 - Product 会由宿主解析 `oec-e3@~1.0.0` 依赖；普通 PRD 写作不会因此自动发布。
-- `dev-beta` 不复制 Engineering Agent、`oec-spec` 或 runtime；缺少这些宿主能力时应停止并报告。
+- `oec-dev-beta` 不复制 Engineering Agent、`oec-spec` 或 runtime；缺少这些宿主能力时应停止并报告。
 - E3 与 Pipeline 包含远端权限，只应由明确 Owner 在授权对象上使用。
 - 团队需要共享 Plugin 启用声明时才选择 project scope，并让 Claude Code 管理项目 settings。
 
@@ -86,7 +86,7 @@ Marketplace 只负责发现和分发。Plugin 可独立安装、升级和卸载�
 - 当前候选版本已经正式发布；
 - E3 `1.0.2` 的账号 Owner 逻辑已完成真实补丁复验；
 - Pipeline `1.0.2` 已在授权非生产流水线上完成 single-POST 真实验收；
-- `dev-beta` 已完成真实 Agent/Playwright outcome 验收；
+- `oec-dev-beta` 已完成真实 Agent/Playwright outcome 验收；
 - Skills 的 route grader 已证明完整用户结果；
 - MCP Connected 等于真实业务验收或生产可用；
 - Codex Agents 已完成完整宿主验收。
@@ -119,4 +119,4 @@ git diff --check
   分层的证据。
 - [Engineering 能力迁移分析](docs/migrations/engineering-capability-migration.md)：旧 Dev/Test 能力到
   主 Session、Engineering 与平台 Plugin 的迁移证据。
-- [Dev Beta](dev-beta/README.md)：实验性长时 Web/full-stack 能力的安装与边界。
+- [Dev Beta](oec-dev-beta/README.md)：实验性长时 Web/full-stack 能力的安装与边界。

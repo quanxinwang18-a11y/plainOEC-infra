@@ -1,10 +1,10 @@
 import { build } from 'esbuild';
 import { resolve } from 'node:path';
-import { generateEngineeringCodexAgents } from './scripts/generate-engineering-codex-agents.mjs';
+import { generateDevCodexAgents } from './scripts/generate-dev-codex-agents.mjs';
 
 const workspaceRoot = import.meta.dirname;
 const productRoot = resolve(workspaceRoot, 'oec-product');
-const engineeringRoot = resolve(workspaceRoot, 'oec-engineering');
+const engineeringRoot = resolve(workspaceRoot, 'oec-dev');
 const e3Root = resolve(workspaceRoot, 'oec-e3');
 const pipelineRoot = resolve(workspaceRoot, 'oec-pipeline');
 
@@ -25,7 +25,7 @@ const common = {
 
 // Claude Markdown is the canonical Engineering Agent source. Keep the committed
 // experimental Codex mirrors generated instead of maintaining two prompt copies.
-await generateEngineeringCodexAgents({ pluginRoot: engineeringRoot });
+await generateDevCodexAgents({ pluginRoot: engineeringRoot });
 
 await Promise.all([
   build({
@@ -43,8 +43,8 @@ await Promise.all([
   build({
     ...common,
     absWorkingDir: productRoot,
-    entryPoints: ['skills/write-prd/scripts/check-artifacts-cli.mjs'],
-    outfile: 'skills/write-prd/runtime/check-artifacts.mjs',
+    entryPoints: ['skills/prd-write/scripts/check-artifacts-cli.mjs'],
+    outfile: 'skills/prd-write/runtime/check-artifacts.mjs',
   }),
   build({
     ...common,

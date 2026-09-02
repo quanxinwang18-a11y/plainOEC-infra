@@ -8,7 +8,7 @@ import { adoptMappingCheckpoints, mappingHasRemoteIds, mappingIsComplete, readMa
 
 test('mapping v1 reads legacy sub_prd_file and v2 writes child_prd atomically', async () => {
   const workspace = await mkdtemp(join(tmpdir(), 'oec-map-'));
-  const directory = join(workspace, 'ai-docs', 'integrations', 'e3');
+  const directory = join(workspace, 'ai-docs', 'integrations', 'e3', 'publications');
   await mkdir(directory, { recursive: true });
   await writeFile(join(directory, 'v1.0.0.yaml'), YAML.stringify({
     schema_version: 1,

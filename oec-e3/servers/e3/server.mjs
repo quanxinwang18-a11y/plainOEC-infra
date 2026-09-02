@@ -68,7 +68,7 @@ export function createE3McpServer({ service, developmentService } = {}) {
 
   mcpServer.registerTool('get_prd_publish_status', {
     title: 'Verify PRD publication',
-    description: 'Read the local mapping and verify its E3 requirements and tasks.',
+    description: 'Read the local E3 publication record and verify its requirements and tasks.',
     inputSchema: {
       workspaceUri: z.string().url().describe('A file URI returned by MCP roots/list'),
       version: z.string().regex(/^v\d+\.\d+\.\d+$/),
@@ -142,7 +142,7 @@ export function createE3McpServer({ service, developmentService } = {}) {
 
   mcpServer.registerTool('get_development_task_status', {
     title: 'Verify E3 development tasks',
-    description: 'Read a development mapping and verify task identity, parent linkage, status, and current worklog in E3.',
+    description: 'Read an E3 development task record and verify task identity, parent linkage, status, and current worklog.',
     inputSchema: {
       workspaceUri: z.string().url().describe('A file URI returned by MCP roots/list'),
       changeId: z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._-]{1,127}$/),

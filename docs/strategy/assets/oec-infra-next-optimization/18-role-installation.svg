@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
   <title id="title">PM、研发与测试的原生 Plugin 安装组合</title>
-  <desc id="desc">PM 安装 Product 并自动获得 E3，研发安装 Engineering 并按需组合 dev-beta、E3 与 Pipeline，测试未来安装 Testing 并在准入后组合 UTP，避免角色套件。</desc>
+  <desc id="desc">PM 安装 Product 并自动获得 E3，研发安装 Engineering 并按需组合 oec-dev-beta、E3 与 Pipeline，测试未来安装 Testing 并在准入后组合 UTP，避免角色套件。</desc>
   <defs>
     <style>
       text { font-family: Kaiti SC; fill: #273142; }
@@ -46,8 +46,8 @@
   <text x="275" y="700" class="note">只安装 Product 即可进入 PM 主链</text>
 
   <text x="800" y="350" class="title">研发</text>
-  <text x="800" y="450" class="plugin">oec-engineering</text><text x="800" y="482" class="body">10 个稳定工程 Skills</text>
-  <text x="800" y="520" class="body">dev-beta：实验性长时流程（另装）</text>
+  <text x="800" y="450" class="plugin">oec-dev</text><text x="800" y="482" class="body">10 个稳定工程 Skills</text>
+  <text x="800" y="520" class="body">oec-dev-beta：实验性长时流程（另装）</text>
   <text x="700" y="600" class="plugin">oec-e3</text><text x="700" y="632" class="body">任务同步</text>
   <text x="900" y="600" class="plugin">Pipeline</text><text x="900" y="632" class="body">按需运行</text>
   <text x="800" y="700" class="note">稳定工程能力与实验性长时编排分开</text>

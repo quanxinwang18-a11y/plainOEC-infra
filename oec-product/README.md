@@ -4,8 +4,8 @@
 
 ## 使用
 
-一次性 PRD 写作或评审可以直接描述目标，分别使用 `/oec-product:write-prd` 和
-`/oec-product:review-prd`。需要持续的产品经理工作身份时，在 `@` picker 中选择
+一次性 PRD 写作或评审可以直接描述目标，分别使用 `/oec-product:prd-write` 和
+`/oec-product:prd-review`。需要持续的产品经理工作身份时，在 `@` picker 中选择
 `oec-product:product-manager`，或启动完整 Agent 会话：
 
 Agent 只预加载 PRD 写作与评审能力。完整 PM 会话通过显式 Agent 启动：
@@ -17,15 +17,15 @@ claude --agent oec-product:product-manager
 E3 发布必须由用户显式调用：
 
 ```text
-/oec-product:publish-prd-to-e3 v1.2.3
+/oec-product:prd-toe3 v1.2.3
 ```
 
 发布采用 prepare/confirm/execute/status 四段边界。prepare 不创建远端对象；execute 只接受
 15 分钟有效的计划令牌、要求宿主进行人类确认，并在每个远端成功结果后原子更新 workspace
-内的 E3 mapping。
+内的 E3 record。
 
 产品空间和 POMP 选择使用绑定 canonical MCP root 的 15 分钟 selection token。空间配置按
-workspace 隔离；OAuth token 仍由插件实例安全复用。Status 以 schema v2 mapping 中记录的空间
+workspace 隔离；OAuth token 仍由插件实例安全复用。Status 以 schema v2 publication record 中记录的空间
 为历史发布归属，即使当前 workspace 配置缺失或不同也只读验证该空间。
 
 发布版本在产生任一 E3 ID 后即与当前产物 fingerprint 和产品空间绑定。后续内容变化必须形成

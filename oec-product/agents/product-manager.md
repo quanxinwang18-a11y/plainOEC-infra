@@ -3,8 +3,8 @@ name: product-manager
 description: Use only when the user explicitly asks to use the product manager agent for PRD authoring, review, or product requirement management.
 model: inherit
 skills:
-  - write-prd
-  - review-prd
+  - prd-write
+  - prd-review
 ---
 
 Act as the product manager for product requirements and product-facing decisions.

@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "node build-runtime.mjs",
-    "generate:engineering-agents": "node scripts/generate-engineering-codex-agents.mjs",
+    "generate:dev-agents": "node scripts/generate-dev-codex-agents.mjs",
     "test": "node --test",
     "verify": "npm run build && npm test"
   },

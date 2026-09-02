@@ -1,15 +1,15 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdtemp, readFile, readdir } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { promisify } from 'node:util';
 import test from 'node:test';
 
 const execFileAsync = promisify(execFile);
 const repositoryRoot = resolve(import.meta.dirname, '..');
-const forbiddenAgentSlash = ['/oec-engineering', 'oec-'].join(':');
+const forbiddenAgentSlash = ['/oec-dev', 'oec-'].join(':');
 const removedGifSkill = ['record', 'gif'].join('-');
 
 async function manifest(plugin) {
@@ -36,7 +36,7 @@ test('Marketplace versions and native Plugin boundaries are internally consisten
   assert.equal(marketplace.version, '3.1.0');
   assert.equal(packageManifest.version, marketplace.version);
   assert.deepEqual(marketplace.plugins.map((plugin) => plugin.name), [
-    'oec-product', 'oec-engineering', 'dev-beta', 'oec-e3', 'oec-pipeline', 'oec-common',
+    'oec-product', 'oec-dev', 'oec-dev-beta', 'oec-e3', 'oec-pipeline', 'oec-common',
   ]);
   for (const entry of marketplace.plugins) {
     const pluginManifest = await manifest(entry.name);
@@ -51,8 +51,8 @@ test('Marketplace versions and native Plugin boundaries are internally consisten
   }
   assert.deepEqual((await manifest('oec-product')).dependencies, [{ name: 'oec-e3', version: '~1.0.0' }]);
   assert.equal(await skillCount('oec-product'), 3);
-  assert.equal(await skillCount('oec-engineering'), 10);
-  assert.equal(await skillCount('dev-beta'), 1);
+  assert.equal(await skillCount('oec-dev'), 10);
+  assert.equal(await skillCount('oec-dev-beta'), 1);
   assert.equal(await skillCount('oec-e3'), 0);
   assert.equal(await skillCount('oec-pipeline'), 0);
   assert.equal(await skillCount('oec-common'), 1);
@@ -60,7 +60,7 @@ test('Marketplace versions and native Plugin boundaries are internally consisten
 
 test('only platform Plugins own MCP Servers and tool counts remain bounded', async () => {
   await assert.rejects(readFile(resolve(repositoryRoot, 'oec-product', '.mcp.json')), /ENOENT/);
-  await assert.rejects(readFile(resolve(repositoryRoot, 'oec-engineering', '.mcp.json')), /ENOENT/);
+  await assert.rejects(readFile(resolve(repositoryRoot, 'oec-dev', '.mcp.json')), /ENOENT/);
   for (const [plugin, server, count] of [
     ['oec-e3', 'servers/e3/server.mjs', 10],
     ['oec-pipeline', 'servers/pipeline/server.mjs', 4],
@@ -88,8 +88,8 @@ test('current-facing documentation stays aligned with Marketplace components', a
     'docs/strategy/assets/oec-infra-next-optimization/05-current-architecture.svg',
   ), 'utf8');
   const productReadme = await readFile(resolve(repositoryRoot, 'oec-product', 'README.md'), 'utf8');
-  const engineeringReadme = await readFile(resolve(repositoryRoot, 'oec-engineering', 'README.md'), 'utf8');
-  const betaReadme = await readFile(resolve(repositoryRoot, 'dev-beta', 'README.md'), 'utf8');
+  const engineeringReadme = await readFile(resolve(repositoryRoot, 'oec-dev', 'README.md'), 'utf8');
+  const betaReadme = await readFile(resolve(repositoryRoot, 'oec-dev-beta', 'README.md'), 'utf8');
   const e3Readme = await readFile(resolve(repositoryRoot, 'oec-e3', 'README.md'), 'utf8');
   const pipelineReadme = await readFile(resolve(repositoryRoot, 'oec-pipeline', 'README.md'), 'utf8');
   const commonReadme = await readFile(resolve(repositoryRoot, 'oec-common', 'README.md'), 'utf8');
@@ -125,12 +125,12 @@ test('current-facing documentation stays aligned with Marketplace components', a
   assert.match(e3Readme, /准备研发任务计划[\s\S]{0,80}不要执行/);
   assert.match(pipelineReadme, /发现当前仓库可用的 test 流水线[\s\S]{0,80}不要运行/);
   assert.match(pipelineReadme, /查询当前计划对应的流水线运行状态，不要重新执行/);
-  assert.match(engineeringReadme, /`develop-change`/);
-  assert.match(engineeringReadme, /`review-code`/);
-  assert.match(engineeringReadme, /`checker`/);
-  assert.match(engineeringReadme, /`evaluator`/);
-  assert.match(betaReadme, /`dev-beta`/);
-  assert.match(betaReadme, /\/dev-beta:run-long-coding/);
+  assert.match(engineeringReadme, /`change-implement`/);
+  assert.match(engineeringReadme, /`code-review`/);
+  assert.match(engineeringReadme, /`change-checker`/);
+  assert.match(engineeringReadme, /`web-evaluator`/);
+  assert.match(betaReadme, /`oec-dev-beta`/);
+  assert.match(betaReadme, /\/oec-dev-beta:web-task-run/);
 
   const productMigration = await readFile(resolve(
     repositoryRoot,
@@ -152,13 +152,13 @@ test('current-facing documentation stays aligned with Marketplace components', a
   }
 
   for (const name of [
-    'write-prd', 'review-prd', 'publish-prd-to-e3',
-    'manage-specs', 'migrate-legacy-ai-docs', 'challenge-decision',
-    'prototype-decision', 'plan-change', 'develop-change', 'develop-test-first',
-    'diagnose-failure', 'review-code', 'close-change', 'run-long-coding', 'create-slides',
+    'prd-write', 'prd-review', 'prd-toe3',
+    'spec-manage', 'legacy-doc-migrate', 'decision-challenge',
+    'design-prototype', 'change-plan', 'change-implement', 'test-first',
+    'failure-debug', 'code-review', 'change-close', 'web-task-run', 'create-slides',
   ]) assert.match(report, new RegExp(`\\b${name}\\b`), `${name} missing from report`);
 
-  for (const name of ['product-manager', 'implementer', 'evaluator', 'checker', 'researcher']) {
+  for (const name of ['product-manager', 'task-implementer', 'web-evaluator', 'change-checker', 'task-researcher']) {
     assert.match(report, new RegExp(`\\b${name}\\b`), `${name} missing from report`);
   }
 
@@ -174,11 +174,11 @@ test('current-facing documentation stays aligned with Marketplace components', a
   assert.doesNotMatch(report, /\boec-(?:product|engineering|e3|pipeline|common)@[~^]?\d+\.\d+\.\d+\b/);
   assert.match(report, /简单、局部、低风险改动/);
   assert.match(report, /非平凡、高风险或需跨会话保存上下文的改动/);
-  assert.match(report, /publish-prd-to-e3[\s\S]{0,180}manual-only/);
-  assert.match(report, /challenge-decision[\s\S]{0,180}可自动发现/);
-  assert.match(report, /close-change[\s\S]{0,180}可自动发现/);
-  assert.match(report, /dev-beta[\s\S]{0,180}run-long-coding/);
-  assert.match(report, /develop-change[\s\S]{0,180}Main Session/);
+  assert.match(report, /prd-toe3[\s\S]{0,180}manual-only/);
+  assert.match(report, /decision-challenge[\s\S]{0,180}可自动发现/);
+  assert.match(report, /change-close[\s\S]{0,180}可自动发现/);
+  assert.match(report, /oec-dev-beta[\s\S]{0,180}web-task-run/);
+  assert.match(report, /change-implement[\s\S]{0,180}Main Session/);
   assert.match(report, /prepared → executing → executed/);
   assert.match(report, /同一个 plan token 最多[\s\S]{0,80}一次 `runPipeline` POST/);
   assert.match(report, /无法确定账号时[\s\S]{0,100}prepare[\s\S]{0,100}失败/);
@@ -219,7 +219,7 @@ test('current-facing documentation stays aligned with Marketplace components', a
   const currentUsage = [
     rootReadme,
     quickstart,
-    await readFile(resolve(repositoryRoot, 'oec-engineering', 'README.md'), 'utf8'),
+    await readFile(resolve(repositoryRoot, 'oec-dev', 'README.md'), 'utf8'),
     betaReadme,
     await readFile(resolve(repositoryRoot, 'oec-common', 'README.md'), 'utf8'),
   ].join('\n');
@@ -233,7 +233,7 @@ test('current-facing documentation stays aligned with Marketplace components', a
     'prototyping-decisions', 'test-driven-development', 'diagnosing-failures',
     'reviewing-code-changes', 'delegating-engineering-agents', 'orchestrating-long-running-coding',
     'closing-engineering-changes', 'html-slides', 'oec-pm', 'oec-research', 'oec-implement',
-    'oec-evaluate', 'oec-check', 'oec-engineering:run-long-coding',
+    'oec-evaluate', 'oec-check', 'oec-dev:web-task-run',
   ]) assert.equal(currentUsage.includes(oldName), false, `current usage still contains ${oldName}`);
 
   const contributionRules = await readFile(resolve(repositoryRoot, 'CLAUDE.md'), 'utf8');
@@ -246,37 +246,53 @@ test('a Git archive contains self-contained Plugin payloads without node_modules
   const isolated = await mkdtemp(join(tmpdir(), 'plain-oec-archive-'));
   const archive = join(isolated, 'marketplace.tar');
   const extracted = join(isolated, 'marketplace');
-  await execFileAsync('git', ['-C', repositoryRoot, 'archive', '--format=tar', '--output', archive, 'HEAD']);
+  const status = await execFileAsync('git', ['-C', repositoryRoot, 'status', '--short']);
+  if (status.stdout.trim()) {
+    // During an uncommitted rename, HEAD still contains the old payload paths.
+    // Archive the current worktree in a temporary directory so local verification
+    // exercises the payload that will be committed.
+    const snapshot = join(isolated, 'source');
+    await cp(repositoryRoot, snapshot, {
+      recursive: true,
+      filter: (source) => {
+        const path = relative(repositoryRoot, source);
+        return path === '' || (!path.split('/').includes('.git') && !path.split('/').includes('node_modules'));
+      },
+    });
+    await execFileAsync('tar', ['-cf', archive, '-C', snapshot, '.']);
+  } else {
+    await execFileAsync('git', ['-C', repositoryRoot, 'archive', '--format=tar', '--output', archive, 'HEAD']);
+  }
   await execFileAsync('mkdir', ['-p', extracted]);
   await execFileAsync('tar', ['-xf', archive, '-C', extracted]);
   const files = (await execFileAsync('find', [extracted, '-type', 'd', '-name', 'node_modules'])).stdout.trim();
   assert.equal(files, '');
-  assert.ok((await readFile(resolve(extracted, 'oec-product', 'skills/write-prd/runtime/check-artifacts.mjs'))).length > 0);
+  assert.ok((await readFile(resolve(extracted, 'oec-product', 'skills/prd-write/runtime/check-artifacts.mjs'))).length > 0);
   assert.ok((await readFile(resolve(extracted, 'oec-e3', 'dist/e3-server.mjs'))).length > 0);
   assert.ok((await readFile(resolve(extracted, 'oec-pipeline', 'dist/pipeline-server.mjs'))).length > 0);
   // Engineering components are self-contained without node_modules.
-  assert.ok((await readFile(resolve(extracted, 'oec-engineering', 'dist/oec-spec.mjs'))).length > 0);
-  assert.ok((await readFile(resolve(extracted, 'oec-engineering', 'agents/implementer.md'))).length > 0);
+  assert.ok((await readFile(resolve(extracted, 'oec-dev', 'dist/oec-spec.mjs'))).length > 0);
+  assert.ok((await readFile(resolve(extracted, 'oec-dev', 'agents/task-implementer.md'))).length > 0);
   assert.ok((await readFile(resolve(
     extracted,
-    'oec-engineering',
-    'skills/migrate-legacy-ai-docs/SKILL.md',
+    'oec-dev',
+    'skills/legacy-doc-migrate/SKILL.md',
   ))).length > 0);
   for (const name of [
-    'challenge-decision',
-    'close-change',
-    'migrate-legacy-ai-docs',
+    'decision-challenge',
+    'change-close',
+    'legacy-doc-migrate',
   ]) {
     assert.ok((await readFile(resolve(
       extracted,
-      'oec-engineering',
+      'oec-dev',
       `skills/${name}/agents/openai.yaml`,
     ))).length > 0);
   }
   assert.ok((await readFile(resolve(
     extracted,
-    'oec-engineering',
-    'skills/prototype-decision/SKILL.md',
+    'oec-dev',
+    'skills/design-prototype/SKILL.md',
   ))).length > 0);
   assert.ok((await readFile(resolve(extracted, 'oec-common', 'skills/create-slides/assets/deck-index.html'))).length > 0);
   assert.ok((await readFile(resolve(extracted, 'oec-common', 'skills/create-slides/LICENSE.huashu-design'))).length > 0);

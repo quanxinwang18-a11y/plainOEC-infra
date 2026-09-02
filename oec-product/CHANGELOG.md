@@ -1,5 +1,9 @@
 # Changelog
 
+## Next
+
+**BREAKING RC CHANGE:** rename the public Product Skills to `prd-write`, `prd-review`, and `prd-toe3`.
+
 ## 3.0.3
 
 **BREAKING RC CHANGE:** normalize public capability names before the first stable release.

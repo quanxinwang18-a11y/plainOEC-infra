@@ -7,7 +7,9 @@
     "name": "OEC"
   },
   "renames": {
-    "pm-prd": "oec-product"
+    "pm-prd": "oec-product",
+    "oec-engineering": "oec-dev",
+    "dev-beta": "oec-dev-beta"
   },
   "plugins": [
     {
@@ -18,17 +20,17 @@
       "category": "product-management"
     },
     {
-      "name": "oec-engineering",
+      "name": "oec-dev",
       "version": "1.9.0",
       "description": "OEC Dev 模块上下文、任务 Spec/Design、任务实现、团队工程知识、故障诊断和代码评审。",
-      "source": "./oec-engineering",
+      "source": "./oec-dev",
       "category": "development"
     },
     {
-      "name": "dev-beta",
+      "name": "oec-dev-beta",
       "version": "0.1.0",
       "description": "实验性 Web/全栈开发流程能力。",
-      "source": "./dev-beta",
+      "source": "./oec-dev-beta",
       "category": "development"
     },
     {

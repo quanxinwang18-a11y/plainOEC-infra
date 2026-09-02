@@ -45,7 +45,7 @@
   <text x="220" y="622" class="note">领域知识生命周期</text>
   <text x="600" y="545" class="title">E3 Plugin</text>
   <text x="600" y="582" class="body">需求、Story、研发任务</text>
-  <text x="600" y="622" class="note">E3 认证与 mapping</text>
+  <text x="600" y="622" class="note">E3 认证与 record</text>
   <text x="980" y="545" class="title">Pipeline Plugin</text>
   <text x="980" y="582" class="body">ref、commit、阶段与运行</text>
   <text x="980" y="622" class="note">构建平台权限与状态</text>

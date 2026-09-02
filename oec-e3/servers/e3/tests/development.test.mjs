@@ -266,7 +266,7 @@ test('development prepare fails closed without a verified E3 account and execute
 
 test('development planning reuses a PRD requirement mapping without copying product requirements', async () => {
   const value = await fixture();
-  const directory = join(value.workspace, 'ai-docs', 'integrations', 'e3');
+  const directory = join(value.workspace, 'ai-docs', 'integrations', 'e3', 'publications');
   await mkdir(directory, { recursive: true });
   await writeFile(join(directory, 'v1.2.3.yaml'), YAML.stringify({
     schema_version: 2,
@@ -346,7 +346,7 @@ test('mapped task identity is immutable and remote drift is blocked without repl
   assert.equal(drifted.status, 'blocked');
   assert.match(drifted.errors.join('\n'), /remote-object-drift/);
   assert.equal(client.creates, 1);
-  const file = await readFile(join(value.workspace, 'ai-docs', 'integrations', 'e3', 'development', 'v1.2.3-alpha.yaml'), 'utf8');
+  const file = await readFile(join(value.workspace, 'ai-docs', 'Spec', 'integrations', 'e3', 'development-tasks', 'v1.2.3-alpha.yaml'), 'utf8');
   assert.match(file, /task-1/);
 });
 
@@ -365,13 +365,13 @@ test('task progress starts a mapped task and status remains read-only', async ()
   assert.equal(client.starts, 1);
   assert.equal(client.tasks.get('req-1')[0].status, '2');
 
-  const mappingPath = join(value.workspace, 'ai-docs', 'integrations', 'e3', 'development', 'v1.2.3-alpha.yaml');
-  const before = await readFile(mappingPath, 'utf8');
+  const recordPath = join(value.workspace, 'ai-docs', 'Spec', 'integrations', 'e3', 'development-tasks', 'v1.2.3-alpha.yaml');
+  const before = await readFile(recordPath, 'utf8');
   const status = await service.status({ workspaceUri: value.workspaceUri, changeId: 'v1.2.3-alpha' }, value.roots);
   assert.equal(status.status, 'synced');
   assert.equal(status.tasks[0].state, 'verified');
   assert.equal(status.tasks[0].status, '2');
-  assert.equal(await readFile(mappingPath, 'utf8'), before);
+  assert.equal(await readFile(recordPath, 'utf8'), before);
 });
 
 test('task progress logs work and completes through server-derived metadata', async () => {

@@ -381,9 +381,9 @@ ideate、generate、revise、finalize 和 split 是可能采用的内部工作�
 
 | Skill | 用户目标 | 副作用边界 |
 |---|---|---|
-| [write-prd](../../oec-product/skills/write-prd/SKILL.md) | 创建、修订、收口和拆分 PRD | 只写本地 PRD；提交前确认 |
-| [review-prd](../../oec-product/skills/review-prd/SKILL.md) | 对 PRD 做只读红队评审 | 不修改文件 |
-| [publish-prd-to-e3](../../oec-product/skills/publish-prd-to-e3/SKILL.md) | 显式发布最终产物 | 展示计划并确认后写 E3 |
+| [prd-write](../../oec-product/skills/prd-write/SKILL.md) | 创建、修订、收口和拆分 PRD | 只写本地 PRD；提交前确认 |
+| [prd-review](../../oec-product/skills/prd-review/SKILL.md) | 对 PRD 做只读红队评审 | 不修改文件 |
+| [prd-toe3](../../oec-product/skills/prd-toe3/SKILL.md) | 显式发布最终产物 | 展示计划并确认后写 E3 |
 
 ### 5.2 Agent、Skill、MCP 各自只有一个主要职责
 
@@ -452,9 +452,9 @@ publishing 不预加载，并设置为只能由用户显式调用。
 Marketplace: plainOEC-infra
 ├── Plugin: oec-product@3.0.3
 │   ├── agents/product-manager.md
-│   ├── skills/write-prd/
-│   ├── skills/review-prd/
-│   ├── skills/publish-prd-to-e3/
+│   ├── skills/prd-write/
+│   ├── skills/prd-review/
+│   ├── skills/prd-toe3/
 │   └── dependency: oec-e3@~1.0.0
 └── Plugin: oec-e3@1.0.2
     ├── .mcp.json
@@ -484,9 +484,9 @@ Plugin cache 中运行。
 
 ### 6.2 Supporting files 回到所属 Skill
 
-Writing 的 artifact contract、versioning、product language、templates 和 checker 都位于
-`write-prd/` 内；Review rubric 位于 `review-prd/`；E3 publish contract 位于
-`publish-prd-to-e3/`。没有 Plugin 根公共 `references/assets/lib`，也没有另一个 Mega Skill
+Writing 的 artifact contract、versioning、product language、templates 和 artifact checker 都位于
+`prd-write/` 内；Review rubric 位于 `prd-review/`；E3 publish contract 位于
+`prd-toe3/`。没有 Plugin 根公共 `references/assets/lib`，也没有另一个 Mega Skill
 负责告诉模型去哪里找文件。
 
 Skill description 直接描述能力和触发边界，不再依赖无定义的品牌词帮助模型判断。Reference 只在
@@ -550,7 +550,7 @@ execute_task_progress
 get_development_task_status
 ```
 
-这些工具不是新的 Dev 工作流，也不依赖 `oec-engineering`。它们只确定性完成需求选择、任务创建或
+这些工具不是新的 Dev 工作流，也不依赖 `oec-dev`。它们只确定性完成需求选择、任务创建或
 复用、开始、工时日志、完成和只读状态验证。任务由 `changeId + localId` 建立本地身份，mapping
 绑定 workspace、空间、父需求、标题和远端 ID；每项成功立即 checkpoint，失败返回 partial。
 
@@ -561,7 +561,7 @@ Marketplace 根 package manifest 仅用于维护和重建，不位于 Plugin 根
 cache 不需要 `node_modules`、npm registry 登录、SessionStart 安装 Hook 或用户执行 `npm install`。
 
 确定性 PRD contract 的源码位于 [packages/prd-artifact-contract](../../packages/prd-artifact-contract)，只在
-构建期被 Product checker 和 E3 Server 分别导入并打包。它不是 Claude 组件、公共 Skill reference
+构建期被 Product artifact checker 和 E3 Server 分别导入并打包。它不是 Claude 组件、公共 Skill reference
 或 Plugin 之间的运行时文件依赖。
 
 ## 7. 能力迁移结果
@@ -577,7 +577,7 @@ cache 不需要 `node_modules`、npm registry 登录、SessionStart 安装 Hook 
 - 发布前后确定性 artifact gate。
 - 子 PRD 到系统需求、Story 到任务的映射。
 - E3 OAuth、空间和 POMP 配置。
-- E3 mapping、状态验证、幂等复用和 partial resume。
+- E3 record、状态验证、幂等复用和 partial resume。
 - 已发布版本不可变及远端对象漂移阻断。
 - E3 研发任务需求选择、创建/复用、进度、工时和状态验证的受控工具链。
 
@@ -701,7 +701,7 @@ Plugin 验证结果：
 ```text
 claude plugin validate .
 claude plugin validate ./oec-product
-claude plugin validate ./oec-engineering
+claude plugin validate ./oec-dev
 claude plugin validate ./oec-e3
 claude plugin validate ./oec-pipeline
 

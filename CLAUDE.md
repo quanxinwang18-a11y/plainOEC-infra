@@ -8,8 +8,8 @@
 - 不新增 legacy `commands/`，新用户入口使用 `skills/<name>/SKILL.md`。
 - 不用提示词复刻 MCP 已确定性实现的认证、API、幂等或恢复逻辑。
 - 每个提交保持单一目的并带对应验证；避免过度设计。
-- `oec-engineering/agents/*.md` 是 Engineering Agent 的事实源；不要手工编辑对应的
-  `.codex-plugin/agents/*.toml`，运行 `npm run build` 或 `npm run generate:engineering-agents` 生成。
+- `oec-dev/agents/*.md` 是 Engineering Agent 的事实源；不要手工编辑对应的
+  `.codex-plugin/agents/*.toml`，运行 `npm run build` 或 `npm run generate:dev-agents` 生成。
 
 ## 语言与用户入口
 

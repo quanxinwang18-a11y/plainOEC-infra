@@ -97,7 +97,7 @@ function normalizeSource(source = {}) {
   const prdVersion = source.prdVersion;
   const featureName = source.featureName;
   if (requirementId && (prdVersion || featureName)) {
-    throw new Error('source must identify a requirement directly or through a PRD mapping, not both');
+    throw new Error('source must identify a requirement directly or through a PRD record, not both');
   }
   if (Boolean(prdVersion) !== Boolean(featureName)) {
     throw new Error('source.prdVersion and source.featureName must be provided together');
@@ -237,12 +237,12 @@ async function requirementFromSource(client, workspace, config, source = {}) {
   if (!requirementId && source.prdVersion && source.featureName) {
     const { mapping } = await readMapping(workspace, source.prdVersion);
     if (mapping?.product_space?.id && String(mapping.product_space.id) !== String(config.productSpace.id)) {
-      throw new Error('PRD mapping belongs to a different E3 product space');
+      throw new Error('PRD record belongs to a different E3 product space');
     }
     const mapped = mapping?.requirements?.find((item) => item.featureName === source.featureName);
     requirementId = mapped?.e3_requirement?.id;
     expectedTitle = mapped?.e3_requirement?.title;
-    if (!requirementId) throw new Error('PRD mapping has no requirement for the requested featureName');
+    if (!requirementId) throw new Error('PRD record has no requirement for the requested featureName');
   }
   if (!requirementId) return { metadata, requirement: null };
   const requirement = await client.getRequirement(config.productSpace.id, metadata.workItemId, requirementId);
@@ -316,7 +316,7 @@ export class DevelopmentTaskService {
       counts: inspected.counts,
       planToken,
       expiresAt: new Date(plan.expiresAt).toISOString(),
-      mappingPath: inspected.path,
+      recordPath: inspected.path,
     };
   }
 
@@ -437,7 +437,7 @@ export class DevelopmentTaskService {
       return {
         status: 'partial',
         changeId: plan.changeId,
-        mappingPath: current.path,
+        recordPath: current.path,
         errors: ['E3 development work for this workspace change is already executing; query status and retry this plan after it finishes'],
       };
     }
@@ -491,13 +491,13 @@ export class DevelopmentTaskService {
       }
       mapping.sync_state = developmentMappingComplete(mapping) ? 'synced' : 'partial';
       checkpoint = await writeDevelopmentMapping(workspace, plan.changeId, mapping);
-      return { status: checkpoint.mapping.sync_state, changeId: plan.changeId, mappingPath: checkpoint.path, changes };
+      return { status: checkpoint.mapping.sync_state, changeId: plan.changeId, recordPath: checkpoint.path, changes };
     } catch (error) {
       mapping.sync_state = 'partial';
       mapping.last_error = error.message;
       checkpoint = await writeDevelopmentMapping(workspace, plan.changeId, mapping);
       const status = /remote-object-drift|Ambiguous|changed|mismatch/i.test(error.message) ? 'blocked' : 'partial';
-      return { status, changeId: plan.changeId, mappingPath: checkpoint.path, changes, errors: [error.message] };
+      return { status, changeId: plan.changeId, recordPath: checkpoint.path, changes, errors: [error.message] };
     }
     } finally {
       await releaseLock();
@@ -518,7 +518,7 @@ export class DevelopmentTaskService {
     if (!config?.productSpace || !config?.pompProject) {
       return { status: 'blocked', changeId, errors: ['E3 workspace configuration is incomplete'] };
     }
-    if (!stored.mapping) return { status: 'blocked', changeId, errors: ['Development task mapping does not exist'] };
+    if (!stored.mapping) return { status: 'blocked', changeId, errors: ['E3 development task record does not exist'] };
     try {
       assertMappingIdentity(stored.mapping, config, { ...stored.mapping.requirement, changeId });
       const snapshots = [];
@@ -580,10 +580,10 @@ export class DevelopmentTaskService {
         })),
         planToken,
         expiresAt: new Date(plan.expiresAt).toISOString(),
-        mappingPath: stored.path,
+        recordPath: stored.path,
       };
     } catch (error) {
-      return { status: 'blocked', changeId, mappingPath: stored.path, errors: [error.message] };
+      return { status: 'blocked', changeId, recordPath: stored.path, errors: [error.message] };
     }
   }
 
@@ -609,13 +609,13 @@ export class DevelopmentTaskService {
       return {
         status: 'partial',
         changeId: plan.changeId,
-        mappingPath: current.path,
+        recordPath: current.path,
         errors: ['E3 development work for this workspace change is already executing; query status and retry this plan after it finishes'],
       };
     }
     try {
     let stored = await readDevelopmentMapping(workspace, plan.changeId);
-    if (!stored.mapping) throw new Error('Development task mapping disappeared after progress prepare');
+    if (!stored.mapping) throw new Error('E3 development task record disappeared after progress prepare');
     assertMappingIdentity(stored.mapping, config, { ...plan.requirement, changeId: plan.changeId });
     const changes = [];
     try {
@@ -679,10 +679,10 @@ export class DevelopmentTaskService {
         changes.push({ localId: update.localId, taskId: remote.id, action });
         stored = await writeDevelopmentMapping(workspace, plan.changeId, stored.mapping);
       }
-      return { status: 'synced', changeId: plan.changeId, mappingPath: stored.path, changes };
+      return { status: 'synced', changeId: plan.changeId, recordPath: stored.path, changes };
     } catch (error) {
       const status = /drift|mismatch|terminal|terminated|completed/i.test(error.message) ? 'blocked' : 'partial';
-      return { status, changeId: plan.changeId, mappingPath: stored.path, changes, errors: [error.message] };
+      return { status, changeId: plan.changeId, recordPath: stored.path, changes, errors: [error.message] };
     }
     } finally {
       await releaseLock();
@@ -693,11 +693,11 @@ export class DevelopmentTaskService {
     if (!CHANGE_ID_PATTERN.test(changeId ?? '')) return { status: 'blocked', errors: ['Invalid changeId'] };
     const workspace = await resolveAuthorizedWorkspace(workspaceUri, roots);
     const stored = await readDevelopmentMapping(workspace, changeId);
-    if (!stored.mapping) return { status: 'partial', changeId, mappingPath: stored.path, tasks: [], errors: ['Development task mapping does not exist'] };
+    if (!stored.mapping) return { status: 'partial', changeId, recordPath: stored.path, tasks: [], errors: ['E3 development task record does not exist'] };
     const spaceId = stored.mapping.product_space?.id;
     const requirementId = stored.mapping.requirement?.id;
     if (!spaceId || !requirementId) {
-      return { status: 'blocked', changeId, mappingPath: stored.path, tasks: [], errors: ['Development mapping identity is incomplete'] };
+      return { status: 'blocked', changeId, recordPath: stored.path, tasks: [], errors: ['E3 development task record identity is incomplete'] };
     }
     const tasks = [];
     for (const mapped of stored.mapping.tasks ?? []) {
@@ -731,6 +731,6 @@ export class DevelopmentTaskService {
     const state = tasks.some((task) => task.state === 'drifted')
       ? 'blocked'
       : tasks.some((task) => task.state === 'missing') || tasks.length === 0 ? 'partial' : 'synced';
-    return { status: state, changeId, mappingPath: stored.path, productSpace: stored.mapping.product_space, requirement: stored.mapping.requirement, tasks };
+    return { status: state, changeId, recordPath: stored.path, productSpace: stored.mapping.product_space, requirement: stored.mapping.requirement, tasks };
   }
 }

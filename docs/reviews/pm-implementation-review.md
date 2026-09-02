@@ -55,9 +55,9 @@ flowchart LR
 oec-product
 ├── Agent: product-manager                         19 行
 ├── Skills
-│   ├── write-prd
-│   ├── review-prd
-│   └── publish-prd-to-e3             三个正文合计 105 行
+│   ├── prd-write
+│   ├── prd-review
+│   └── prd-toe3             三个正文合计 105 行
 └── dependency: oec-e3@~1.0.0
 
 oec-e3
@@ -91,9 +91,9 @@ frontmatter `skills:` 预加载 PM 能力。模型必须自己完成意图路由
 
 ```mermaid
 flowchart TD
-    A["显式 product-manager Agent"] --> W["原生预加载 write-prd"]
-    A --> R["原生预加载 review-prd"]
-    U["用户显式发布"] --> P["publish-prd-to-e3"]
+    A["显式 product-manager Agent"] --> W["原生预加载 prd-write"]
+    A --> R["原生预加载 prd-review"]
+    U["用户显式发布"] --> P["prd-toe3"]
     P --> M["oec-e3 类型化 MCP"]
 ```
 
@@ -117,8 +117,8 @@ schema、服务端校验、不可变计划、workspace 绑定、远端身份验�
 
 | 旧能力 | 当前决定 | 原因 |
 | --- | --- | --- |
-| PRD 编写、修订、拆分 | 合并为 `write-prd` | 同一稳定产物目标 |
-| PRD 红队评审 | `review-prd` | 只读且判断边界独立 |
+| PRD 编写、修订、拆分 | 合并为 `prd-write` | 同一稳定产物目标 |
+| PRD 红队评审 | `prd-review` | 只读且判断边界独立 |
 | PRD 发布 E3 | Product Skill + E3 MCP | 产品语义与平台执行分离 |
 | 原型设计 | 未迁移 | 不是当前 PRD 主链必需能力 |
 | 通用产品/系统需求 CRUD | 未迁移 | 会扩大为平台管理 SDK |

@@ -25,11 +25,11 @@
 
 - Product：显式 PM Agent + 三个以用户目标划分并带跨域负向边界的 PRD Skills。
 - Engineering：十个稳定工程 Skills + 四个可选 Agent；在不恢复总控流程的前提下，补充版本化任务的
-  `taskRef`、`spec.md`/`design.md`、Product/Dev 双空间来源、轻量 `develop-change` 执行入口和只读
+  `taskRef`、`spec.md`/`design.md`、Product/Dev 双空间来源、轻量 `change-implement` 执行入口和只读
   Spec reminder。稳定 Skills 均由精确自然语言意图发现，本地写入和 commit 仍有确认门。固定 Agent 委派
   和长时 Web 编排不属于稳定 Plugin；SessionStart 只注入不含能力清单、项目扫描或状态的静态行为约束。
   详细实施事实源为 `docs/architecture/oec-dev-contract-implementation-plan.md`。
-- Dev Beta：独立的 `dev-beta@0.1.0`，只提供显式的实验性 `run-long-coding`，复用宿主 Engineering
+- Dev Beta：独立的 `oec-dev-beta@0.1.0`，只提供显式的实验性 `web-task-run`，复用宿主 Engineering
   Agent 和 `oec-spec`，不复制文件或 runtime。
 - E3：独立 MCP-only Plugin，提供十个受控工具。
 - Pipeline：独立 MCP-only Plugin，提供四个既有流水线工具。
@@ -373,7 +373,7 @@ Skill/Agent 文档
 | --- | --- |
 | OAuth/PKCE、token 缓存和部分 401 重授权 | 选择哪个子文档、脚本和参数组合 |
 | 部分 HTTP 超时、错误包装和响应解包 | 多候选业务身份的精确选择及确认 |
-| 个别 UTP 操作的归一化与幂等测试 | 跨脚本 plan、checkpoint、mapping 和 status read-back |
+| 个别 UTP 操作的归一化与幂等测试 | 跨脚本 plan、checkpoint、record 和 status read-back |
 | Pipeline Client 的请求包装 | `run_pipeline` 等写操作失败后的通用重试缺少“结果未知先精确查询”的语义 |
 
 已发现的风险包括：
@@ -475,15 +475,15 @@ Skill 的价值不是替模型复述常识，而是在正确触发时提供模�
 
 | 处置 | 能力 | 决定与理由 |
 | --- | --- | --- |
-| 稳定保留 | `manage-specs`、`plan-change`、`review-code`、`close-change` | 分别拥有 Team Knowledge、任务契约、只读风险评审和最终收口边界 |
-| 稳定新增 | `develop-change` | 只执行已有 ready task，在 Main Session 中完成轻量实现和最新验证，不创建第二套状态 |
-| 稳定保留并开放发现 | `challenge-decision`、`prototype-decision`、`migrate-legacy-ai-docs` | 无远端写入；通过 description、精确路径计划和 Human 确认保护本地副作用 |
-| 稳定保留 | `develop-test-first`、`diagnose-failure` | 仍有明确方法目标，但后续用 outcome eval 复核其相对主模型的增量 |
+| 稳定保留 | `spec-manage`、`change-plan`、`code-review`、`change-close` | 分别拥有 Team Knowledge、任务契约、只读风险评审和最终收口边界 |
+| 稳定新增 | `change-implement` | 只执行已有 ready task，在 Main Session 中完成轻量实现和最新验证，不创建第二套状态 |
+| 稳定保留并开放发现 | `decision-challenge`、`design-prototype`、`legacy-doc-migrate` | 无远端写入；通过 description、精确路径计划和 Human 确认保护本地副作用 |
+| 稳定保留 | `test-first`、`failure-debug` | 仍有明确方法目标，但后续用 outcome eval 复核其相对主模型的增量 |
 | 删除 | 原固定 Agent 委派入口 | 只是宿主 `@` picker 的顺序包装，没有独立 artifact 或 runtime contract |
-| 移出稳定分发 | 长时 Web/full-stack 编排 | 依赖 Playwright、成本不可预测且需要多轮 Agent 调度，独立放入 `dev-beta` |
+| 移出稳定分发 | 长时 Web/full-stack 编排 | 依赖 Playwright、成本不可预测且需要多轮 Agent 调度，独立放入 `oec-dev-beta` |
 
-因此稳定 `oec-engineering` 为 10 个可由模型发现的 Skills 和 4 个 Agent；`dev-beta` 只有一个
-`run-long-coding`，保持 `disable-model-invocation: true`。稳定 Plugin 只保留真正不可逆的外部发布
+因此稳定 `oec-dev` 为 10 个可由模型发现的 Skills 和 4 个 Agent；`oec-dev-beta` 只有一个
+`web-task-run`，保持 `disable-model-invocation: true`。稳定 Plugin 只保留真正不可逆的外部发布
 Skill 为 manual-only；本地写入和 commit 通过各自的确认门控制。
 
 本轮已有的 route eval 只能证明调用或抑制行为，不能证明真实用户收益。删除或继续保留通用方法 Skill
@@ -549,9 +549,9 @@ Claude Code 官方将这些能力放在不同扩展位置：[扩展模型](https
 | 产品原型设计 | 不属于当前 PRD 写作、评审和发布主链 | 不随 Product 核心能力迁移；Engineering 仅提供用于回答一个交互或状态问题的 throwaway 决策原型，不生成产品原型资产 |
 | 通用产品/系统需求 CRUD | 会把受控发布扩张为平台管理 SDK，权限与失败面明显增大 | 不迁移；只保留 PRD 发布所需的受限 E3 原子操作 |
 | 文件写入策略 | Claude Code 已有原生文件工具，旧 Prompt 规则不提供额外领域价值 | 交还主 Agent；Skill 只保留产物契约和精确提交边界 |
-| `oec-dev-task` + `oec-dev-flow` | 大部分是现代 Coding Agent 已具备的通用研发流程；团队长期事实和已有任务执行仍有独立价值 | 删除总控流程；稳定 Engineering 保留十个聚焦 Skills（含 `develop-change`）和项目侧团队 Specs；固定 Agent 委派与长时 Web 编排不进入稳定 Plugin，后者只在独立 `dev-beta` 中实验 |
+| `oec-dev-task` + `oec-dev-flow` | 大部分是现代 Coding Agent 已具备的通用研发流程；团队长期事实和已有任务执行仍有独立价值 | 删除总控流程；稳定 Engineering 保留十个聚焦 Skills（含 `change-implement`）和项目侧团队 Specs；固定 Agent 委派与长时 Web 编排不进入稳定 Plugin，后者只在独立 `oec-dev-beta` 中实验 |
 | `oec-manage-task` 及 E3 scripts | “何时同步哪些任务”需要业务语义；认证、候选、远端写入和恢复必须确定执行 | 研发规划留在主 Agent/Engineering Skills；平台动作进入 `oec-e3` 六个研发任务工具 |
-| PRD 发布说明 + E3 scripts | 子 PRD、Story 和发布确认属于产品语义；HTTP、mapping 和幂等属于平台执行 | publishing Skill 编排 `oec-e3` 四个 PRD 发布工具 |
+| PRD 发布说明 + E3 scripts | 子 PRD、Story 和发布确认属于产品语义；HTTP、record 和幂等属于平台执行 | publishing Skill 编排 `oec-e3` 四个 PRD 发布工具 |
 | `oec-dev-flow` 中的流水线步骤及平台 Client | 普通开发流程不应强制绑定流水线；运行既有流水线是独立高副作用能力 | 删除固定开发阶段；`oec-pipeline` 提供四个受控运行工具 |
 | `oec-test-dispatcher` + 71 内部 Skills + Agent 文件树 | 不能把嵌套路由器整体搬入新 Plugin | 先逐项审计，再决定 Skill、script、UTP MCP、Agent 候选或删除 |
 
@@ -655,7 +655,7 @@ Tool。
 以 PRD 发布为例，新的调用链如下。
 
 其中 Skill 保留“一个子 PRD 对应一个系统需求”“何时应该发布”“如何向用户解释 warning”等领域
-语义；MCP 保证 OAuth、空间绑定、POMP 选择、mapping、远端身份、幂等和恢复。研发任务同步采用同样
+语义；MCP 保证 OAuth、空间绑定、POMP 选择、record、远端身份、幂等和恢复。研发任务同步采用同样
 原则，但不额外创建“Dev 总控 Skill”：技术规划仍由主 Agent 和 Engineering Skills 完成，E3 只提供
 受限的任务创建、进度和状态原子工具。Pipeline 也只负责把一个已经明确的 dev/test 运行计划安全
 执行，不规定研发必须经过哪些阶段。
@@ -676,7 +676,7 @@ Plugin 的粒度则由生命周期决定：当外部事实来源、认证权限�
 
 | 能力所有者 | 管理的事实与状态 | 组合边界 |
 | --- | --- | --- |
-| E3 Plugin | 需求、Story、研发任务、空间与 E3 mapping | 只负责 E3 认证、远端身份和任务/发布状态 |
+| E3 Plugin | 需求、Story、研发任务、空间与 E3 record | 只负责 E3 认证、远端身份和任务/发布状态 |
 | Pipeline Plugin | Git remote、ref、commit、流水线、阶段与运行状态 | 只运行既有 dev/test 流水线，不管理应用运行态 |
 | 未来 SAE Plugin | 应用、环境、实例、版本和运行健康 | 通过准入后独立建设，不借用 Pipeline 的权限或验收结果 |
 | Engineering Skills | 工程判断、团队 Specs、任务执行、计划、诊断和评审方法 | 不持有任何平台 token、selection、plan 或远端状态 |
@@ -699,8 +699,8 @@ Plugin 的粒度则由生命周期决定：当外部事实来源、认证权限�
 | Plugin | Agent | Skills | Hook | MCP | 作用与边界 |
 | --- | ---: | ---: | ---: | ---: | --- |
 | `oec-product@3.0.3` | 1 | 3 | 0 | 0 | PRD 写作、只读评审和发布语义；依赖 E3 |
-| `oec-engineering@1.9.0` | 4 | 10 | 1 | 0 | 稳定任务执行、团队 Specs、决策、诊断、review 和 close |
-| `dev-beta@0.1.0` | 0 | 1 | 0 | 0 | 实验性长时 Web/full-stack 编排 |
+| `oec-dev@1.9.0` | 4 | 10 | 1 | 0 | 稳定任务执行、团队 Specs、决策、诊断、review 和 close |
+| `oec-dev-beta@0.1.0` | 0 | 1 | 0 | 0 | 实验性长时 Web/full-stack 编排 |
 | `oec-e3@1.0.2` | 0 | 0 | 0 | 1 | 4 个 PRD 发布工具 + 6 个研发任务工具 |
 | `oec-pipeline@1.0.2` | 0 | 0 | 0 | 1 | 既有 dev/test 流水线的受控 prepare/execute/status |
 | `oec-common@0.3.0` | 0 | 1 | 0 | 0 | 零依赖 HTML-first 幻灯片 |
@@ -709,12 +709,12 @@ Product 明确向用户承诺 E3 发布，所以声明 `oec-e3@~1.0.0` dependenc
 不以 E3 或 Pipeline 为完成前提，因此与平台 Plugin 是按场景组合关系，不作强依赖。Dev Beta 也不复制或
 声明新的平台依赖；它只在宿主已提供 Engineering Agent 和 `oec-spec` 时工作。
 
-![根级 PRD artifact contract 在构建时分别进入 Product checker 与 E3 Server bundle](assets/oec-infra-next-optimization/16-shared-artifact-contract.svg)
+![根级 PRD artifact contract 在构建时分别进入 Product artifact checker 与 E3 Server bundle](assets/oec-infra-next-optimization/16-shared-artifact-contract.svg)
 
 *图：共享的是构建期确定性实现，不是公共 Skill 资源或运行时跨 Plugin 文件依赖。*
 
 Product 与 E3 都需要验证同一份 PRD 产物，但不复制两套规则：根级构建模块
-`packages/prd-artifact-contract` 维护唯一确定性实现，Product checker 与 E3 publication gate 在构建
+`packages/prd-artifact-contract` 维护唯一确定性实现，Product artifact checker 与 E3 publication gate 在构建
 时分别导入，再生成各自的自足 bundle。它不是 Claude 组件、公共 Skill references 或运行时 npm 包，
 Product 和 E3 运行时也不跨 Plugin 读取文件。这样既避免 artifact gate 漂移，也不让平台 Plugin
 反向依赖 Product 的安装路径。
@@ -727,8 +727,8 @@ claude plugin marketplace add \
   --scope user
 
 claude plugin install oec-product@plainOEC-infra --scope user
-claude plugin install oec-engineering@plainOEC-infra --scope user
-claude plugin install dev-beta@plainOEC-infra --scope user
+claude plugin install oec-dev@plainOEC-infra --scope user
+claude plugin install oec-dev-beta@plainOEC-infra --scope user
 claude plugin install oec-pipeline@plainOEC-infra --scope user
 claude plugin install oec-common@plainOEC-infra --scope user
 ```
@@ -739,7 +739,7 @@ claude plugin install oec-common@plainOEC-infra --scope user
 - project scope 由 CLI 生成插件启用声明，不需要手工复制组件。
 - 自足 bundle 随 Git 提交，用户不需要 npm login、npm install 或 Plugin 内 `node_modules`。
 - Plugin Data 保存 token、workspace config、selection、plan 和 runtime state；业务仓库只保存需要团队
-  审计和恢复的产物与 mapping。
+  审计和恢复的产物与 integration record。
 
 ### 6.3 当前证据边界
 
@@ -780,7 +780,7 @@ UTP 也不得借用 E3 证据宣称已验证。
 - 通用 Dev Agent。
 - 测试 Dispatcher 或 71 项文件索引树。
 - 角色套件 Plugin。
-- 固定 Agent 顺序或稳定 Plugin 内的长时 Web 编排；实验性长时能力只放在独立 `dev-beta`。
+- 固定 Agent 顺序或稳定 Plugin 内的长时 Web 编排；实验性长时能力只放在独立 `oec-dev-beta`。
 - SessionStart 项目同步、动态项目状态注入、默认 Agent settings 或通用平台 CRUD；静态行为提示是唯一例外。
 
 ### 7.2 角色安装体验
@@ -794,7 +794,7 @@ UTP 也不得借用 E3 证据宣称已验证。
 | 角色 | 基础安装 | 按需平台组合 | 说明 |
 | --- | --- | --- | --- |
 | PM | `oec-product` | 自动获得 `oec-e3` | publishing 明确依赖 E3 |
-| 研发 | `oec-engineering` | `dev-beta`、`oec-e3`、`oec-pipeline` | 稳定工程能力与实验性长时编排分开 |
+| 研发 | `oec-dev` | `oec-dev-beta`、`oec-e3`、`oec-pipeline` | 稳定工程能力与实验性长时编排分开 |
 | 测试 | 未来 `oec-testing` | 未来 `oec-utp`、现有 Pipeline | UTP 未准入前不提供安装承诺 |
 
 公司内部完整研发场景可在 onboarding 文档中给出按需组合的原生安装命令，但不为“一条命令”重新制造一个
@@ -951,7 +951,7 @@ UTP 也不得借用 E3 证据宣称已验证。
 
 - 所有外部写操作是否经过类型化 schema、计划确认和独立 status。
 - 是否存在默认取第一候选、任意 payload、盲重试或缺 ID 仍报告完成。
-- workspace、token、plan、mapping 和远端对象是否正确隔离与绑定。
+- workspace、token、plan、record 和远端对象是否正确隔离与绑定。
 - 权限、脱敏、提示注入、路径逃逸和越权修改是否有失败测试。
 
 ### 9.4 证据等级
@@ -1037,8 +1037,8 @@ OEC-infra 后续不应继续做“更多 Prompt、更多角色路由、更多统
 | 旧 Plugin 是 bootstrap | `plugins/oec-ai/.claude-plugin/plugin.json`、`plugins/oec-ai/skills/oec-project-init/`、`plugins/oec-ai/hooks/hooks.json` | 原生入口是初始化 Skill 与 SessionStart Hook；角色资产位于 payload |
 | 旧平台并非没有代码封装 | `oec-infra/skills/tools/oec-manage-task/scripts/client.py`、`oec-infra/skills/tools/oec-git-devops/devops/scripts/client.ts`、`oec-infra/skills/test/skills/platform-gateway/scripts/gateway_client.py` | OAuth、401、响应处理和部分重试已有确定性实现 |
 | 旧平台边界仍不完整 | `oec-infra/skills/tools/oec-manage-task/SKILL.md` 与上述 clients | 模型仍负责文件路由、入口/参数组合和跨步骤流程；Pipeline Client 对写操作使用通用失败重试 |
-| 当前组件层级与 dependency | [Marketplace manifest](../../.claude-plugin/marketplace.json)、[Product manifest](../../oec-product/.claude-plugin/plugin.json)、[Engineering manifest](../../oec-engineering/.claude-plugin/plugin.json)、[Dev Beta manifest](../../dev-beta/.claude-plugin/plugin.json)、[E3 manifest](../../oec-e3/.claude-plugin/plugin.json)、[Pipeline manifest](../../oec-pipeline/.claude-plugin/plugin.json)、[Common manifest](../../oec-common/.claude-plugin/plugin.json) | 当前版本、分发单元、Product→E3 依赖和 Dev Beta 隔离 |
-| Product/Engineering/Dev Beta/Common 的结构与 fixture | [Product 组件测试](../../oec-product/tests/components.test.mjs)、[Engineering 组件测试](../../oec-engineering/tests/components.test.mjs)、[Engineering 分发测试](../../oec-engineering/tests/distribution.test.mjs)、[Dev Beta 组件测试](../../dev-beta/tests/components.test.mjs)、[Common 组件测试](../../oec-common/tests/components.test.mjs) | 原生组件、负向触发文本、Agent parity、任务执行入口、Dev Beta 宿主能力引用、Spec 工具、HTML deck shell 和无依赖 bundle 等确定性契约 |
+| 当前组件层级与 dependency | [Marketplace manifest](../../.claude-plugin/marketplace.json)、[Product manifest](../../oec-product/.claude-plugin/plugin.json)、[Engineering manifest](../../oec-dev/.claude-plugin/plugin.json)、[Dev Beta manifest](../../oec-dev-beta/.claude-plugin/plugin.json)、[E3 manifest](../../oec-e3/.claude-plugin/plugin.json)、[Pipeline manifest](../../oec-pipeline/.claude-plugin/plugin.json)、[Common manifest](../../oec-common/.claude-plugin/plugin.json) | 当前版本、分发单元、Product→E3 依赖和 Dev Beta 隔离 |
+| Product/Engineering/Dev Beta/Common 的结构与 fixture | [Product 组件测试](../../oec-product/tests/components.test.mjs)、[Engineering 组件测试](../../oec-dev/tests/components.test.mjs)、[Engineering 分发测试](../../oec-dev/tests/distribution.test.mjs)、[Dev Beta 组件测试](../../oec-dev-beta/tests/components.test.mjs)、[Common 组件测试](../../oec-common/tests/components.test.mjs) | 原生组件、负向触发文本、Agent parity、任务执行入口、Dev Beta 宿主能力引用、Spec 工具、HTML deck shell 和无依赖 bundle 等确定性契约 |
 | E3/Pipeline 的 mock 与 bundle | [E3 mock journey](../../oec-e3/servers/e3/tests/journey.test.mjs)、[E3 bundle 测试](../../oec-e3/servers/e3/tests/distribution.test.mjs)、[Pipeline planner 测试](../../oec-pipeline/servers/pipeline/tests/planner.test.mjs)、[Pipeline bundle 测试](../../oec-pipeline/servers/pipeline/tests/distribution.test.mjs) | 测试替身下的计划/恢复分支和 MCP stdio 分发，不证明真实远端运行 |
 | E3 真实非生产旅程 | [脱敏验收记录](../evidence/e3-platform-3.0.0-real-acceptance.md) | 授权空间、唯一标识、execute/status/read-back 和明确未覆盖边界 |
 | 当前宿主版本 | 2026-08-21 执行 `claude --version` 返回 `2.1.237 (Claude Code)` | 当时验证使用的 Claude Code 版本，不代表未来版本行为 |
@@ -1058,6 +1058,6 @@ OEC-infra 后续不应继续做“更多 Prompt、更多角色路由、更多统
 | POMP | E3 产品空间下用于关联需求/任务的项目元数据 |
 | HANDOFF | PRD 版本向子 PRD 和 Story 映射的结构化交接文件，当前 contract 为 schema v4 |
 | Plugin Data | Claude Code 为单个 Plugin 提供的本地数据目录，用于 token、workspace config、selection 和 plan 等非 Git 状态 |
-| mapping | Git 仓库内记录本地产物与 E3 远端对象身份及同步状态的 YAML 文件 |
+| E3 record | Git 仓库内记录本地产物与 E3 远端对象身份及同步状态的 YAML 文件 |
 | selection token | 把候选集合、workspace 和选择阶段绑定起来的短期不透明凭据 |
 | plan token | 把已确认计划、workspace、fingerprint 和目标平台状态绑定起来的短期不透明凭据 |
