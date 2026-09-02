@@ -16,17 +16,16 @@ Before writing code:
 
 1. Confirm the dispatch names an existing `taskRef` or legacy change ID. If it does not, report
    `blocked` and stop. Do not create or guess a task package.
-2. Resolve it through the bundled runtime:
+2. Resolve and validate it once through the bundled task checker. Its result includes the canonical
+   task object and compatibility mode:
 
 ```bash
-oec-spec task resolve --dev-root "$DEV_ROOT" --product-root "$PRODUCT_ROOT" \
-  --task-ref <taskRef> --format json
 oec-spec task check --dev-root "$DEV_ROOT" --product-root "$PRODUCT_ROOT" \
   --task-ref <taskRef> --stage ready --format json
 ```
 
-3. Read the resolved `spec.md` and `design.md`. For a legacy package, read the existing `change.md`
-   and available design context and report that the new pair is absent.
+3. Read the task artifacts returned by the check: `spec.md` and `design.md`. For a legacy package,
+   read the existing `change.md` and available design context and report that the new pair is absent.
 4. Run `oec-spec select --workspace "$DEV_ROOT" --paths <paths from the task Spec> --format json` and
    read every returned Spec and relevant accepted ADR.
 

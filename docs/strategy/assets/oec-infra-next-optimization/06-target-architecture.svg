@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
   <title id="title">OEC-infra 下一阶段目标架构</title>
-  <desc id="desc">目标 Marketplace 保留 Product、Engineering、Common、E3、Pipeline，并在审计后建设 Testing，在平台准入后建设 UTP 和 SAE。</desc>
+  <desc id="desc">目标 Marketplace 保留 Product、稳定 Engineering、实验性 Dev Beta、Common、E3、Pipeline，并在审计后建设 Testing，在平台准入后建设 UTP 和 SAE。</desc>
   <defs>
     <style>
       text { font-family: Kaiti SC; fill: #273142; }
@@ -60,7 +60,7 @@
   <text x="190" y="500" class="status">PM Agent + PRD Skills</text>
   <text x="400" y="432" class="label">oec-engineering</text>
   <text x="400" y="470" class="status">已实现</text>
-  <text x="400" y="500" class="status">聚焦工程 Skills</text>
+  <text x="400" y="500" class="status">稳定 Skills；长时能力见 dev-beta</text>
   <text x="610" y="432" class="label">oec-testing</text>
   <text x="610" y="470" class="status">审计后建设</text>
   <text x="610" y="500" class="status">不预设 Skill 数量</text>

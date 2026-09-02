@@ -1,17 +1,20 @@
 # Changelog
 
-## Unreleased
+## 1.9.0
 
-- Add a shared `taskRef` contract for versioned `dev-task` packages and unversioned Engineering changes,
-  including legacy change-ID resolution and safe DEV_ROOT containment.
-- Add deterministic `spec.md`/`design.md` task-pair validation with structured identity, source, module,
-  section, acceptance, and cross-reference checks.
-- Add Product Root / Dev Root source resolution for same-space and split-space repositories without
-  copying or writing Product artifacts.
-- Add advisory `oec-spec remind` checks at planning, review, and close checkpoints; reminders are read-only,
-  have no state file, and do not interrupt Direct Coding.
-- Update Engineering Skills and Agents to consume the normalized task reference while preserving the
-  current no-router, no-default-Agent distribution boundary.
+**BREAKING RC CHANGE:** separate lightweight task execution from experimental long-running orchestration.
+
+- Add the model-discoverable `develop-change` Skill for implementing an existing ready task in the Main Session.
+- Keep ten stable Engineering Skills and four optional Agents; ordinary coding remains in the Main Session.
+- Remove the redundant `delegate-agents` orchestration Skill and its fixed researcher/implementer/checker sequence.
+- Move the experimental `run-long-coding` capability to the independent `dev-beta` Plugin.
+- Make decision, migration, prototype, and closing Skills model-discoverable while retaining their local
+  safety gates and explicit commit confirmation.
+- Keep the shared `taskRef` contract, deterministic task-pair validation, Product/Dev Root resolution, and
+  read-only Spec reminder behavior.
+- Generate experimental Codex Agent TOML files from canonical Claude Markdown during the build.
+- Add one bounded Claude SessionStart bootstrap containing only operational engineering behavior; exclude
+  capability inventories, project scans, task selection, state, and workflow routing.
 
 ## 1.8.0
 

@@ -7,4 +7,4 @@ timeout_seconds: 300
 allowed_tools: [Read, Glob, Grep, Skill]
 ---
 
-Use /oec-engineering:challenge-decision to pressure-test this database migration decision before planning or coding.
+Before planning or coding, pressure-test this database migration decision. Challenge its assumptions, dependencies, and rollback tradeoffs.

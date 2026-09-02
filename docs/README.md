@@ -9,7 +9,7 @@ contract 为准；策略、迁移、评审和历史验收不能覆盖当前实�
 | --- | --- | --- | --- |
 | 项目入口 | [根 README](../README.md) | 当前定位、全部 Plugin、角色方向和发布状态 | 当前能力或版本变化 |
 | 快速开始 | [QUICKSTART](../QUICKSTART.md) | 安装、角色建议、首次安全使用和回退 | 安装或用户入口变化 |
-| Plugin README | 各 `oec-*/README.md` | 单个 Plugin 的权威能力、边界和验收状态 | Plugin 行为或证据变化 |
+| Plugin README | 各 Plugin 的 `README.md` | 单个 Plugin 的权威能力、边界和验收状态 | Plugin 行为或证据变化 |
 | 架构 | [`architecture/`](architecture/) | 当前稳定层级、依赖、权限和状态归属 | 架构 contract 变化 |
 | 策略 | [`strategy/`](strategy/) | 管理决策、路线、讲解材料和候选方向 | 决策或路线变化 |
 | 迁移 | [`migrations/`](migrations/) | 旧系统分发、问题、取舍与迁移证据 | 历史基线或迁移结论修订 |
@@ -20,7 +20,7 @@ contract 为准；策略、迁移、评审和历史验收不能覆盖当前实�
 ## 从哪里开始
 
 - 第一次使用：阅读 [QUICKSTART](../QUICKSTART.md)。
-- 了解当前五 Plugin 架构：阅读
+- 了解当前六 Plugin 架构：阅读
   [平台 Plugin 层级与 MCP 迁移设计](architecture/platform-plugin-hierarchy.md)。
 - 面向管理者了解完整能力、证据等级和发布阻塞：阅读
   [PlainOEC-infra 完整架构与能力管理报告](strategy/plainoec-infra-management-report.md)。
@@ -33,6 +33,7 @@ contract 为准；策略、迁移、评审和历史验收不能覆盖当前实�
 | --- | --- | --- |
 | Product | [oec-product](../oec-product/README.md) | [版本](../oec-product/CHANGELOG.md) |
 | Engineering | [oec-engineering](../oec-engineering/README.md) | [版本](../oec-engineering/CHANGELOG.md) |
+| Dev Beta | [dev-beta](../dev-beta/README.md) | [版本](../dev-beta/CHANGELOG.md) |
 | E3 | [oec-e3](../oec-e3/README.md) | [版本](../oec-e3/CHANGELOG.md) |
 | Pipeline | [oec-pipeline](../oec-pipeline/README.md) | [版本](../oec-pipeline/CHANGELOG.md) |
 | Common | [oec-common](../oec-common/README.md) | [版本](../oec-common/CHANGELOG.md) |
@@ -48,7 +49,7 @@ contract 为准；策略、迁移、评审和历史验收不能覆盖当前实�
 
 ### Strategy
 
-- [完整架构与能力管理报告](strategy/plainoec-infra-management-report.md)：当前五个模块、协作主链、
+- [完整架构与能力管理报告](strategy/plainoec-infra-management-report.md)：当前六个模块、协作主链、
   证据总表和正式发布门禁。
 - [下一步完整优化思路](strategy/oec-infra-next-optimization.md)：旧系统问题、能力处置、候选 Testing与
   平台准入路线。

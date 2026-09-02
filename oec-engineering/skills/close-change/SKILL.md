@@ -1,8 +1,7 @@
 ---
 name: close-change
-description: Finalizes a completed code change by checking real verification evidence, validating an optional taskRef, reconciling durable team Specs or ADRs, recording residual risk, and optionally committing exact files. Use only when the user explicitly asks to close or finish engineering work. Do not use to deploy, update E3, implement unfinished code, or force documentation onto a small fix.
+description: Finalizes a completed code change by checking real verification evidence, validating an optional taskRef, reconciling durable team Specs or ADRs, recording residual risk, and optionally committing exact files. Use when the user asks to close or finish engineering work. Do not use merely to report test results, deploy, update E3, implement unfinished code, or force documentation onto a small fix.
 argument-hint: "[taskRef, change ID, or completed change]"
-disable-model-invocation: true
 ---
 
 # Close change
@@ -13,11 +12,10 @@ commit boundary for convenience.
 ## Establish context and evidence
 
 1. Run `git status --short` and inspect the complete diff, including untracked files.
-2. If a taskRef is supplied, resolve it with the bundled runtime and validate its task artifacts:
+2. If a taskRef is supplied, resolve and validate it once through the bundled task checker. Its
+   result includes the canonical task object:
 
 ```bash
-oec-spec task resolve --dev-root "$DEV_ROOT" --product-root "$PRODUCT_ROOT" \
-  --task-ref <taskRef> --format json
 oec-spec task check --dev-root "$DEV_ROOT" --product-root "$PRODUCT_ROOT" \
   --task-ref <taskRef> --stage close --format json
 ```
@@ -59,7 +57,7 @@ Summarize behavior, acceptance evidence, checks, reminder candidates, durable do
 why none were needed), residual risk, exact code and engineering-document paths, and unrelated paths
 that remain untouched.
 
-Only after explicit confirmation, stage the exact proposed files:
+Invoking this Skill does not authorize a commit. Only after explicit confirmation, stage the exact proposed files:
 
 ```bash
 git add -- <exact code and engineering-document paths>

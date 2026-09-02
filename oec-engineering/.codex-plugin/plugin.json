@@ -1,11 +1,12 @@
 {
   "name": "oec-engineering",
-  "version": "1.8.0",
-  "description": "OEC Dev 模块上下文、任务 Spec/Design、团队工程知识、技术方案、故障诊断、代码评审和按需长时 Web/全栈开发。",
+  "version": "1.9.0",
+  "description": "OEC Dev 模块上下文、任务 Spec/Design、任务实现、团队工程知识、技术方案、故障诊断和代码评审。",
   "author": {
     "name": "OEC"
   },
   "license": "MIT",
-  "keywords": ["engineering", "oec-dev", "task-ref", "task-spec", "task-design", "team-specs", "module-context", "source-resolution", "migration", "planning", "decision-challenge", "prototype", "code-review", "tdd", "diagnosis", "agent-delegation", "long-running-coding", "runtime-evaluation", "closing"],
-  "skills": "./skills/"
+  "keywords": ["engineering", "oec-dev", "task-ref", "task-spec", "task-design", "team-specs", "module-context", "source-resolution", "migration", "planning", "decision-challenge", "prototype", "code-review", "tdd", "diagnosis", "runtime-evaluation", "closing"],
+  "skills": "./skills/",
+  "hooks": {}
 }

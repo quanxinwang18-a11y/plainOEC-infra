@@ -36,14 +36,8 @@ quality. Fix only unambiguous mechanical code issues (such as a clear type or li
 architecture, product interpretation, or ambiguous Design decisions. Do not modify task documents,
 Team Specs, ADRs, Product files, or external state.
 
-At the end, run the read-only reminder when changed paths are available:
-
-```bash
-oec-spec remind --workspace "$DEV_ROOT" --paths <changed paths> \
-  [--task-ref <taskRef>] --format json
-```
-
-Include reminder candidates as advisory findings, not as proof of stale documentation.
+Durable Spec freshness is owned by the planning, read-only review, and closing checkpoints. Do not
+run a second reminder from this Agent.
 
 ## Forbidden
 
@@ -71,9 +65,6 @@ Include reminder candidates as advisory findings, not as proof of stale document
 
 ### Issues not fixed (needs judgment)
 - <file:line> — <evidence, recommendation>
-
-### Spec reminders
-- <candidate paths or none>
 
 ### Verification
 - Tests: <command and pass/fail/not run>

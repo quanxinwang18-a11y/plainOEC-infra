@@ -17,7 +17,7 @@
 → 为什么这种结构会影响模型判断
 → 旧 Skill 应该按什么原则拆分
 → 为什么外部交互脚本需要进入 MCP
-→ 当前 3.0 已经实现什么
+→ 当前 3.1 候选已经实现什么
 → 哪些能力仍缺少证据
 → 下一阶段如何推进
 → 需要确认哪些决策
@@ -162,17 +162,21 @@ MCP Tool 适合：
 
 转场：按这套原则拆分后，当前仓库已经形成了清楚的领域层与平台层。
 
-## 七、展示当前 3.0 架构
+## 七、展示当前 3.1 候选架构
 
-![plainOEC-infra 3.0 当前领域 Plugin 与平台 Plugin 架构](assets/oec-infra-next-optimization/05-current-architecture.svg)
+![plainOEC-infra 3.1 当前领域 Plugin 与平台 Plugin 架构](assets/oec-infra-next-optimization/05-current-architecture.svg)
 
-当前结构包含五个独立分发单元：
+当前结构包含六个独立分发单元：
 
 - `oec-product@3.0.3`：1 Agent、3 Skills、0 MCP；明确依赖 `oec-e3`。
-- `oec-engineering@1.8.0`：11 Skills（迁移、决策挑战、Agent 委派、长时 Web 编码与收口仅用户触发）、4 个显式使用的可选 Agent、0 MCP；普通编码仍由主 Coding Agent 负责。
+- `oec-engineering@1.9.0`：10 个可自动发现的稳定 Skills、4 个可选 Agent、1 个静态 SessionStart 行为 Hook、0 MCP；普通编码仍由主 Coding Agent 负责。
+- `dev-beta@0.1.0`：1 个显式实验性 Skill；复用宿主 Engineering 的 Agent 和 `oec-spec`，不复制文件或 runtime。
 - `oec-e3@1.0.2`：1 MCP Server、10 Tools；负责 PRD 发布和研发任务主链。
 - `oec-pipeline@1.0.2`：1 MCP Server、4 Tools；只运行既有 dev/test 流水线。
 - `oec-common@0.3.0`：1 Skill、0 Agent、0 MCP；提供零依赖 HTML-first 幻灯片。
+
+稳定 Engineering 新增 `develop-change` 作为已有 ready task 的轻量 Main Session 执行入口；固定 Agent
+委派和长时编排不再进入稳定 Plugin。长时 Web 编排隔离到 `dev-beta`，并保持显式调用。
 
 强调两种关系：
 
@@ -231,7 +235,7 @@ MCP Tool 适合：
 收尾时只保留三句话：
 
 1. **旧问题的根因是边界错位，不是单个 Agent 或 Skill 写得不够好。**
-2. **当前 3.0 已证明领域 Skill、确定性工具和平台 MCP 可以按原生层级协作。**
+2. **当前 3.1 候选已证明稳定领域 Skill、确定性工具、实验能力和平台 MCP 可以按原生层级协作。**
 3. **下一阶段应该优先迁移测试能力并建立统一治理，而不是重新创造大 Agent、Dispatcher 或平台 CRUD。**
 
 需要确认的决策：
@@ -250,7 +254,7 @@ MCP Tool 适合：
 2. `02-native-vs-file-routing.svg`：Read 文件为什么不等于原生 Skill。
 3. `12-legacy-skill-decomposition.svg`：旧能力按责任重新拆分。
 4. `13-script-vs-mcp.svg`：本地确定性脚本与外部平台 MCP 的边界。
-5. `05-current-architecture.svg`：当前 3.0 Marketplace 的五个 Plugin。
+5. `05-current-architecture.svg`：当前 3.1 Marketplace 的六个 Plugin。
 6. `08-evidence-gated-roadmap.svg`：下一阶段测试迁移与平台准入顺序。
 
 压缩版仍必须讲清两条边界：E3 已完成真实非生产验收；Pipeline、Testing、UTP、SAE 尚不能借用该
@@ -264,5 +268,5 @@ MCP Tool 适合：
 | Skill 已有 scripts，为什么还需要 MCP？ | 本地确定性处理留在 script；认证、远端状态、副作用和恢复进入 MCP | 第 5.3 节 |
 | 为什么 E3 与 Pipeline 分开？ | 两个平台的事实、权限、身份、状态、Owner 和验收周期不同 | 第 5.4、6 节 |
 | 为什么不再做 Dev Agent？ | 主 Coding Agent 已具备通用开发能力，只有独立身份、上下文或权限边界成立时才需要 Agent | 第 4、5、7 节 |
-| 新架构是否已经完整替代旧能力？ | Product、Engineering 和 E3 主链已落地；Pipeline 尚缺真实验收，Testing/UTP/SAE 尚待审计和准入 | 第 6.3、7 节 |
+| 新架构是否已经完整替代旧能力？ | Product、Engineering、E3 主链已落地；Dev Beta 仍属实验能力，Pipeline 尚缺真实验收，Testing/UTP/SAE 尚待审计和准入 | 第 6.3、7 节 |
 | 测试能力准备拆成多少 Skills？ | 不预设数量，先按用户目标、使用率、Owner、外部依赖和证据逐项处置 | 第 4.4、7.3、8 节 |

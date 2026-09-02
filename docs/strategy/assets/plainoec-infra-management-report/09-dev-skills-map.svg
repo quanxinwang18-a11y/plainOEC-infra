@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1672" height="941" viewBox="0 0 1672 941" role="img" aria-labelledby="title desc">
   <title id="title">Dev 与 Engineering Skill 能力地图</title>
-  <desc id="desc">主 Session 负责普通编码，十一个 Engineering Skills 分为团队知识、决策规划、实现诊断、评审收口四类按需能力。</desc>
+  <desc id="desc">主 Session 负责普通编码，十个稳定 Engineering Skills 分为团队知识、决策规划、任务执行、实现诊断、评审收口五类按需能力；实验性长时编排位于 dev-beta。</desc>
   <defs>
     <linearGradient id="navy" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#09264f"/>
@@ -22,7 +22,7 @@
   <circle cx="42" cy="920" r="230" fill="#eef3fb"/>
 
   <text x="70" y="82" class="navy" font-size="46" font-weight="800">Dev / Engineering Skill 能力地图</text>
-  <text x="70" y="122" class="muted" font-size="23">主 Session 承担普通编码；十一个 Skill 只在目标匹配时补充团队特有方法</text>
+  <text x="70" y="122" class="muted" font-size="23">主 Session 承担普通编码；十个稳定 Skill 只在目标匹配时补充团队特有方法</text>
 
   <rect x="70" y="151" width="1532" height="92" rx="24" fill="url(#navy)"/>
   <text x="112" y="190" fill="#bfe8eb" font-size="18" font-weight="700">默认研发入口</text>
@@ -63,14 +63,14 @@
   <text x="112" y="573" class="navy code" font-size="17" font-weight="800">migrate-legacy-ai-docs</text>
   <text x="112" y="607" fill="#0b6f76" font-size="19" font-weight="700">迁移仍被代码证明的旧事实</text>
   <text x="112" y="639" class="muted" font-size="17">不复制旧目录树，不清理状态</text>
-  <rect x="112" y="656" width="86" height="25" rx="13" fill="#def0ed"/>
-  <text x="155" y="674" fill="#0b6f76" font-size="14" font-weight="800" text-anchor="middle">仅手动</text>
+  <rect x="112" y="656" width="112" height="25" rx="13" fill="#def0ed"/>
+  <text x="168" y="674" fill="#0b6f76" font-size="14" font-weight="800" text-anchor="middle">自然语言发现</text>
 
   <rect x="478" y="368" width="310" height="106" rx="18" fill="#f5f8fc" stroke="#c7d6e8"/>
   <text x="496" y="400" class="navy code" font-size="16" font-weight="800">challenge-decision</text>
   <text x="496" y="433" fill="#245f9e" font-size="18" font-weight="700">压力测试技术决定</text>
-  <rect x="684" y="440" width="84" height="24" rx="12" fill="#e3ecf7"/>
-  <text x="726" y="457" fill="#245f9e" font-size="13" font-weight="800" text-anchor="middle">仅手动</text>
+  <rect x="650" y="440" width="118" height="24" rx="12" fill="#e3ecf7"/>
+  <text x="709" y="457" fill="#245f9e" font-size="13" font-weight="800" text-anchor="middle">自然语言发现</text>
 
   <rect x="478" y="492" width="310" height="100" rx="18" fill="#f5f8fc" stroke="#c7d6e8"/>
   <text x="496" y="525" class="navy code" font-size="17" font-weight="800">prototype-decision</text>
@@ -89,13 +89,11 @@
   <text x="880" y="490" class="navy code" font-size="17" font-weight="800">diagnose-failure</text>
   <text x="880" y="520" fill="#39753b" font-size="17" font-weight="700">诊断难复现或根因不清故障</text>
 
-  <rect x="862" y="548" width="310" height="76" rx="18" fill="#f6fbf4" stroke="#c6ddc2"/>
-  <text x="880" y="580" class="navy code" font-size="15" font-weight="800">delegate-agents</text>
-  <text x="880" y="610" fill="#39753b" font-size="17" font-weight="700">显式串行委派可选 Agent</text>
+  <rect x="862" y="548" width="310" height="88" rx="18" fill="#f6fbf4" stroke="#c6ddc2"/>
+  <text x="880" y="580" class="navy code" font-size="17" font-weight="800">develop-change</text>
+  <text x="880" y="610" fill="#39753b" font-size="17" font-weight="700">已有 ready 任务的轻量执行</text>
 
-  <rect x="862" y="638" width="310" height="88" rx="18" fill="#f6fbf4" stroke="#c6ddc2"/>
-  <text x="880" y="670" class="navy code" font-size="14" font-weight="800">run-long-coding</text>
-  <text x="880" y="700" fill="#39753b" font-size="17" font-weight="700">长时 Build / QA</text>
+  <text x="880" y="680" class="muted" font-size="16">dev-beta：实验性长时 Web 编排（另装）</text>
 
   <rect x="1246" y="378" width="332" height="138" rx="18" fill="#fffaf1" stroke="#ead4aa"/>
   <text x="1264" y="411" class="navy code" font-size="17" font-weight="800">review-code</text>
@@ -107,10 +105,10 @@
   <text x="1264" y="573" class="navy code" font-size="17" font-weight="800">close-change</text>
   <text x="1264" y="607" fill="#a96500" font-size="19" font-weight="700">核对证据、知识与残余风险</text>
   <text x="1264" y="639" class="muted" font-size="17">用户确认后可精确路径提交</text>
-  <rect x="1264" y="656" width="86" height="25" rx="13" fill="#fff0d3"/>
-  <text x="1307" y="674" fill="#a96500" font-size="14" font-weight="800" text-anchor="middle">仅手动</text>
+  <rect x="1264" y="656" width="112" height="25" rx="13" fill="#fff0d3"/>
+  <text x="1320" y="674" fill="#a96500" font-size="14" font-weight="800" text-anchor="middle">自然语言发现</text>
 
-  <text x="70" y="795" class="navy" font-size="22" font-weight="800">辅助组件（不是上述十一个 Skill）</text>
+  <text x="70" y="795" class="navy" font-size="22" font-weight="800">辅助组件（不是上述十个稳定 Skill）</text>
   <rect x="70" y="816" width="520" height="76" rx="18" fill="#eef6f5" stroke="#a7d0cc"/>
   <text x="96" y="849" fill="#0b6f76" class="code" font-size="20" font-weight="800">oec-spec runtime</text>
   <text x="96" y="876" class="muted" font-size="17">按路径选取与确定性校验工程文档</text>

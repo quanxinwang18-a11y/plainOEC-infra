@@ -38,6 +38,6 @@ jobs:
       - name: Validate Marketplace and Plugins strictly
         run: |
           claude plugin validate --strict .
-          for plugin in oec-product oec-engineering oec-e3 oec-pipeline oec-common; do
+          for plugin in oec-product oec-engineering dev-beta oec-e3 oec-pipeline oec-common; do
             claude plugin validate --strict "$plugin"
           done

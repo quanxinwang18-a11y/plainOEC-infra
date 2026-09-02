@@ -1,5 +1,6 @@
 import { build } from 'esbuild';
 import { resolve } from 'node:path';
+import { generateEngineeringCodexAgents } from './scripts/generate-engineering-codex-agents.mjs';
 
 const workspaceRoot = import.meta.dirname;
 const productRoot = resolve(workspaceRoot, 'oec-product');
@@ -21,6 +22,10 @@ const common = {
     js: 'import { createRequire as __oecCreateRequire } from "node:module"; const require = __oecCreateRequire(import.meta.url);',
   },
 };
+
+// Claude Markdown is the canonical Engineering Agent source. Keep the committed
+// experimental Codex mirrors generated instead of maintaining two prompt copies.
+await generateEngineeringCodexAgents({ pluginRoot: engineeringRoot });
 
 await Promise.all([
   build({

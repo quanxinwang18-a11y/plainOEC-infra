@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
-  <title id="title">plainOEC-infra 3.0 当前 Plugin 架构</title>
-  <desc id="desc">当前 Marketplace 包含 Product、Engineering、Common 三个模型侧插件，以及 E3、Pipeline 两个平台插件；Product 强依赖 E3，Engineering 与平台按场景组合。</desc>
+  <title id="title">plainOEC-infra 3.1 当前 Plugin 架构</title>
+  <desc id="desc">当前 Marketplace 包含 Product、Engineering、Dev Beta、Common 四个模型侧插件，以及 E3、Pipeline 两个平台插件；Product 强依赖 E3，Dev Beta 复用 Engineering 宿主能力。</desc>
   <defs>
     <style>
       text { font-family: Kaiti SC; fill: #273142; }
@@ -25,38 +25,42 @@
     <marker id="arrow-gray" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1 L10 6 L1 11" fill="none" stroke="#6b7280" stroke-width="2.2" stroke-linecap="round"/></marker>
   </defs>
   <rect width="1600" height="900" fill="#fffaf0"/>
-  <text x="70" y="62" class="heading">当前 3.0：领域知识与平台执行已经分层</text>
+  <text x="70" y="62" class="heading">当前 3.1：领域知识与平台执行已经分层</text>
   <path d="M70 78 C300 70, 545 82, 820 76" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round"/>
 
   <g filter="url(#rough)">
     <rect x="520" y="105" width="560" height="115" rx="25" fill="#e7d8ff" class="outline"/>
     <rect x="70" y="300" width="650" height="440" rx="30" fill="#e9f4ff" class="outline"/>
     <rect x="880" y="300" width="650" height="440" rx="30" fill="#fff3d5" class="outline"/>
-    <rect x="125" y="395" width="540" height="100" rx="22" fill="#dbeafe" class="outline"/>
-    <rect x="125" y="525" width="540" height="100" rx="22" fill="#d8f3dc" class="outline"/>
-    <rect x="125" y="655" width="540" height="70" rx="22" fill="#efe3ff" class="outline"/>
+    <rect x="125" y="380" width="540" height="90" rx="22" fill="#dbeafe" class="outline"/>
+    <rect x="125" y="485" width="540" height="90" rx="22" fill="#d8f3dc" class="outline"/>
+    <rect x="125" y="590" width="540" height="65" rx="22" fill="#efe3ff" class="outline"/>
+    <rect x="125" y="675" width="540" height="50" rx="22" fill="#f5e9ff" class="outline"/>
     <rect x="935" y="410" width="540" height="125" rx="22" fill="#ffd6cc" class="outline"/>
     <rect x="935" y="585" width="540" height="110" rx="22" fill="#fff0b3" class="outline"/>
     <path d="M800 225 C640 252, 470 260, 395 292" class="distribute"/>
     <path d="M800 225 C960 252, 1130 260, 1205 292" class="distribute"/>
     <path d="M665 445 C770 430, 835 448, 925 473" class="dependency"/>
-    <path d="M665 570 C785 555, 820 520, 925 505" class="compose"/>
-    <path d="M665 590 C780 680, 835 677, 925 645" class="compose"/>
+    <path d="M665 525 C785 510, 820 520, 925 505" class="compose"/>
+    <path d="M665 625 C780 680, 835 677, 925 645" class="compose"/>
   </g>
 
   <text x="800" y="148" class="label">plainOEC-infra Marketplace</text>
-  <text x="800" y="187" class="version">3.0.2 · Git 原生分发</text>
+  <text x="800" y="187" class="version">3.1.0 · Git 原生分发</text>
   <text x="395" y="354" class="section">模型侧能力 Plugins</text>
   <text x="1205" y="354" class="section">平台能力 Plugins</text>
 
-  <text x="395" y="428" class="label">oec-product</text>
-  <text x="395" y="458" class="version">3.0.3</text>
-  <text x="395" y="483" class="count">1 Agent · 3 Skills · 0 MCP</text>
-  <text x="395" y="558" class="label">oec-engineering</text>
-  <text x="395" y="588" class="version">1.8.0</text>
-  <text x="395" y="613" class="count">4 Agents · 11 Skills · 0 MCP</text>
-  <text x="395" y="681" class="label">oec-common</text>
-  <text x="395" y="704" class="version">0.3.0 · 1 create-slides Skill</text>
+  <text x="395" y="413" class="label">oec-product</text>
+  <text x="395" y="440" class="version">3.0.3</text>
+  <text x="395" y="463" class="count">1 Agent · 3 Skills · 0 MCP</text>
+  <text x="395" y="518" class="label">oec-engineering</text>
+  <text x="395" y="545" class="version">1.9.0</text>
+  <text x="395" y="568" class="count">4 Agents · 10 Skills · 0 MCP</text>
+  <text x="395" y="615" class="label">dev-beta</text>
+  <text x="395" y="637" class="version">0.1.0</text>
+  <text x="395" y="653" class="count">1 experimental Skill</text>
+  <text x="395" y="694" class="label">oec-common</text>
+  <text x="395" y="716" class="version">0.3.0 · 1 create-slides Skill</text>
 
   <text x="1205" y="452" class="label">oec-e3</text>
   <text x="1205" y="483" class="version">1.0.2</text>
@@ -71,5 +75,5 @@
   <text x="1205" y="720" class="status" fill="#9a6b00">仅 mock / integration 证据</text>
 
   <text x="800" y="805" class="note">粗实线：Product 明确承诺 E3 发布，因此声明依赖</text>
-  <text x="800" y="840" class="note">紫色点线：Engineering 可按需组合平台；Common 独立提供 HTML 幻灯片</text>
+  <text x="800" y="840" class="note">紫色点线：Engineering 可按需组合平台；Dev Beta 复用宿主能力；Common 独立提供 HTML 幻灯片</text>
 </svg>

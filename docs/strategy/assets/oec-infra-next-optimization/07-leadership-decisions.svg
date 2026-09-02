@@ -44,7 +44,7 @@
   <text x="112" y="294" class="item-strong">✓ 原生 Git Marketplace 分发</text>
   <text x="112" y="349" class="item-strong">✓ Product / Engineering 分层</text>
   <text x="112" y="404" class="item-strong">✓ E3 已完成非生产真实验收</text>
-  <text x="112" y="459" class="item-strong">✓ 99 / 99 自动测试通过</text>
+  <text x="112" y="459" class="item-strong">✓ 154 / 154 自动测试通过</text>
   <text x="112" y="514" class="item-strong">✓ 领域知识与平台执行分离</text>
   <text x="275" y="616" class="note">结论：迁移方向已有工程事实支撑</text>
 

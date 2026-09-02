@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "plainOEC-infra",
-  "version": "3.0.2",
+  "version": "3.1.0",
   "description": "OEC 面向 Claude Code 的组织级能力市场。",
   "owner": {
     "name": "OEC"
@@ -19,9 +19,16 @@
     },
     {
       "name": "oec-engineering",
-      "version": "1.8.0",
-      "description": "OEC Dev 模块上下文、任务 Spec/Design、团队工程知识、故障诊断、代码评审和按需长时 Web/全栈开发。",
+      "version": "1.9.0",
+      "description": "OEC Dev 模块上下文、任务 Spec/Design、任务实现、团队工程知识、故障诊断和代码评审。",
       "source": "./oec-engineering",
+      "category": "development"
+    },
+    {
+      "name": "dev-beta",
+      "version": "0.1.0",
+      "description": "实验性 Web/全栈开发流程能力。",
+      "source": "./dev-beta",
       "category": "development"
     },
     {

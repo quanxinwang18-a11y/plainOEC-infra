@@ -1,6 +1,6 @@
 {
   "name": "@oec/plain-oec-infra",
-  "version": "3.0.2",
+  "version": "3.1.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "node build-runtime.mjs",
+    "generate:engineering-agents": "node scripts/generate-engineering-codex-agents.mjs",
     "test": "node --test",
     "verify": "npm run build && npm test"
   },

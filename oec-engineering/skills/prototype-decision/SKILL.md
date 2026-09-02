@@ -2,7 +2,6 @@
 name: prototype-decision
 description: Builds a deliberately throwaway interaction or behavior prototype to answer one explicit engineering-design question and obtain human feedback. Use when the user asks to prototype alternatives or exercise a state model before production implementation. Do not use for production features, polished demos, generic feasibility research, or questions an ordinary test or command can answer.
 argument-hint: "[design question, alternatives, or state model to prototype]"
-disable-model-invocation: true
 ---
 
 # Prototype decision

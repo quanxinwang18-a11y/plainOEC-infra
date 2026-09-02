@@ -2,7 +2,6 @@
 name: manage-specs
 description: Creates or updates durable project engineering Specs and ADRs, or reports possible stale Specs, when the user explicitly asks to initialize team knowledge, document current architecture, reconcile documentation with code, preserve a decision, or remind on a completed change. Do not use for task Spec/Design authoring, ordinary implementation plans, legacy migration, or product requirements.
 argument-hint: "[remind, init, update, or engineering topic]"
-disable-model-invocation: true
 ---
 
 # Manage Specs

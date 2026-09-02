@@ -7,4 +7,4 @@ timeout_seconds: 300
 allowed_tools: [Read, Glob, Grep, Skill]
 ---
 
-Use /oec-engineering:migrate-legacy-ai-docs to migrate verified facts from the existing legacy ai-docs without deleting the originals.
+Migrate the verified engineering facts from this legacy ai-docs tree into the current structure, but preserve every original file and do not clean up managed configuration.

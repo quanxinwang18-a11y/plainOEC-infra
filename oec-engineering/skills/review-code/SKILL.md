@@ -10,11 +10,10 @@ Review the requested change against actual behavior, repository evidence, the re
 when supplied, and the contract closest to the changed code. Establish the exact review target and
 inspect its complete diff.
 
-When a taskRef is supplied, resolve and validate it before judging the patch:
+When a taskRef is supplied, resolve and validate it once through the task checker before judging the
+patch. The result includes the canonical task object:
 
 ```bash
-oec-spec task resolve --dev-root "$DEV_ROOT" --product-root "$PRODUCT_ROOT" \
-  --task-ref <taskRef> --format json
 oec-spec task check --dev-root "$DEV_ROOT" --product-root "$PRODUCT_ROOT" \
   --task-ref <taskRef> --stage structure --format json
 ```

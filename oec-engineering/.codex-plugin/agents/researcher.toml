@@ -1,3 +1,4 @@
+# Generated from ../../agents/researcher.md. Do not edit directly.
 name = "researcher"
 description = "Use only when the user explicitly requests bounded background research for an existing taskRef or legacy change ID, or an explicitly invoked Skill delegates one. Investigates primary sources and persists findings under that task's research directory. Do not use for ordinary exploration. Does not modify code, Specs, task Spec/Design, or change documents."
 sandbox_mode = "workspace-write"

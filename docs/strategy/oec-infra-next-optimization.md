@@ -21,18 +21,21 @@
 
 ### 1.2 已完成的迁移
 
-当前 release candidate `plainOEC-infra@3.0.2` 已经完成第一阶段原生化：
+当前 release candidate `plainOEC-infra@3.1.0` 已经完成第一阶段原生化，并将实验性长时编排独立分发：
 
 - Product：显式 PM Agent + 三个以用户目标划分并带跨域负向边界的 PRD Skills。
-- Engineering：十一个聚焦工程 Skills + 四个显式使用的可选 Agent；在不恢复总控流程的前提下，补充
-  版本化任务的 `taskRef`、`spec.md`/`design.md`、Product/Dev 双空间来源和只读 Spec reminder。旧
-  `ai-docs` 迁移、工程决策挑战、Spec 写入、Agent 委派、长时 Web 编码与工程收口只允许用户触发，
-  不创建默认接管主线程的通用 Dev Agent，也不注入 SessionStart 上下文。详细实施事实源为
-  `docs/architecture/oec-dev-contract-implementation-plan.md`。
+- Engineering：十个稳定工程 Skills + 四个可选 Agent；在不恢复总控流程的前提下，补充版本化任务的
+  `taskRef`、`spec.md`/`design.md`、Product/Dev 双空间来源、轻量 `develop-change` 执行入口和只读
+  Spec reminder。稳定 Skills 均由精确自然语言意图发现，本地写入和 commit 仍有确认门。固定 Agent 委派
+  和长时 Web 编排不属于稳定 Plugin；SessionStart 只注入不含能力清单、项目扫描或状态的静态行为约束。
+  详细实施事实源为 `docs/architecture/oec-dev-contract-implementation-plan.md`。
+- Dev Beta：独立的 `dev-beta@0.1.0`，只提供显式的实验性 `run-long-coding`，复用宿主 Engineering
+  Agent 和 `oec-spec`，不复制文件或 runtime。
 - E3：独立 MCP-only Plugin，提供十个受控工具。
 - Pipeline：独立 MCP-only Plugin，提供四个既有流水线工具。
 - Common：一个零运行时依赖的 HTML-first 幻灯片 Skill。
-- 分发：Git Marketplace + 自足 bundle，不再通过 SessionStart 向业务仓库同步配置。
+- 分发：Git Marketplace + 自足 bundle，不再通过 SessionStart 向业务仓库同步配置；Engineering
+  SessionStart 仅承载静态行为提示。
 
 这里的迁移不是把旧 Skill 文案缩短后重新命名，而是先把一个旧 Skill 中混在一起的**用户目标、领域
 知识、通用工作流、确定性代码、外部平台操作和项目事实**拆开，再分别交给 Skill、主模型、script、
@@ -466,6 +469,26 @@ Skill 的价值不是替模型复述常识，而是在正确触发时提供模�
 | Dispatcher 和 Agent 文件路由器 | 删除 | 重复宿主能力，制造嵌套判断 |
 | 只有在独立上下文中有明确收益的任务 | Agent 候选 | 必须用 eval 证明隔离/并行价值 |
 
+### 4.5 本轮 Engineering Skill 处置
+
+本轮以真实用户目标、独立产物、确定性 contract、外部副作用和宿主重复度为标准重新审查 Dev Skills：
+
+| 处置 | 能力 | 决定与理由 |
+| --- | --- | --- |
+| 稳定保留 | `manage-specs`、`plan-change`、`review-code`、`close-change` | 分别拥有 Team Knowledge、任务契约、只读风险评审和最终收口边界 |
+| 稳定新增 | `develop-change` | 只执行已有 ready task，在 Main Session 中完成轻量实现和最新验证，不创建第二套状态 |
+| 稳定保留并开放发现 | `challenge-decision`、`prototype-decision`、`migrate-legacy-ai-docs` | 无远端写入；通过 description、精确路径计划和 Human 确认保护本地副作用 |
+| 稳定保留 | `develop-test-first`、`diagnose-failure` | 仍有明确方法目标，但后续用 outcome eval 复核其相对主模型的增量 |
+| 删除 | 原固定 Agent 委派入口 | 只是宿主 `@` picker 的顺序包装，没有独立 artifact 或 runtime contract |
+| 移出稳定分发 | 长时 Web/full-stack 编排 | 依赖 Playwright、成本不可预测且需要多轮 Agent 调度，独立放入 `dev-beta` |
+
+因此稳定 `oec-engineering` 为 10 个可由模型发现的 Skills 和 4 个 Agent；`dev-beta` 只有一个
+`run-long-coding`，保持 `disable-model-invocation: true`。稳定 Plugin 只保留真正不可逆的外部发布
+Skill 为 manual-only；本地写入和 commit 通过各自的确认门控制。
+
+本轮已有的 route eval 只能证明调用或抑制行为，不能证明真实用户收益。删除或继续保留通用方法 Skill
+前，仍需用固定任务集比较成功率、无关步骤、验证完整性和交互成本。
+
 ## 5. Agent、Skill、MCP、Plugin 的职责
 
 Claude Code 官方将这些能力放在不同扩展位置：[扩展模型](https://code.claude.com/docs/en/features-overview)、
@@ -526,7 +549,7 @@ Claude Code 官方将这些能力放在不同扩展位置：[扩展模型](https
 | 产品原型设计 | 不属于当前 PRD 写作、评审和发布主链 | 不随 Product 核心能力迁移；Engineering 仅提供用于回答一个交互或状态问题的 throwaway 决策原型，不生成产品原型资产 |
 | 通用产品/系统需求 CRUD | 会把受控发布扩张为平台管理 SDK，权限与失败面明显增大 | 不迁移；只保留 PRD 发布所需的受限 E3 原子操作 |
 | 文件写入策略 | Claude Code 已有原生文件工具，旧 Prompt 规则不提供额外领域价值 | 交还主 Agent；Skill 只保留产物契约和精确提交边界 |
-| `oec-dev-task` + `oec-dev-flow` | 大部分是现代 Coding Agent 已具备的通用研发流程；团队长期事实仍有独立价值 | 删除总控流程；保留十一个聚焦 Engineering Skills 和项目侧团队 Specs；显式 Agent 委派只处理已有 change 或当前 diff，长时 Web 编码只在当前 Session 复用 Agent ID，不保存项目级阶段或恢复状态 |
+| `oec-dev-task` + `oec-dev-flow` | 大部分是现代 Coding Agent 已具备的通用研发流程；团队长期事实和已有任务执行仍有独立价值 | 删除总控流程；稳定 Engineering 保留十个聚焦 Skills（含 `develop-change`）和项目侧团队 Specs；固定 Agent 委派与长时 Web 编排不进入稳定 Plugin，后者只在独立 `dev-beta` 中实验 |
 | `oec-manage-task` 及 E3 scripts | “何时同步哪些任务”需要业务语义；认证、候选、远端写入和恢复必须确定执行 | 研发规划留在主 Agent/Engineering Skills；平台动作进入 `oec-e3` 六个研发任务工具 |
 | PRD 发布说明 + E3 scripts | 子 PRD、Story 和发布确认属于产品语义；HTTP、mapping 和幂等属于平台执行 | publishing Skill 编排 `oec-e3` 四个 PRD 发布工具 |
 | `oec-dev-flow` 中的流水线步骤及平台 Client | 普通开发流程不应强制绑定流水线；运行既有流水线是独立高副作用能力 | 删除固定开发阶段；`oec-pipeline` 提供四个受控运行工具 |
@@ -656,7 +679,8 @@ Plugin 的粒度则由生命周期决定：当外部事实来源、认证权限�
 | E3 Plugin | 需求、Story、研发任务、空间与 E3 mapping | 只负责 E3 认证、远端身份和任务/发布状态 |
 | Pipeline Plugin | Git remote、ref、commit、流水线、阶段与运行状态 | 只运行既有 dev/test 流水线，不管理应用运行态 |
 | 未来 SAE Plugin | 应用、环境、实例、版本和运行健康 | 通过准入后独立建设，不借用 Pipeline 的权限或验收结果 |
-| Engineering Skills | 工程判断、团队 Specs、计划、诊断和评审方法 | 不持有任何平台 token、selection、plan 或远端状态 |
+| Engineering Skills | 工程判断、团队 Specs、任务执行、计划、诊断和评审方法 | 不持有任何平台 token、selection、plan 或远端状态 |
+| Dev Beta | 实验性长时 Web/full-stack 编排 | 不复制 Engineering Agent、`oec-spec` 或 runtime，不成为稳定流程 |
 | 主 Agent / 场景 Skill | 根据用户目标决定何时组合领域知识和平台工具 | 不复制各平台认证、payload、幂等或恢复实现 |
 
 因此，“部署当前提交到测试环境”可以在会话中依次组合 Pipeline 运行和未来 SAE 状态验证，但这种场景
@@ -664,24 +688,26 @@ Plugin 的粒度则由生命周期决定：当外部事实来源、认证权限�
 转发层并重新模糊 Owner。详细平台边界保留在
 [平台 Plugin 层级与 MCP 迁移设计](../architecture/platform-plugin-hierarchy.md)中。
 
-## 6. 当前 3.0 已实现架构
+## 6. 当前 3.1 候选已实现架构
 
 ### 6.1 组件层级
 
-![plainOEC-infra 3.0 当前领域 Plugin 与平台 Plugin 架构](assets/oec-infra-next-optimization/05-current-architecture.svg)
+![plainOEC-infra 3.1 当前领域 Plugin 与平台 Plugin 架构](assets/oec-infra-next-optimization/05-current-architecture.svg)
 
-*图：Product 明确依赖 E3；Engineering 与 E3、Pipeline 仅按使用场景组合；Common 独立提供通用 HTML 幻灯片。*
+*图：Product 明确依赖 E3；Engineering 与 E3、Pipeline 仅按使用场景组合；Dev Beta 独立提供实验性长时编排；Common 独立提供通用 HTML 幻灯片。*
 
-| Plugin | Agent | Skills | MCP | 作用与边界 |
-| --- | ---: | ---: | ---: | --- |
-| `oec-product@3.0.3` | 1 | 3 | 0 | PRD 写作、只读评审和发布语义；依赖 E3 |
-| `oec-engineering@1.8.0` | 4 | 11 | 0 | 团队 Specs、显式迁移、规划、决策挑战、决策原型、TDD、诊断、Agent 委派、长时 Web 编码、review、close |
-| `oec-e3@1.0.2` | 0 | 0 | 1 | 4 个 PRD 发布工具 + 6 个研发任务工具 |
-| `oec-pipeline@1.0.2` | 0 | 0 | 1 | 既有 dev/test 流水线的受控 prepare/execute/status |
-| `oec-common@0.3.0` | 0 | 1 | 0 | 零依赖 HTML-first 幻灯片 |
+| Plugin | Agent | Skills | Hook | MCP | 作用与边界 |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `oec-product@3.0.3` | 1 | 3 | 0 | 0 | PRD 写作、只读评审和发布语义；依赖 E3 |
+| `oec-engineering@1.9.0` | 4 | 10 | 1 | 0 | 稳定任务执行、团队 Specs、决策、诊断、review 和 close |
+| `dev-beta@0.1.0` | 0 | 1 | 0 | 0 | 实验性长时 Web/full-stack 编排 |
+| `oec-e3@1.0.2` | 0 | 0 | 0 | 1 | 4 个 PRD 发布工具 + 6 个研发任务工具 |
+| `oec-pipeline@1.0.2` | 0 | 0 | 0 | 1 | 既有 dev/test 流水线的受控 prepare/execute/status |
+| `oec-common@0.3.0` | 0 | 1 | 0 | 0 | 零依赖 HTML-first 幻灯片 |
 
-Product 明确向用户承诺 E3 发布，所以声明 `oec-e3@~1.0.0` dependency。Engineering 的十一个 Skills
-不以 E3 或 Pipeline 为完成前提，因此与平台 Plugin 是按场景组合关系，不作强依赖。
+Product 明确向用户承诺 E3 发布，所以声明 `oec-e3@~1.0.0` dependency。Engineering 的十个稳定 Skills
+不以 E3 或 Pipeline 为完成前提，因此与平台 Plugin 是按场景组合关系，不作强依赖。Dev Beta 也不复制或
+声明新的平台依赖；它只在宿主已提供 Engineering Agent 和 `oec-spec` 时工作。
 
 ![根级 PRD artifact contract 在构建时分别进入 Product checker 与 E3 Server bundle](assets/oec-infra-next-optimization/16-shared-artifact-contract.svg)
 
@@ -702,6 +728,7 @@ claude plugin marketplace add \
 
 claude plugin install oec-product@plainOEC-infra --scope user
 claude plugin install oec-engineering@plainOEC-infra --scope user
+claude plugin install dev-beta@plainOEC-infra --scope user
 claude plugin install oec-pipeline@plainOEC-infra --scope user
 claude plugin install oec-common@plainOEC-infra --scope user
 ```
@@ -720,6 +747,7 @@ claude plugin install oec-common@plainOEC-infra --scope user
 | --- | --- | --- | --- |
 | Product Agent/Skills | 已完成 | 组件、触发、artifact、bundle 回归 | PM 使用旅程已有 fixture 证据 |
 | Engineering Skills/Specs/Agents | 已完成 | 结构、Agent parity、路径选择、bundle、Java/前端 fixture | 不涉及外部平台写入 |
+| Dev Beta long-running Skill | 已实现 | 独立 Plugin 结构、显式调用和宿主能力引用 | 真实 Agent/Playwright outcome 待验收 |
 | Common HTML Slides | 已完成 | 组件、零依赖 shell、真实浏览器 smoke | 不涉及外部平台写入 |
 | E3 PRD 发布 | 已完成 | OAuth、幂等、漂移、partial 等 | “OBU-AI提效组”真实通过 |
 | E3 研发任务 | 已完成 | 创建/复用、进度、status 等 | “OBU-AI提效组”真实通过 |
@@ -752,7 +780,8 @@ UTP 也不得借用 E3 证据宣称已验证。
 - 通用 Dev Agent。
 - 测试 Dispatcher 或 71 项文件索引树。
 - 角色套件 Plugin。
-- SessionStart 项目同步、默认 Agent settings 或通用平台 CRUD。
+- 固定 Agent 顺序或稳定 Plugin 内的长时 Web 编排；实验性长时能力只放在独立 `dev-beta`。
+- SessionStart 项目同步、动态项目状态注入、默认 Agent settings 或通用平台 CRUD；静态行为提示是唯一例外。
 
 ### 7.2 角色安装体验
 
@@ -765,10 +794,10 @@ UTP 也不得借用 E3 证据宣称已验证。
 | 角色 | 基础安装 | 按需平台组合 | 说明 |
 | --- | --- | --- | --- |
 | PM | `oec-product` | 自动获得 `oec-e3` | publishing 明确依赖 E3 |
-| 研发 | `oec-engineering` | `oec-e3`、`oec-pipeline` | 工程方法不与内部平台强绑定 |
+| 研发 | `oec-engineering` | `dev-beta`、`oec-e3`、`oec-pipeline` | 稳定工程能力与实验性长时编排分开 |
 | 测试 | 未来 `oec-testing` | 未来 `oec-utp`、现有 Pipeline | UTP 未准入前不提供安装承诺 |
 
-公司内部完整研发场景可在 onboarding 文档中给出三条原生安装命令，但不为“一条命令”重新制造一个
+公司内部完整研发场景可在 onboarding 文档中给出按需组合的原生安装命令，但不为“一条命令”重新制造一个
 无领域知识、只转发 dependency 的角色套件。
 
 ### 7.3 `oec-testing` 的形成方式
@@ -984,14 +1013,15 @@ OEC-infra 后续不应继续做“更多 Prompt、更多角色路由、更多统
 
 | 项目 | 版本/状态 |
 | --- | --- |
-| Marketplace | `3.0.2` release candidate |
+| Marketplace | `3.1.0` release candidate |
 | Product | `3.0.3` release candidate，未创建新 tag |
-| Engineering | `1.8.0` release candidate，未创建新 tag |
+| Engineering | `1.9.0` release candidate，未创建新 tag |
+| Dev Beta | `0.1.0` experimental candidate，未创建新 tag |
 | E3 | `1.0.2` release candidate，未创建新 tag |
 | Pipeline | `1.0.2` release candidate，未创建新 tag |
 | Common | `0.3.0` release candidate，未创建新 tag |
 | 当前自动测试 | 全部通过；精确数量以 `npm test` 输出为准 |
-| Skill 行为 eval | 15 个 Skill 的正负场景已可执行；新增长时 Coding 的 Agent/Playwright outcome 仍待验收 |
+| Skill 行为 eval | 15 个 Skill 的正负场景已可执行；Dev Beta 长时 Coding 的 Agent/Playwright outcome 仍待验收 |
 | 远端发布 | LICENSE/notice Owner 决定及外部写入证据完成前阻塞；不创建或推送新 tag |
 
 ## 附录 C：可复核证据索引
@@ -1007,8 +1037,8 @@ OEC-infra 后续不应继续做“更多 Prompt、更多角色路由、更多统
 | 旧 Plugin 是 bootstrap | `plugins/oec-ai/.claude-plugin/plugin.json`、`plugins/oec-ai/skills/oec-project-init/`、`plugins/oec-ai/hooks/hooks.json` | 原生入口是初始化 Skill 与 SessionStart Hook；角色资产位于 payload |
 | 旧平台并非没有代码封装 | `oec-infra/skills/tools/oec-manage-task/scripts/client.py`、`oec-infra/skills/tools/oec-git-devops/devops/scripts/client.ts`、`oec-infra/skills/test/skills/platform-gateway/scripts/gateway_client.py` | OAuth、401、响应处理和部分重试已有确定性实现 |
 | 旧平台边界仍不完整 | `oec-infra/skills/tools/oec-manage-task/SKILL.md` 与上述 clients | 模型仍负责文件路由、入口/参数组合和跨步骤流程；Pipeline Client 对写操作使用通用失败重试 |
-| 当前组件层级与 dependency | [Marketplace manifest](../../.claude-plugin/marketplace.json)、[Product manifest](../../oec-product/.claude-plugin/plugin.json)、[Engineering manifest](../../oec-engineering/.claude-plugin/plugin.json)、[E3 manifest](../../oec-e3/.claude-plugin/plugin.json)、[Pipeline manifest](../../oec-pipeline/.claude-plugin/plugin.json)、[Common manifest](../../oec-common/.claude-plugin/plugin.json) | 当前版本、分发单元和 Product→E3 依赖 |
-| Product/Engineering/Common 的结构与 fixture | [Product 组件测试](../../oec-product/tests/components.test.mjs)、[Engineering 组件测试](../../oec-engineering/tests/components.test.mjs)、[Engineering 分发测试](../../oec-engineering/tests/distribution.test.mjs)、[Common 组件测试](../../oec-common/tests/components.test.mjs) | 原生组件、负向触发文本、Agent parity、Spec 工具、HTML deck shell 和无依赖 bundle 等确定性契约 |
+| 当前组件层级与 dependency | [Marketplace manifest](../../.claude-plugin/marketplace.json)、[Product manifest](../../oec-product/.claude-plugin/plugin.json)、[Engineering manifest](../../oec-engineering/.claude-plugin/plugin.json)、[Dev Beta manifest](../../dev-beta/.claude-plugin/plugin.json)、[E3 manifest](../../oec-e3/.claude-plugin/plugin.json)、[Pipeline manifest](../../oec-pipeline/.claude-plugin/plugin.json)、[Common manifest](../../oec-common/.claude-plugin/plugin.json) | 当前版本、分发单元、Product→E3 依赖和 Dev Beta 隔离 |
+| Product/Engineering/Dev Beta/Common 的结构与 fixture | [Product 组件测试](../../oec-product/tests/components.test.mjs)、[Engineering 组件测试](../../oec-engineering/tests/components.test.mjs)、[Engineering 分发测试](../../oec-engineering/tests/distribution.test.mjs)、[Dev Beta 组件测试](../../dev-beta/tests/components.test.mjs)、[Common 组件测试](../../oec-common/tests/components.test.mjs) | 原生组件、负向触发文本、Agent parity、任务执行入口、Dev Beta 宿主能力引用、Spec 工具、HTML deck shell 和无依赖 bundle 等确定性契约 |
 | E3/Pipeline 的 mock 与 bundle | [E3 mock journey](../../oec-e3/servers/e3/tests/journey.test.mjs)、[E3 bundle 测试](../../oec-e3/servers/e3/tests/distribution.test.mjs)、[Pipeline planner 测试](../../oec-pipeline/servers/pipeline/tests/planner.test.mjs)、[Pipeline bundle 测试](../../oec-pipeline/servers/pipeline/tests/distribution.test.mjs) | 测试替身下的计划/恢复分支和 MCP stdio 分发，不证明真实远端运行 |
 | E3 真实非生产旅程 | [脱敏验收记录](../evidence/e3-platform-3.0.0-real-acceptance.md) | 授权空间、唯一标识、execute/status/read-back 和明确未覆盖边界 |
 | 当前宿主版本 | 2026-08-21 执行 `claude --version` 返回 `2.1.237 (Claude Code)` | 当时验证使用的 Claude Code 版本，不代表未来版本行为 |

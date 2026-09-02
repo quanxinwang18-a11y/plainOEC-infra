@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import test from 'node:test';
 import YAML from 'yaml';
+import {
+  ENGINEERING_AGENT_NAMES,
+  renderCodexAgent,
+} from '../../scripts/generate-engineering-codex-agents.mjs';
 
 const pluginRoot = resolve(import.meta.dirname, '..');
 const forbiddenAgentSlash = ['/oec-engineering', 'oec-'].join(':');
@@ -35,6 +40,12 @@ function codexAgent(name) {
   return { name: declaredName, description, instructions };
 }
 
+function openaiSkill(name) {
+  const relativePath = `skills/${name}/agents/openai.yaml`;
+  assert.equal(existsSync(resolve(pluginRoot, relativePath)), true, `${relativePath} is required`);
+  return YAML.parse(readFileSync(resolve(pluginRoot, relativePath), 'utf8'));
+}
+
 function compact(value) {
   return value.replace(/\s+/g, ' ').trim();
 }
@@ -42,7 +53,7 @@ function compact(value) {
 const expectedSkills = [
   'challenge-decision',
   'close-change',
-  'delegate-agents',
+  'develop-change',
   'develop-test-first',
   'diagnose-failure',
   'manage-specs',
@@ -50,13 +61,12 @@ const expectedSkills = [
   'plan-change',
   'prototype-decision',
   'review-code',
-  'run-long-coding',
 ];
 
-test('engineering plugin exposes eleven native Skills and no always-on orchestration components', () => {
+test('engineering plugin exposes ten native Skills, four Agents, and one static bootstrap Hook', () => {
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-engineering');
-  assert.equal(manifest.version, '1.8.0');
+  assert.equal(manifest.version, '1.9.0');
   // Agents and Skills are auto-discovered from directories, not declared in plugin.json.
   for (const key of ['skills', 'agents', 'mcpServers', 'commands', 'hooks']) assert.equal(key in manifest, false);
 
@@ -65,8 +75,10 @@ test('engineering plugin exposes eleven native Skills and no always-on orchestra
     .map((entry) => entry.name)
     .sort();
   assert.deepEqual(discovered, expectedSkills);
+  assert.equal(existsSync(resolve(pluginRoot, 'skills/delegate-agents')), false);
+  assert.equal(existsSync(resolve(pluginRoot, 'skills/run-long-coding')), false);
 
-  for (const path of ['.mcp.json', 'commands', 'hooks', 'settings.json', 'references', 'assets', 'lib']) {
+  for (const path of ['.mcp.json', 'commands', 'settings.json', 'references', 'assets', 'lib']) {
     assert.equal(existsSync(resolve(pluginRoot, path)), false, `${path} must not exist at plugin root`);
   }
   assert.equal(existsSync(resolve(pluginRoot, 'package.json')), false);
@@ -80,11 +92,12 @@ test('engineering plugin exposes eleven native Skills and no always-on orchestra
 
   const marketplace = JSON.parse(readFileSync(resolve(pluginRoot, '..', '.claude-plugin', 'marketplace.json'), 'utf8'));
   const packageManifest = JSON.parse(readFileSync(resolve(pluginRoot, '..', 'package.json'), 'utf8'));
-  assert.equal(marketplace.version, '3.0.2');
+  assert.equal(marketplace.version, '3.1.0');
   assert.equal(packageManifest.version, marketplace.version);
   assert.deepEqual(marketplace.plugins.map((plugin) => plugin.name), [
     'oec-product',
     'oec-engineering',
+    'dev-beta',
     'oec-e3',
     'oec-pipeline',
     'oec-common',
@@ -94,8 +107,50 @@ test('engineering plugin exposes eleven native Skills and no always-on orchestra
   assert.equal(engineeringEntry.source, './oec-engineering');
 });
 
-test('Claude and experimental Codex Agents keep explicit-use policy and matching instructions', () => {
-  for (const name of ['checker', 'evaluator', 'implementer', 'researcher']) {
+test('SessionStart injects bounded behavioral guidance without duplicating capability metadata', () => {
+  const config = JSON.parse(readFileSync(resolve(pluginRoot, 'hooks/hooks.json'), 'utf8'));
+  const group = config.hooks.SessionStart;
+  assert.equal(group.length, 1);
+  assert.equal(group[0].matcher, 'startup|clear|compact');
+  assert.doesNotMatch(group[0].matcher, /resume|fork/);
+  assert.equal(group[0].hooks.length, 1);
+  assert.deepEqual(group[0].hooks[0], {
+    type: 'command',
+    command: 'node "${CLAUDE_PLUGIN_ROOT}/hooks/session-start.mjs"',
+    async: false,
+  });
+
+  const script = resolve(pluginRoot, 'hooks/session-start.mjs');
+  const first = execFileSync(process.execPath, [script], { encoding: 'utf8' });
+  const second = execFileSync(process.execPath, [script], { encoding: 'utf8' });
+  assert.equal(first, second);
+  const payload = JSON.parse(first);
+  assert.deepEqual(Object.keys(payload), ['hookSpecificOutput']);
+  assert.equal(payload.hookSpecificOutput.hookEventName, 'SessionStart');
+  const context = payload.hookSpecificOutput.additionalContext;
+  assert.match(context, /^<oec-engineering>/);
+  assert.match(context, /If the user is unsure what to do/);
+  assert.match(context, /check available Skills before acting/);
+  assert.match(context, /proactively identify the durable document that may need review/);
+  assert.match(context, /smallest sufficient change/);
+  assert.match(context, /observable success criteria/);
+  assert.ok(context.length <= 1800, `SessionStart context is too large: ${context.length} characters`);
+  assert.ok(context.trim().split(/\s+/).length <= 250, 'SessionStart context exceeds the word budget');
+  for (const name of [...expectedSkills, 'checker', 'evaluator', 'implementer', 'researcher']) {
+    assert.equal(context.includes(name), false, `SessionStart must not duplicate capability metadata: ${name}`);
+  }
+  assert.doesNotMatch(context, /oec-spec|ai-docs|taskRef|Skill count|Agent count/);
+
+  const codexManifest = JSON.parse(readFileSync(resolve(pluginRoot, '.codex-plugin/plugin.json'), 'utf8'));
+  assert.deepEqual(codexManifest.hooks, {});
+});
+
+test('Claude Agent sources deterministically generate experimental Codex mirrors', () => {
+  for (const name of ENGINEERING_AGENT_NAMES) {
+    const markdown = readFileSync(resolve(pluginRoot, 'agents', `${name}.md`), 'utf8');
+    const committedToml = readFileSync(resolve(pluginRoot, '.codex-plugin', 'agents', `${name}.toml`), 'utf8');
+    assert.equal(committedToml, renderCodexAgent(markdown, name));
+
     const claude = claudeAgent(name);
     const codex = codexAgent(name);
     assert.equal(codex.name, name);
@@ -107,6 +162,7 @@ test('Claude and experimental Codex Agents keep explicit-use policy and matching
   const implement = claudeAgent('implementer');
   assert.match(compact(implement.metadata.description), /existing taskRef or legacy change ID/);
   assert.match(implement.body, /Tests: <command and pass\/fail\/not run>/);
+  assert.doesNotMatch(implement.body, /oec-spec task resolve/);
   assert.doesNotMatch(implement.body, /## Implementation complete/);
   const check = claudeAgent('checker');
   assert.match(compact(check.metadata.description), /may modify code/);
@@ -115,6 +171,7 @@ test('Claude and experimental Codex Agents keep explicit-use policy and matching
   assert.match(check.body, /git diff HEAD --/);
   assert.match(check.body, /relevant untracked files/);
   assert.match(check.body, /Tests: <command and pass\/fail\/not run>/);
+  assert.doesNotMatch(check.body, /oec-spec remind/);
   const research = claudeAgent('researcher');
   assert.match(compact(research.metadata.description), /existing taskRef or legacy change ID/);
   assert.match(research.body, /Do not create or guess a task package/);
@@ -128,6 +185,7 @@ test('Claude and experimental Codex Agents keep explicit-use policy and matching
   assert.equal('mcpServers' in evaluate.metadata, false);
   assert.equal('hooks' in evaluate.metadata, false);
   assert.equal('permissionMode' in evaluate.metadata, false);
+  assert.match(evaluate.body, /task Spec's `AC-NNN` acceptance items/);
   assert.match(evaluate.body, /Product depth/);
   assert.match(evaluate.body, /Working tree changed by evaluator/);
 });
@@ -142,17 +200,18 @@ test('skill descriptions make positive and negative judgment boundaries explicit
   }
 
   assert.match(skill('manage-specs').metadata.description, /durable project engineering Specs and ADRs/);
-  assert.match(skill('migrate-legacy-ai-docs').metadata.description, /user explicitly invokes/);
+  assert.match(skill('develop-change').metadata.description, /existing development task/);
+  assert.match(skill('develop-change').metadata.description, /ready Spec\/Design pair/);
+  assert.match(skill('migrate-legacy-ai-docs').metadata.description, /legacy repository/);
   assert.match(skill('plan-change').metadata.description, /task-level Spec and Design/);
   assert.match(skill('plan-change').metadata.description, /technical design/);
   assert.match(skill('plan-change').metadata.description, /small obvious fix/);
-  assert.match(skill('challenge-decision').metadata.description, /user explicitly invokes/);
+  assert.match(skill('challenge-decision').metadata.description, /asks to challenge/);
   assert.match(skill('challenge-decision').metadata.description, /ordinary planning/);
-  assert.match(skill('delegate-agents').metadata.description, /Routes a bounded engineering change/);
-  assert.match(skill('delegate-agents').metadata.description, /ordinary coding/);
-  assert.match(skill('run-long-coding').metadata.description, /resumed implementation/);
-  assert.match(skill('run-long-coding').metadata.description, /Playwright runtime evaluation/);
-  assert.match(skill('run-long-coding').metadata.description, /small fixes/);
+  assert.match(skill('develop-change').metadata.description, /Do not use to create task artifacts/);
+  assert.match(skill('develop-change').body, /Main Session/);
+  assert.match(skill('develop-change').body, /task check --dev-root/);
+  assert.match(skill('develop-change').body, /Do not dispatch an Agent by default/);
   assert.match(skill('prototype-decision').metadata.description, /throwaway/);
   assert.match(skill('prototype-decision').metadata.description, /production features/);
   assert.match(skill('develop-test-first').metadata.description, /explicitly asks for TDD/);
@@ -163,101 +222,48 @@ test('skill descriptions make positive and negative judgment boundaries explicit
   assert.match(skill('review-code').metadata.description, /Do not use to implement/);
 });
 
-test('explicit engineering Skills stay manual-only and no Skill recreates the legacy router', () => {
+test('engineering Skill invocation boundaries remain explicit and no Skill recreates the legacy router', () => {
   for (const name of expectedSkills) {
     const item = skill(name);
-    if ([
-      'challenge-decision',
-      'close-change',
-      'delegate-agents',
-      'manage-specs',
-      'migrate-legacy-ai-docs',
-      'prototype-decision',
-      'run-long-coding',
-    ].includes(name)) {
-      assert.equal(item.metadata['disable-model-invocation'], true);
-    } else {
-      assert.equal(item.metadata['disable-model-invocation'], undefined);
-    }
+    assert.equal(item.metadata['disable-model-invocation'], undefined);
     assert.doesNotMatch(item.text, /oec-dev-task|oec-dev-flow|STAGE\.md|\.codex\/skills/);
     assert.doesNotMatch(item.text, /Read .*SKILL\.md|读取.*SKILL\.md/i);
     assert.doesNotMatch(item.text, /OAuth|HTTP payload|token cache|partial resume/i);
     assert.equal(item.text.includes(forbiddenAgentSlash), false);
   }
+  const managing = skill('manage-specs');
+  assert.equal(managing.metadata['disable-model-invocation'], undefined);
+  assert.equal(openaiSkill('manage-specs').policy, undefined);
+  for (const name of ['challenge-decision', 'close-change', 'migrate-legacy-ai-docs', 'prototype-decision']) {
+    assert.equal(skill(name).metadata['disable-model-invocation'], undefined);
+    assert.equal(openaiSkill(name).policy, undefined);
+  }
+
   const closing = skill('close-change');
-  assert.match(closing.metadata.description, /explicitly asks/);
+  assert.match(closing.metadata.description, /asks to close/);
+  assert.match(closing.body, /Invoking this Skill does not authorize a commit/);
   assert.match(closing.body, /git add -- <exact code and engineering-document paths>/);
   assert.match(closing.body, /git commit -m .* -- <same exact paths>/);
-
-  const delegation = skill('delegate-agents');
-  assert.match(delegation.body, /existing taskRef and a concrete question/);
-  assert.match(delegation.body, /task existence/);
-  assert.match(delegation.body, /run no further repository tools/);
-  assert.match(delegation.body, /Never create or guess a task package/);
-  assert.match(delegation.body, /researcher[\s\S]*implementer[\s\S]*checker/);
-  assert.match(delegation.body, /Treat a missing status as `partial`/);
-  assert.match(delegation.body, /stop on `partial`, `failed`, or `blocked`/);
-  assert.match(delegation.metadata['argument-hint'], /sequence/);
-  assert.doesNotMatch(delegation.metadata['argument-hint'], /full/);
-  assert.match(delegation.body, /researcher[\s\S]*implementer[\s\S]*checker/);
-  assert.match(delegation.body, /Never run Agents concurrently in `sequence`/);
-  assert.match(delegation.body, /automatic retry loop/);
-  assert.match(delegation.body, /A sequence is coordination evidence, not task closure/);
-
-  const delegationOpenai = YAML.parse(readFileSync(resolve(
-    pluginRoot,
-    'skills/delegate-agents/agents/openai.yaml',
-  ), 'utf8'));
-  assert.equal(delegationOpenai.policy.allow_implicit_invocation, false);
-  assert.match(delegationOpenai.interface.default_prompt, /\$delegate-agents/);
-
-  const orchestration = skill('run-long-coding');
-  assert.equal(orchestration.metadata['argument-hint'], '[existing taskRef or currently confirmed change]');
-  assert.match(orchestration.body, /existing canonical `taskRef` or an explicitly confirmed legacy change ID/);
-  assert.match(orchestration.body, /required Playwright tools are unavailable, report `blocked`/);
-  assert.match(orchestration.body, /Retain the returned Agent ID/);
-  assert.match(orchestration.body, /five build-and-evaluate cycles by default/);
-  assert.match(orchestration.body, /up to ten total cycles/);
-  assert.match(orchestration.body, /Do not create state files, snapshots, branches/);
-  assert.doesNotMatch(orchestration.body, /Sprint|backlog|run\.json|progress\.md|ledger/);
-  const orchestrationOpenai = YAML.parse(readFileSync(resolve(
-    pluginRoot,
-    'skills/run-long-coding/agents/openai.yaml',
-  ), 'utf8'));
-  assert.equal(orchestrationOpenai.policy.allow_implicit_invocation, false);
-  assert.match(orchestrationOpenai.interface.default_prompt, /\$run-long-coding/);
 
   const migration = skill('migrate-legacy-ai-docs');
   assert.match(migration.body, /preserve every existing `ai-docs` file in place/i);
   assert.match(migration.body, /Do not adopt E3 mappings/);
   assert.match(migration.body, /Do not create a migration state file/);
-  const openai = YAML.parse(readFileSync(resolve(
-    pluginRoot,
-    'skills/migrate-legacy-ai-docs/agents/openai.yaml',
-  ), 'utf8'));
-  assert.equal(openai.policy.allow_implicit_invocation, false);
-  assert.match(openai.interface.default_prompt, /\$migrate-legacy-ai-docs/);
 
-  const challenge = YAML.parse(readFileSync(resolve(
-    pluginRoot,
-    'skills/challenge-decision/agents/openai.yaml',
-  ), 'utf8'));
-  assert.equal(challenge.policy.allow_implicit_invocation, false);
-  assert.match(challenge.interface.default_prompt, /\$challenge-decision/);
-
-  const closingOpenai = YAML.parse(readFileSync(resolve(
-    pluginRoot,
-    'skills/close-change/agents/openai.yaml',
-  ), 'utf8'));
-  assert.equal(closingOpenai.policy.allow_implicit_invocation, false);
-  assert.match(closingOpenai.interface.default_prompt, /\$close-change/);
   assert.equal(readFileSync(resolve(pluginRoot, 'README.md'), 'utf8').includes(forbiddenAgentSlash), false);
+});
+
+test('newly discoverable Skills have natural-language positive evals', () => {
+  for (const name of ['challenge-decision', 'close-change', 'migrate-legacy-ai-docs', 'prototype-decision']) {
+    const prompt = readFileSync(resolve(pluginRoot, 'evals', `${name}-positive/prompt.md`), 'utf8');
+    assert.doesNotMatch(prompt, /\/oec-engineering:/, `${name} positive eval should exercise natural-language discovery`);
+  }
 });
 
 test('public Skill and Agent identifiers use scoped concise names without an oec prefix', () => {
   for (const name of expectedSkills) {
     assert.doesNotMatch(name, /^oec-/);
-    assert.match(name, /^(?:challenge|close|delegate|develop|diagnose|manage|migrate|plan|prototype|review|run)-/);
+    assert.match(name, /^(?:challenge|close|develop|diagnose|manage|migrate|plan|prototype|review)-/);
   }
   for (const name of ['checker', 'evaluator', 'implementer', 'researcher']) {
     assert.doesNotMatch(name, /^oec-/);
@@ -267,6 +273,11 @@ test('public Skill and Agent identifiers use scoped concise names without an oec
 });
 
 test('OEC Dev task assets expose one taskRef and paired Spec/Design contract', () => {
+  const development = skill('develop-change');
+  assert.equal(development.metadata['disable-model-invocation'], undefined);
+  assert.match(development.body, /oec-spec task check/);
+  assert.match(development.body, /Do not dispatch an Agent by default/);
+  assert.match(development.body, /Do not commit, push, merge/);
   const planning = skill('plan-change');
   assert.match(planning.body, /oec-spec task resolve/);
   assert.match(planning.body, /oec-spec task check/);
@@ -277,11 +288,16 @@ test('OEC Dev task assets expose one taskRef and paired Spec/Design contract', (
   assert.match(readFileSync(resolve(pluginRoot, 'skills/plan-change/assets/task-spec.md'), 'utf8'), /artifact: task-spec/);
   assert.match(readFileSync(resolve(pluginRoot, 'skills/plan-change/assets/task-design.md'), 'utf8'), /artifact: task-design/);
   const managing = skill('manage-specs');
-  assert.equal(managing.metadata['disable-model-invocation'], true);
+  assert.equal(managing.metadata['disable-model-invocation'], undefined);
   assert.match(managing.body, /oec-spec remind/);
-  assert.match(skill('review-code').body, /oec-spec remind/);
-  assert.match(skill('close-change').body, /oec-spec task check/);
-  assert.match(skill('close-change').body, /oec-spec remind/);
+  const reviewing = skill('review-code');
+  assert.match(reviewing.body, /oec-spec remind/);
+  assert.doesNotMatch(reviewing.body, /oec-spec task resolve/);
+  const closing = skill('close-change');
+  assert.match(closing.body, /oec-spec task check/);
+  assert.match(closing.body, /oec-spec remind/);
+  assert.doesNotMatch(closing.body, /oec-spec task resolve/);
+  assert.equal(existsSync(resolve(pluginRoot, 'skills/close-change/assets/evidence.md')), false);
 });
 
 test('team Spec assets encode conditional artifacts and safe project ownership', () => {

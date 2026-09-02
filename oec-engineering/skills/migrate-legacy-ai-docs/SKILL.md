@@ -1,8 +1,7 @@
 ---
 name: migrate-legacy-ai-docs
-description: Migrates verified engineering facts and accepted decisions from legacy OEC ai-docs into current team Specs, ADRs, and active change packages. Use only when the user explicitly invokes this Skill for a legacy repository migration. Do not use for ordinary Spec maintenance, Product PRDs, E3 mapping adoption, or deletion of legacy files and managed configuration.
+description: Migrates verified engineering facts and accepted decisions from legacy OEC ai-docs into current team Specs, ADRs, and active change packages. Use when the user asks to migrate a legacy repository's engineering knowledge. Do not use for ordinary Spec maintenance, Product PRDs, E3 mapping adoption, or deletion of legacy files and managed configuration.
 argument-hint: "[workspace or migration scope]"
-disable-model-invocation: true
 ---
 
 # Migrate legacy ai-docs

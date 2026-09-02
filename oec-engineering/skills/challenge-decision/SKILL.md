@@ -1,8 +1,7 @@
 ---
 name: challenge-decision
-description: Stress-tests a proposed engineering decision through a user-led challenge that exposes assumptions, dependencies, and unresolved tradeoffs. Use only when the user explicitly invokes this Skill to challenge, grill, pressure-test, or argue against a technical plan or design. Do not use for ordinary planning, implementation, code review, or work already governed by an accepted Spec or ADR.
+description: Stress-tests a proposed engineering decision through a user-led challenge that exposes assumptions, dependencies, and unresolved tradeoffs. Use when the user asks to challenge, grill, pressure-test, or argue against a technical plan or design. Do not use for ordinary planning, implementation, code review, or work already governed by an accepted Spec or ADR.
 argument-hint: "[decision, plan, design, or assumption to challenge]"
-disable-model-invocation: true
 ---
 
 # Challenge decision

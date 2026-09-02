@@ -19,7 +19,7 @@ test('E3 is the registered MCP-only platform dependency', () => {
   assert.deepEqual(mcp.mcpServers.e3.args, ['${CLAUDE_PLUGIN_ROOT}/dist/e3-server.mjs']);
   assert.equal(existsSync(resolve(pluginRoot, 'dist/e3-server.mjs')), true);
   const marketplace = JSON.parse(readFileSync(resolve(marketplaceRoot, '.claude-plugin/marketplace.json'), 'utf8'));
-  assert.equal(marketplace.version, '3.0.2');
+  assert.equal(marketplace.version, '3.1.0');
   const entry = marketplace.plugins.find((plugin) => plugin.name === 'oec-e3');
   assert.equal(entry.version, manifest.version);
   assert.equal(entry.source, './oec-e3');

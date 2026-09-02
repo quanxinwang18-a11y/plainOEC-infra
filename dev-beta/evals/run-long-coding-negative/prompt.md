@@ -1,6 +1,6 @@
 ---
 name: run-long-coding-negative
-description: Keeps an ordinary small implementation request out of the long-running orchestration Skill.
+description: Keeps an ordinary small implementation request out of the experimental long-running Skill.
 tags: [routing, negative, run-long-coding]
 max_turns: 10
 timeout_seconds: 300

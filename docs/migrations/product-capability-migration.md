@@ -1,7 +1,7 @@
 # OEC PM 能力迁移分析
 
 > 本文基于旧仓库 `oec-ai-infra` 的 commit
-> `79356008b9961c3e8a70c57e2fe5c9cf0c7ce424` 和当前 release candidate Marketplace `3.0.2`。分析对象分别是旧
+> `79356008b9961c3e8a70c57e2fe5c9cf0c7ce424` 和当前 release candidate Marketplace `3.1.0`。分析对象分别是旧
 > `oec-ai@0.2.2`，以及当前 `oec-product@3.0.3` 与其平台依赖 `oec-e3@1.0.2`。旧结构的数据来自
 > 实际构建产物以及一次隔离临时目录中的
 > `role=designer + tool=claude-code` 初始化，不把编辑源码目录误认为 PM 最终加载的配置。
@@ -669,7 +669,7 @@ flowchart LR
 
 ### 8.2 自动验证
 
-Marketplace `3.0.2` 当前自动验证命令：
+Marketplace `3.1.0` 当前自动验证命令：
 
 ```text
 npm run build
