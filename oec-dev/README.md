@@ -56,10 +56,23 @@ claude plugin install oec-dev-beta@plainOEC-infra --scope user
 /oec-dev:code-review
 ```
 
+### PRD 到实现
+
+当用户说“根据这个 PRD 开发”时，非平凡任务先经过一次规划门：读取 PRD、解析任务上下文、生成最小
+`spec.md` + `design.md`，展示精确路径并取得确认；任务通过 `ready` 检查后再进入实现。用户不需要
+一开始手工填写 `taskRef`，可由 PRD 路径和模块身份解析；只有存在歧义时才询问。
+
+```text
+PRD → task context → spec.md + design.md → user confirmation → implementation → verification
+```
+
+小而明确的修复不需要这道门，仍由 Main Session 直接修改和验证。
+
 ### `change-implement`
 
 这是已有任务的轻量执行入口。只有请求包含 canonical `taskRef` 或明确的现有 change ID，且任务
-已经有可通过 `ready` 检查的 `spec.md` / `design.md` 时才使用。
+已经有可通过 `ready` 检查的 `spec.md` / `design.md` 时才使用。只给出 PRD 而没有 ready 任务时，
+应先进入上面的规划门，不得直接修改业务代码。
 
 ```text
 resolve/check taskRef
@@ -215,18 +228,18 @@ oec-spec legacy-audit --workspace "$DEV_ROOT"
 用户目标 → Main Session 定位代码 → 修改 → 最小相关测试 → 报告结果
 ```
 
-非平凡或需要跨会话保存上下文的修改：
+来自 PRD/Story/HANDOFF 的非平凡修改：
 
 ```text
-需求/问题
-→ taskRef 与 Product/Dev Root 解析
-→ 选择相关 Specs/ADR
+PRD/需求
 → change-plan 创建 spec.md + design.md
+→ 用户确认任务边界
 → change-implement 或 Main Session 实现
 → 测试、typecheck、lint
-→ code-review / change-checker（按需）
-→ change-close（用户需要时）
 ```
+
+已有明确 ready 任务或普通小改动不需要重复规划；code-review、change-checker、change-close、E3、
+Pipeline 和 web-task-run 均按需使用。
 
 这不是强制状态机。TDD、决策挑战、原型、诊断、Agent 和收口都按用户目标或实际风险启用。
 
@@ -259,5 +272,5 @@ claude plugin validate --strict ./oec-dev
 git diff --check
 ```
 
-当前 1.9.0 是候选版本。自动测试、bundle、Plugin validation、真实 Agent 发现和真实 Playwright
+当前 1.9.1 是候选版本。自动测试、bundle、Plugin validation、真实 Agent 发现和真实 Playwright
 旅程是不同证据等级；不能用其中一项替代另一项。

@@ -1,6 +1,6 @@
 ---
 name: change-implement
-description: Implements an existing development task in the Main Session when the user asks to implement a canonical taskRef or existing change ID that resolves to a ready Spec/Design pair. Do not use to create task artifacts, handle ordinary small fixes, review code, close changes, or operate E3, Pipeline, or deployment.
+description: Implements an existing development task in the Main Session when the user asks to implement a canonical taskRef or existing change ID that resolves to a ready Spec/Design pair. A PRD-only implementation request must go through task planning first. Do not use to create task artifacts, handle ordinary small fixes, review code, close changes, or operate E3, Pipeline, or deployment.
 argument-hint: "[taskRef or existing change ID]"
 ---
 
@@ -8,6 +8,10 @@ argument-hint: "[taskRef or existing change ID]"
 
 Implement the task the user identifies in the Main Session. This is a lightweight execution entry,
 not a workflow engine and not a replacement for ordinary coding.
+
+If the user provides only a PRD, Story, HANDOFF, issue, or other requirement document and no ready
+`taskRef`/change ID, do not edit business code. Route the request to the planning gate first; the
+PRD is a source, not an implementation authorization or a ready task package.
 
 ## Resolve before inspecting or editing
 

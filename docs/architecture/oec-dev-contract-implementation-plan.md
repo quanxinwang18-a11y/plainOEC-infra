@@ -1,6 +1,6 @@
 # OEC Dev 契约与实施计划
 
-- **Status**: Implemented candidate — Engineering 1.9.0 and Dev Beta 0.1.0 follow-up pending commit and release decision
+- **Status**: Implemented candidate — Engineering 1.9.1 and Dev Beta 0.1.0 follow-up pending commit and release decision
 - **Owner**: `oec-dev` / OEC Dev
 - **Scope**: `plainOEC-infra/oec-dev` (stable execution) and `plainOEC-infra/oec-dev-beta` (experimental long-running orchestration)
 - **Last updated**: 2026-09-02
@@ -25,10 +25,11 @@ OEC Dev 是一个模块感知的工程上下文和交付能力，不是固定的
 4. 在自然检查点对可能过期的 Team Specs 给出只读提醒；
 5. 通过静态 SessionStart 提示强化不确定性管理、Skill 匹配、Spec 复核和验证闭环；
 6. 为已有 ready 任务提供轻量的 `change-implement` Main Session 执行入口。
+7. 对来自 PRD/Story/HANDOFF 的非平凡实现请求提供明确的规划门，避免需求文档被直接当作代码修改授权。
 
 ### 1.2 保留的设计原则
 
-- 普通编码由 Main Session 完成；
+- 普通编码由 Main Session 完成；来自 PRD/Story/HANDOFF 的非平凡任务先完成最小任务上下文和 Spec/Design 确认；
 - 任务路径和身份由 runtime 处理，不由模型在多个 Skill 中重复拼接；
 - 任务 Spec/Design 是交付产物，但不构成固定阶段状态机；
 - Team Specs 描述长期当前事实，不能替代任务 Spec；
@@ -386,6 +387,10 @@ Design 不要求固定 API、数据库、部署、性能等章节，也不复制
 `change-implement` 是稳定 Engineering Plugin 的轻量执行入口，只处理已有且可验证的任务。它不是
 任务创建器、Agent 委派器或固定状态机。
 
+当请求只提供 PRD、Story、HANDOFF 或其他需求文档时，该文档属于来源，不属于 ready 任务；非平凡实现
+必须先经过 `change-plan`，在任务 Spec/Design 生成、路径展示并取得确认后，才允许进入实现。小而明确
+的直接修复不受此规划门影响。
+
 触发必须同时满足：
 
 - 请求包含 canonical `taskRef` 或明确的现有 change ID；
@@ -508,8 +513,8 @@ SessionStart 只提示模型主动识别复核时机。Direct Coding 不调用�
 
 | Skill | Model invocation | 责任 |
 | --- | --- | --- |
-| `change-plan` | 可自动发现，仅限 PRD/Story/非平凡任务 | 解析来源并管理任务 Spec/Design |
-| `change-implement` | 可自动发现，仅限已有且 ready 的任务 | 在 Main Session 按任务边界实现并验证 |
+| `change-plan` | 可自动发现；PRD/Story/非平凡实现请求的首个规划门 | 解析来源并管理任务 Spec/Design |
+| `change-implement` | 可自动发现，仅限已有且 ready 的任务 | 在 Main Session 按任务边界实现并验证；PRD-only 请求先回到规划门 |
 | `code-review` | 可自动发现 | 只读 Review，并调用 reminder |
 | `spec-manage` | 可自动发现，仅限明确的 Spec/ADR 管理意图 | 写入长期 Spec/ADR；写前确认精确路径，`remind` 子模式只读 |
 | `test-first` | 仅明确 TDD 意图 | 可选测试方式 |

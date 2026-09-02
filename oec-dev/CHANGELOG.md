@@ -4,6 +4,12 @@
 
 **BREAKING RC CHANGE:** align the public Dev identity and names before the first stable release.
 
+## 1.9.1
+
+- Add an explicit PRD-to-implementation planning gate for non-trivial work.
+- Prevent PRD-only requests from being treated as ready tasks or direct business-code authorization.
+- Keep small obvious fixes and ordinary direct coding lightweight in the Main Session.
+
 - Rename the Plugin from `oec-engineering` to `oec-dev`.
 - Rename the stable Skills to the concise object-action names used by the Dev entry points.
 - Rename the Agents to `task-implementer`, `change-checker`, `task-researcher`, and `web-evaluator`.

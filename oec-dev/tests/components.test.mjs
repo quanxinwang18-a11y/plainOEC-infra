@@ -66,7 +66,7 @@ const expectedSkills = [
 test('engineering plugin exposes ten native Skills, four Agents, and one static bootstrap Hook', () => {
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-dev');
-  assert.equal(manifest.version, '1.9.0');
+  assert.equal(manifest.version, '1.9.1');
   // Agents and Skills are auto-discovered from directories, not declared in plugin.json.
   for (const key of ['skills', 'agents', 'mcpServers', 'commands', 'hooks']) assert.equal(key in manifest, false);
 
@@ -131,6 +131,8 @@ test('SessionStart injects bounded behavioral guidance without duplicating capab
   assert.match(context, /^<oec-dev>/);
   assert.match(context, /If the user is unsure what to do/);
   assert.match(context, /check available Skills before acting/);
+  assert.match(context, /PRD, Story, or HANDOFF/);
+  assert.match(context, /before any business-code edit/);
   assert.match(context, /proactively identify the durable document that may need review/);
   assert.match(context, /smallest sufficient change/);
   assert.match(context, /observable success criteria/);
@@ -202,9 +204,13 @@ test('skill descriptions make positive and negative judgment boundaries explicit
   assert.match(skill('spec-manage').metadata.description, /durable project engineering Specs and ADRs/);
   assert.match(skill('change-implement').metadata.description, /existing development task/);
   assert.match(skill('change-implement').metadata.description, /ready Spec\/Design pair/);
+  assert.match(skill('change-implement').metadata.description, /PRD-only implementation request/);
+  assert.match(skill('change-implement').body, /PRD.*not an implementation authorization/si);
   assert.match(skill('legacy-doc-migrate').metadata.description, /legacy repository/);
   assert.match(skill('change-plan').metadata.description, /task-level Spec and Design/);
   assert.match(skill('change-plan').metadata.description, /technical design/);
+  assert.match(skill('change-plan').metadata.description, /Required first planning step/);
+  assert.match(skill('change-plan').body, /planning gate before business-code/);
   assert.match(skill('change-plan').metadata.description, /small obvious fix/);
   assert.match(skill('decision-challenge').metadata.description, /asks to challenge/);
   assert.match(skill('decision-challenge').metadata.description, /ordinary planning/);

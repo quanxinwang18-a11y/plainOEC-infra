@@ -1,13 +1,18 @@
 ---
 name: change-plan
-description: Produces or updates a task-level Spec and Design for an explicit OEC development task sourced from a PRD, Story, HANDOFF, issue, or other non-trivial change. It records the technical design without forcing an implementation plan. Do not use for ordinary implementation, a small obvious fix, product PRD authoring, or external task creation.
+description: Required first planning step for a non-trivial implementation request sourced from a PRD, Story, HANDOFF, issue, or other change; produces the smallest task-level Spec and Design. It records technical design without forcing an implementation plan. Do not use for ordinary implementation, a small obvious fix, product PRD authoring, or external task creation.
 argument-hint: "[taskRef, PRD, HANDOFF, issue, or technical change]"
 ---
 
 # Plan change
 
-This Skill prepares the smallest useful task context. It does not become a coding router or impose a
-fixed implementation sequence. Ordinary coding remains in the Main Session.
+This Skill prepares the smallest useful task context. It is the planning gate before business-code
+edits when a non-trivial implementation request is sourced from a PRD, Story, HANDOFF, issue, or
+other change document. A PRD-only implementation request is not an existing ready task: do not start
+coding until this Skill has produced a valid task pair and the user has confirmed the file plan.
+
+It does not become a general coding router or impose a fixed implementation sequence. Ordinary small
+coding remains in the Main Session.
 
 ## Resolve context
 
