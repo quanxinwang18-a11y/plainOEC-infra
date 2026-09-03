@@ -30,7 +30,7 @@ Marketplace 只负责发现和分发。Plugin 可独立安装、升级和卸载�
 | --- | --- |
 | Marketplace | `3.1.0` |
 | Product | `3.0.3` |
-| Engineering | `1.9.4` |
+| Engineering | `1.9.5` |
 | Dev Beta | `0.1.0` |
 | E3 | `1.0.2` |
 | Pipeline | `1.0.2` |
@@ -75,7 +75,7 @@ Marketplace 只负责发现和分发。Plugin 可独立安装、升级和卸载�
 
 当前本地证据包括：
 
-- `154/154` 自动测试通过（以当前工作树执行结果为准）；
+- `156/156` 自动测试通过（执行 `npm test`，以当前工作树结果为准）；
 - Marketplace 与六个 Plugin strict validation 通过的结构测试；
 - committed bundles 可在没有 Plugin 内 `node_modules` 的隔离环境运行；
 - E3/Pipeline 的路径、身份、并发、幂等和失败恢复具有自动测试；
@@ -110,6 +110,7 @@ git diff --check
 ## 文档入口
 
 - [QUICKSTART](QUICKSTART.md)：全部 Plugin 介绍、角色安装建议、首次安全使用和回退。
+- [OEC-infra 系统全景 HTML 地图](docs/architecture/oec-infra-system-map.html)：交互式查看当前分层、组件、能力方法、完整工作流、契约和证据边界。
 - [PlainOEC 文档地图](docs/README.md)：架构、策略、迁移、评审、审计和证据分类。
 - [OEC Dev 契约与实施计划](docs/architecture/oec-dev-contract-implementation-plan.md)：任务身份、
   Spec/Design、双空间来源和 Team Spec reminder 的事实源。

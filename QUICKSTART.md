@@ -100,14 +100,14 @@ claude plugin install \
 只读评审当前工作区 diff，优先报告会改变行为、兼容性或数据完整性的问题。
 ```
 
-对于来自 PRD、Story 或 HANDOFF 的非平凡研发任务，使用 `change-plan` 创建：
+对于来自 PRD、Story 或 HANDOFF 的非平凡研发任务，使用 `code-plan` 创建：
 
 ```text
 ai-docs/versions/vX.Y.Z/dev-task/<task-slug>/spec.md
 ai-docs/versions/vX.Y.Z/dev-task/<task-slug>/design.md
 ```
 
-已有任务需要实现时，直接描述 canonical `taskRef` 和实现目标，`change-implement` 会先检查任务身份、
+已有任务需要实现时，直接描述 canonical `taskRef` 和实现目标，`code-implement` 会先检查任务身份、
 Spec/Design 和相关 Team Specs，再在 Main Session 中实现和验证。
 
 任务身份统一使用 `versioned:vX.Y.Z/<task-slug>` 或 `change:YYYY-MM-DD-<slug>`。Product/Dev 双空间、
@@ -123,8 +123,8 @@ claude plugin install oec-dev-beta@plainOEC-infra --scope user
 
 - 需要演示交付时安装 `oec-common`。
 - 团队确实需要 repository-owned 工程事实时，可以用自然语言要求初始化或维护 Team Specs；所有写入仍需确认精确文件。
-- 需要隔离实现、fresh-eyes 或有边界研究时，使用 `@task-implementer`、`@change-checker` 或 `@task-researcher`。
-- 需要 Web 运行态验收时，使用 `@web-evaluator`，并提供已配置的 Playwright MCP 和非生产目标。
+- 需要隔离实现、fresh-eyes 或有边界研究时，使用 `@implementer`、`@checker` 或 `@researcher`。
+- 需要 Web 运行态验收时，使用 `@evaluator`，并提供已配置的 Playwright MCP 和非生产目标。
 
 `oec-dev-beta` 只在明确的已有 Web/full-stack taskRef 上使用，不属于普通 Dev 流程，也不自动提交或关闭任务。
 

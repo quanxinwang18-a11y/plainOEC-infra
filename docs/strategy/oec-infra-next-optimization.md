@@ -25,11 +25,11 @@
 
 - Product：显式 PM Agent + 三个以用户目标划分并带跨域负向边界的 PRD Skills。
 - Engineering：十个稳定工程 Skills + 四个可选 Agent；在不恢复总控流程的前提下，补充版本化任务的
-  `taskRef`、`spec.md`/`design.md`、Product/Dev 双空间来源、轻量 `change-implement` 执行入口和只读
+  `taskRef`、`spec.md`/`design.md`、Product/Dev 双空间来源、轻量 `code-implement` 执行入口和只读
   Spec reminder。稳定 Skills 均由精确自然语言意图发现，本地写入和 commit 仍有确认门。固定 Agent 委派
   和长时 Web 编排不属于稳定 Plugin；SessionStart 只注入不含能力清单、项目扫描或状态的静态行为约束。
   详细实施事实源为 `docs/architecture/oec-dev-contract-implementation-plan.md`。
-- Dev Beta：独立的 `oec-dev-beta@0.1.0`，只提供显式的实验性 `web-task-run`，复用宿主 Engineering
+- Dev Beta：独立的 `oec-dev-beta@0.1.0`，只提供显式的实验性 `web-develop`，复用宿主 Engineering
   Agent 和 `oec-spec`，不复制文件或 runtime。
 - E3：独立 MCP-only Plugin，提供十个受控工具。
 - Pipeline：独立 MCP-only Plugin，提供四个既有流水线工具。
@@ -42,7 +42,7 @@
 MCP 和项目文档。对于原来“Skill 读取说明后执行 Python/TypeScript 调平台”的能力，业务语义仍留在
 Skill，认证、远端选择、写入、幂等和状态验证则进入 MCP；完整拆分方法见第 5.3 节。
 
-当前完整自动测试全部通过，精确数量以 `npm test` 输出为准。E3 的 PRD 发布与研发任务主链已在授权非生产空间完成真实验收；Pipeline
+当前执行根目录 `npm test` 的 156/156 项自动测试全部通过。E3 的 PRD 发布与研发任务主链已在授权非生产空间完成真实验收；Pipeline
 当前只有 mock/integration 证据；Testing、UTP、SAE 尚未进入 Marketplace。
 
 ### 1.3 下一阶段建议
@@ -116,7 +116,7 @@ Skill，认证、远端选择、写入、幂等和状态验证则进入 MCP；�
 ```text
 产品业务仓库/
 ├── .claude/
-│   ├── agents/product-manager-agent.md
+│   ├── agents/<legacy-pm-agent>.md
 │   └── skills/                    # 25 个顶层项目 Skills
 ├── .oec-ai/
 │   ├── installation.json
@@ -129,14 +129,14 @@ Skill，认证、远端选择、写入、幂等和状态验证则进入 MCP；�
 ```text
 803 行 PM Agent
 → 25 个 Skill descriptions
-→ product-manager Mega Skill 再路由
+→ 旧 PM Mega Skill 再路由
 → Read 6 个内部 SKILL.md
 → Read references
 → Bash/Python
 → E3 HTTP API
 ```
 
-例如，PRD 生成、review、revise、finalize、split 分别存在顶层 Skill；`product-manager` 又根据阶段和路径做
+例如，PRD 生成、review、revise、finalize、split 分别存在顶层 Skill；旧 PM Mega Skill 又根据阶段和路径做
 二次路由；Agent 还保存入口表和流程规则。相同的“补充并发布这个需求”会在 Agent、阶段 Skill 和
 Mega Skill 三处被重新解释。
 
@@ -241,7 +241,7 @@ Claude Code 原生 Skill 的关键关系是：宿主发现 `<name>/SKILL.md` 的
 
 具体例子：
 
-- PM：`product-manager` 根入口把 6 个内部 `SKILL.md` 声明为执行规范。
+- PM：旧 PM 根入口把 6 个内部 `SKILL.md` 声明为执行规范。
 - Dev：`oec-dev-task` 要求动作前读取内部 `STAGE.md`，这些文件自身声明不是可注册 Skill。
 - Test：Dispatcher 明确说明 71 个子 Skill 不被平台发现，只能由根入口按路径 Read。
 - Test Agent：`AGENT.md` 要求 Read 目标 Agent Markdown 后“按文件指令执行”，不是原生 Agent 调用。
@@ -475,15 +475,15 @@ Skill 的价值不是替模型复述常识，而是在正确触发时提供模�
 
 | 处置 | 能力 | 决定与理由 |
 | --- | --- | --- |
-| 稳定保留 | `spec-manage`、`change-plan`、`code-review`、`change-close` | 分别拥有 Team Knowledge、任务契约、只读风险评审和最终收口边界 |
-| 稳定新增 | `change-implement` | 只执行已有 ready task，在 Main Session 中完成轻量实现和最新验证，不创建第二套状态 |
-| 稳定保留并开放发现 | `decision-challenge`、`design-prototype`、`legacy-doc-migrate` | 无远端写入；通过 description、精确路径计划和 Human 确认保护本地副作用 |
-| 稳定保留 | `test-first`、`failure-debug` | 仍有明确方法目标，但后续用 outcome eval 复核其相对主模型的增量 |
+| 稳定保留 | `knowledge-manage`、`code-plan`、`code-review`、`code-finish` | 分别拥有 Team Knowledge、任务契约、只读风险评审和最终收口边界 |
+| 稳定新增 | `code-implement` | 只执行已有 ready task，在 Main Session 中完成轻量实现和最新验证，不创建第二套状态 |
+| 稳定保留并开放发现 | `decision-review`、`prototype`、`docs-migrate` | 无远端写入；通过 description、精确路径计划和 Human 确认保护本地副作用 |
+| 稳定保留 | `test-first`、`debug` | 仍有明确方法目标，但后续用 outcome eval 复核其相对主模型的增量 |
 | 删除 | 原固定 Agent 委派入口 | 只是宿主 `@` picker 的顺序包装，没有独立 artifact 或 runtime contract |
 | 移出稳定分发 | 长时 Web/full-stack 编排 | 依赖 Playwright、成本不可预测且需要多轮 Agent 调度，独立放入 `oec-dev-beta` |
 
 因此稳定 `oec-dev` 为 10 个可由模型发现的 Skills 和 4 个 Agent；`oec-dev-beta` 只有一个
-`web-task-run`，保持 `disable-model-invocation: true`。稳定 Plugin 只保留真正不可逆的外部发布
+`web-develop`，保持 `disable-model-invocation: true`。稳定 Plugin 只保留真正不可逆的外部发布
 Skill 为 manual-only；本地写入和 commit 通过各自的确认门控制。
 
 本轮已有的 route eval 只能证明调用或抑制行为，不能证明真实用户收益。删除或继续保留通用方法 Skill
@@ -545,11 +545,11 @@ Claude Code 官方将这些能力放在不同扩展位置：[扩展模型](https
 
 | 旧能力集合 | 拆分判断 | 当前或目标落点 |
 | --- | --- | --- |
-| PM Agent + `product-manager` Mega Skill + PRD 阶段 Skills | PM 身份、写作、评审和发布是不同职责；内部 `SKILL.md` 路由没有独立价值 | `product-manager` Agent；writing/reviewing/publishing 三个 Skills；模板和契约归属各自 Skill |
+| PM Agent + 旧 PM Mega Skill + PRD 阶段 Skills | PM 身份、写作、评审和发布是不同职责；内部 `SKILL.md` 路由没有独立价值 | `prd-manager` Agent；`prd-write`、`prd-review`、`prd-publish` 三个 Skills；模板和契约归属各自 Skill |
 | 产品原型设计 | 不属于当前 PRD 写作、评审和发布主链 | 不随 Product 核心能力迁移；Engineering 仅提供用于回答一个交互或状态问题的 throwaway 决策原型，不生成产品原型资产 |
 | 通用产品/系统需求 CRUD | 会把受控发布扩张为平台管理 SDK，权限与失败面明显增大 | 不迁移；只保留 PRD 发布所需的受限 E3 原子操作 |
 | 文件写入策略 | Claude Code 已有原生文件工具，旧 Prompt 规则不提供额外领域价值 | 交还主 Agent；Skill 只保留产物契约和精确提交边界 |
-| `oec-dev-task` + `oec-dev-flow` | 大部分是现代 Coding Agent 已具备的通用研发流程；团队长期事实和已有任务执行仍有独立价值 | 删除总控流程；稳定 Engineering 保留十个聚焦 Skills（含 `change-implement`）和项目侧团队 Specs；固定 Agent 委派与长时 Web 编排不进入稳定 Plugin，后者只在独立 `oec-dev-beta` 中实验 |
+| `oec-dev-task` + `oec-dev-flow` | 大部分是现代 Coding Agent 已具备的通用研发流程；团队长期事实和已有任务执行仍有独立价值 | 删除总控流程；稳定 Engineering 保留十个聚焦 Skills（含 `code-implement`）和项目侧团队 Specs；固定 Agent 委派与长时 Web 编排不进入稳定 Plugin，后者只在独立 `oec-dev-beta` 中实验 |
 | `oec-manage-task` 及 E3 scripts | “何时同步哪些任务”需要业务语义；认证、候选、远端写入和恢复必须确定执行 | 研发规划留在主 Agent/Engineering Skills；平台动作进入 `oec-e3` 六个研发任务工具 |
 | PRD 发布说明 + E3 scripts | 子 PRD、Story 和发布确认属于产品语义；HTTP、record 和幂等属于平台执行 | publishing Skill 编排 `oec-e3` 四个 PRD 发布工具 |
 | `oec-dev-flow` 中的流水线步骤及平台 Client | 普通开发流程不应强制绑定流水线；运行既有流水线是独立高副作用能力 | 删除固定开发阶段；`oec-pipeline` 提供四个受控运行工具 |
@@ -699,7 +699,7 @@ Plugin 的粒度则由生命周期决定：当外部事实来源、认证权限�
 | Plugin | Agent | Skills | Hook | MCP | 作用与边界 |
 | --- | ---: | ---: | ---: | ---: | --- |
 | `oec-product@3.0.3` | 1 | 3 | 0 | 0 | PRD 写作、只读评审和发布语义；依赖 E3 |
-| `oec-dev@1.9.0` | 4 | 10 | 1 | 0 | 稳定任务执行、团队 Specs、决策、诊断、review 和 close |
+| `oec-dev@1.9.5` | 4 | 10 | 1 | 0 | 稳定任务执行、团队 Specs、决策、诊断、review 和 close |
 | `oec-dev-beta@0.1.0` | 0 | 1 | 0 | 0 | 实验性长时 Web/full-stack 编排 |
 | `oec-e3@1.0.2` | 0 | 0 | 0 | 1 | 4 个 PRD 发布工具 + 6 个研发任务工具 |
 | `oec-pipeline@1.0.2` | 0 | 0 | 0 | 1 | 既有 dev/test 流水线的受控 prepare/execute/status |
@@ -758,7 +758,7 @@ claude plugin install oec-common@plainOEC-infra --scope user
 
 *图：真实旅程证明创建、复用、进度和 read-back 主链；图中同时标明不能由此推出的结论。*
 
-当前完整自动测试全部通过，精确数量以 `npm test` 输出为准。E3 的真实验收不是“工具能够注册”或“mock 返回成功”，而是完成了图中的远端
+当前执行根目录 `npm test` 的 156/156 项自动测试全部通过。E3 的真实验收不是“工具能够注册”或“mock 返回成功”，而是完成了图中的远端
 旅程。
 
 [脱敏验收记录](../evidence/e3-platform-3.0.0-real-acceptance.md)没有保存 token、远端内部 ID 或原始
@@ -1015,12 +1015,12 @@ OEC-infra 后续不应继续做“更多 Prompt、更多角色路由、更多统
 | --- | --- |
 | Marketplace | `3.1.0` release candidate |
 | Product | `3.0.3` release candidate，未创建新 tag |
-| Engineering | `1.9.0` release candidate，未创建新 tag |
+| Engineering | `1.9.5` release candidate，未创建新 tag |
 | Dev Beta | `0.1.0` experimental candidate，未创建新 tag |
 | E3 | `1.0.2` release candidate，未创建新 tag |
 | Pipeline | `1.0.2` release candidate，未创建新 tag |
 | Common | `0.3.0` release candidate，未创建新 tag |
-| 当前自动测试 | 全部通过；精确数量以 `npm test` 输出为准 |
+| 当前自动测试 | `npm test` 通过，156/156 tests |
 | Skill 行为 eval | 15 个 Skill 的正负场景已可执行；Dev Beta 长时 Coding 的 Agent/Playwright outcome 仍待验收 |
 | 远端发布 | LICENSE/notice Owner 决定及外部写入证据完成前阻塞；不创建或推送新 tag |
 

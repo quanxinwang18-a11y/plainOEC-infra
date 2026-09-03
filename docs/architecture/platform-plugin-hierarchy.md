@@ -1,6 +1,6 @@
 # 平台 Plugin 层级与 MCP 迁移设计
 
-> 当前候选实现：Marketplace `3.1.0`、`oec-product@3.0.3`、`oec-dev@1.9.4`、`oec-dev-beta@0.1.0`、
+> 当前候选实现：Marketplace `3.1.0`、`oec-product@3.0.3`、`oec-dev@1.9.5`、`oec-dev-beta@0.1.0`、
 > `oec-e3@1.0.2`、`oec-pipeline@1.0.2`、`oec-common@0.3.0`。本文区分“代码和自动验证已完成”与“真实外部平台已验收”；
 > SAE、UTP 和 `oec-testing` 仍未进入 Marketplace。
 
@@ -76,7 +76,7 @@ flowchart TB
 | Plugin | Agent | Skills | Hook | MCP | 责任 |
 | --- | ---: | ---: | ---: | ---: | --- |
 | `oec-product@3.0.3` | 1 | 3 | 0 | 0 | PRD 领域知识和发布语义 |
-| `oec-dev@1.9.4` | 4 | 11 | 1 | 0 | 稳定 OEC Dev 任务执行、Specs、模块上下文和工程辅助；含一个 SessionStart bootstrap |
+| `oec-dev@1.9.5` | 4 | 11 | 1 | 0 | 稳定 OEC Dev 任务执行、Specs、模块上下文和工程辅助；含一个 SessionStart bootstrap |
 | `oec-dev-beta@0.1.0` | 0 | 1 | 0 | 0 | 实验性长时 Web/full-stack 编排；复用宿主 Engineering 能力 |
 | `oec-e3@1.0.2` | 0 | 0 | 0 | 1 | E3 PRD 发布与研发任务执行 |
 | `oec-pipeline@1.0.2` | 0 | 0 | 0 | 1 | 既有 dev/test 流水线受控执行 |
@@ -91,8 +91,10 @@ plainOEC-infra/
 ├── .claude-plugin/marketplace.json
 ├── packages/prd-artifact-contract/       # 构建期共享确定性契约
 ├── oec-product/
-│   ├── agents/product-manager.md
-│   └── skills/{writing,reviewing,publishing}-prds*/
+│   ├── agents/prd-manager.md
+│   ├── skills/prd-write/
+│   ├── skills/prd-review/
+│   └── skills/prd-publish/
 ├── oec-dev/
 │   ├── skills/
 │   ├── agents/
@@ -100,7 +102,7 @@ plainOEC-infra/
 │   └── dist/oec-spec.mjs
 ├── oec-dev-beta/
 │   ├── .claude-plugin/plugin.json
-│   └── skills/web-task-run/
+│   └── skills/web-develop/
 ├── oec-e3/
 │   ├── .mcp.json
 │   ├── servers/e3/
@@ -124,12 +126,12 @@ E3 Server 在构建时导入同一实现，再分别生成无外部依赖的 bun
 ### Product
 
 ```text
-product-manager Agent
+prd-manager Agent
 ├── 预加载 prd-write
 ├── 预加载 prd-review
-└── 不预加载 prd-toe3
+└── 不预加载 prd-publish
 
-prd-toe3
+prd-publish
 └── 显式调用 oec-e3 MCP
 ```
 
@@ -145,8 +147,8 @@ plan、幂等和远端校验全部属于 `oec-e3`。
 统一身份由 `oec-spec task resolve` 处理。Claude SessionStart 只注入静态行为约束，不扫描项目或承担
 Router；Spec reminder 只读且不创建项目状态。
 
-`oec-dev-beta` 是独立的实验性 Plugin，只提供 `web-task-run`。它要求宿主已经发现 `oec-dev`
-的 `task-implementer`、`change-checker`、`web-evaluator` 和 `oec-spec`，不复制这些文件或 runtime；Skill 保持显式调用，
+`oec-dev-beta` 是独立的实验性 Plugin，只提供 `web-develop`。它要求宿主已经发现 `oec-dev`
+的 `implementer`、`checker`、`evaluator` 和 `oec-spec`，不复制这些文件或 runtime；Skill 保持显式调用，
 只面向本地或内部非生产 Web/full-stack 目标。
 
 开发者按需组合：
@@ -160,12 +162,12 @@ claude plugin install oec-pipeline@plainOEC-infra
 
 ## 5. 实验性 Dev Beta 边界
 
-`oec-dev-beta` 不拥有新的 Agent、MCP、Hook 或 runtime。`web-task-run` 只在用户明确调用时启动，
-先校验已有 taskRef、任务 Spec/Design、Playwright 和非生产目标，再复用宿主的 `task-implementer` 与
-`web-evaluator`，通过 bounded cycles 完成运行态验证，最后可复用 `change-checker`。它不创建项目状态、提交、
+`oec-dev-beta` 不拥有新的 Agent、MCP、Hook 或 runtime。`web-develop` 只在用户明确调用时启动，
+先校验已有 taskRef、任务 Spec/Design、Playwright 和非生产目标，再复用宿主的 `implementer` 与
+`evaluator`，通过 bounded cycles 完成运行态验证，最后可复用 `checker`。它不创建项目状态、提交、
 部署或更新 E3/Pipeline。
 
-稳定 `oec-dev` 的 `change-implement` 只负责 Main Session 的轻量任务执行；它不自动转入 Beta
+稳定 `oec-dev` 的 `code-implement` 只负责 Main Session 的轻量任务执行；它不自动转入 Beta
 长时循环。两者的职责和发布周期独立。
 
 ## 6. E3 平台边界
@@ -323,7 +325,7 @@ plugin-scoped 身份会变化，因此 Product 使用主版本升级。
 | 六个研发任务工具 | 已验收 | 自动测试、mock journey 与“OBU-AI提效组”真实主链均完成 |
 | 四个 Pipeline 工具 | 已实现 | 自动测试和 mock/integration 已完成；未执行真实 Pipeline |
 | Product dependency cutover | 已完成 | Product 0 MCP；隔离安装自动解析 E3 dependency |
-| Engineering 1.9.0 task execution | 已完成 | `change-implement`、十个稳定 Skills、四个 Agent 和静态 Hook |
+| Engineering 1.9.5 task execution | 已完成 | `code-implement`、十个稳定 Skills、四个 Agent 和静态 Hook |
 | Dev Beta 0.1.0 | 已实现 | 单个显式长时 Skill；复用宿主 Agent/runtime，真实 Web outcome 待验收 |
 | Common HTML Slides | 已完成 | 1 个零依赖 Skill；真实浏览器验证 overview、hash 与键盘导航 |
 | SAE、UTP 准入 | 审计中 | 不创建空 Plugin，不进入 Marketplace |

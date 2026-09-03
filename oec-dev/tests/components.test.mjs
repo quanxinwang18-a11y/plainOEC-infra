@@ -50,24 +50,24 @@ function compact(value) {
   return value.replace(/\s+/g, ' ').trim();
 }
 
-const bootstrapSkill = 'using-oec-dev';
+const bootstrapSkill = 'guide';
 const expectedSkills = [
-  'change-close',
-  'change-implement',
-  'change-plan',
+  'code-finish',
+  'code-implement',
+  'code-plan',
   'code-review',
-  'decision-challenge',
-  'design-prototype',
-  'failure-debug',
-  'legacy-doc-migrate',
-  'spec-manage',
+  'decision-review',
+  'prototype',
+  'debug',
+  'docs-migrate',
+  'knowledge-manage',
   'test-first',
 ];
 
 test('engineering plugin exposes ten task Skills, one bootstrap Skill, four Agents, and one static Hook', () => {
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-dev');
-  assert.equal(manifest.version, '1.9.4');
+  assert.equal(manifest.version, '1.9.5');
   // Agents and Skills are auto-discovered from directories, not declared in plugin.json.
   for (const key of ['skills', 'agents', 'mcpServers', 'commands', 'hooks']) assert.equal(key in manifest, false);
 
@@ -78,7 +78,7 @@ test('engineering plugin exposes ten task Skills, one bootstrap Skill, four Agen
   assert.deepEqual(discovered, [...expectedSkills, bootstrapSkill].sort());
   assert.equal(existsSync(resolve(pluginRoot, `skills/${bootstrapSkill}/SKILL.md`)), true);
   assert.equal(existsSync(resolve(pluginRoot, 'skills/delegate-agents')), false);
-  assert.equal(existsSync(resolve(pluginRoot, 'skills/web-task-run')), false);
+  assert.equal(existsSync(resolve(pluginRoot, 'skills/web-develop')), false);
 
   for (const path of ['.mcp.json', 'commands', 'settings.json', 'references', 'assets', 'lib']) {
     assert.equal(existsSync(resolve(pluginRoot, path)), false, `${path} must not exist at plugin root`);
@@ -90,7 +90,7 @@ test('engineering plugin exposes ten task Skills, one bootstrap Skill, four Agen
     .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
     .map((entry) => entry.name)
     .sort();
-  assert.deepEqual(agentFiles, ['change-checker.md', 'task-implementer.md', 'task-researcher.md', 'web-evaluator.md']);
+  assert.deepEqual(agentFiles, ['checker.md', 'evaluator.md', 'implementer.md', 'researcher.md']);
 
   const marketplace = JSON.parse(readFileSync(resolve(pluginRoot, '..', '.claude-plugin', 'marketplace.json'), 'utf8'));
   const packageManifest = JSON.parse(readFileSync(resolve(pluginRoot, '..', 'package.json'), 'utf8'));
@@ -131,19 +131,24 @@ test('SessionStart injects bounded behavioral guidance without duplicating capab
   assert.equal(payload.hookSpecificOutput.hookEventName, 'SessionStart');
   const context = payload.hookSpecificOutput.additionalContext;
   assert.match(context, /^<EXTREMELY-IMPORTANT>/);
+  assert.match(context, /The user brings a goal, not an internal OEC process/);
+  assert.match(context, /does not need to know or name Skills/);
   assert.match(context, /If the user is unsure what to do/);
-  assert.match(context, /using-oec-dev/);
+  assert.match(context, /two or three concrete, evidence-backed next steps/);
+  assert.match(context, /guide/);
   assert.match(context, /Before any response or action/);
-  assert.match(context, /change-plan/);
-  assert.match(context, /change-implement/);
+  assert.match(context, /code-plan/);
+  assert.match(context, /code-implement/);
   assert.match(context, /never make the user act as the router/);
   assert.match(context, /before any business-code edit/);
   assert.match(context, /proactively identify the durable document that may need review/);
+  assert.match(context, /Do not initialize or update durable engineering knowledge merely because a PRD or code change exists/);
+  assert.match(context, /Do not force a fixed phase, status, task split/);
   assert.match(context, /smallest sufficient change/);
   assert.match(context, /observable success criteria/);
   assert.ok(context.length <= 5000, `SessionStart context is too large: ${context.length} characters`);
   assert.ok(context.trim().split(/\s+/).length <= 600, 'SessionStart context exceeds the word budget');
-  for (const name of [...expectedSkills.filter((name) => !['change-plan', 'change-implement'].includes(name)), 'change-checker', 'web-evaluator', 'task-implementer', 'task-researcher']) {
+  for (const name of [...expectedSkills.filter((name) => !['code-plan', 'code-implement'].includes(name)), 'checker', 'evaluator', 'implementer', 'researcher']) {
     assert.equal(context.includes(name), false, `SessionStart must not duplicate capability metadata: ${name}`);
   }
   assert.doesNotMatch(context, /oec-spec|ai-docs|taskRef|Skill count|Agent count/);
@@ -166,12 +171,12 @@ test('Claude Agent sources deterministically generate experimental Codex mirrors
     assert.equal(compact(claude.metadata.description), compact(codex.description));
     assert.equal(claude.body, codex.instructions);
   }
-  const implement = claudeAgent('task-implementer');
+  const implement = claudeAgent('implementer');
   assert.match(compact(implement.metadata.description), /existing taskRef or legacy change ID/);
   assert.match(implement.body, /Tests: <command and pass\/fail\/not run>/);
   assert.doesNotMatch(implement.body, /oec-spec task resolve/);
   assert.doesNotMatch(implement.body, /## Implementation complete/);
-  const check = claudeAgent('change-checker');
+  const check = claudeAgent('checker');
   assert.match(compact(check.metadata.description), /may modify code/);
   assert.match(compact(check.metadata.description), /Do not use for a read-only code review/);
   assert.match(check.body, /git status --short/);
@@ -179,10 +184,10 @@ test('Claude Agent sources deterministically generate experimental Codex mirrors
   assert.match(check.body, /relevant untracked files/);
   assert.match(check.body, /Tests: <command and pass\/fail\/not run>/);
   assert.doesNotMatch(check.body, /oec-spec remind/);
-  const research = claudeAgent('task-researcher');
+  const research = claudeAgent('researcher');
   assert.match(compact(research.metadata.description), /existing taskRef or legacy change ID/);
   assert.match(research.body, /Do not create or guess a task package/);
-  const evaluate = claudeAgent('web-evaluator');
+  const evaluate = claudeAgent('evaluator');
   assert.ok(evaluate.metadata.tools.includes('mcp__playwright__browser_navigate'));
   assert.ok(evaluate.metadata.tools.includes('mcp__playwright__browser_snapshot'));
   assert.equal(evaluate.metadata.tools.some((tool) => tool.includes('*')), false);
@@ -194,7 +199,7 @@ test('Claude Agent sources deterministically generate experimental Codex mirrors
   assert.equal('permissionMode' in evaluate.metadata, false);
   assert.match(evaluate.body, /task Spec's `AC-NNN` acceptance items/);
   assert.match(evaluate.body, /Product depth/);
-  assert.match(evaluate.body, /Working tree changed by web-evaluator/);
+  assert.match(evaluate.body, /Working tree changed by evaluator/);
 });
 
 test('skill descriptions make positive and negative judgment boundaries explicit', () => {
@@ -206,33 +211,35 @@ test('skill descriptions make positive and negative judgment boundaries explicit
     assert.ok(item.text.split('\n').length < 90, `${name} entrypoint should remain focused`);
   }
 
-  assert.match(skill('spec-manage').metadata.description, /durable project engineering Specs and ADRs/);
-  assert.match(skill('change-implement').metadata.description, /existing development task/);
-  assert.match(skill('change-implement').metadata.description, /ready Spec\/Design pair/);
-  assert.match(skill('change-implement').metadata.description, /PRD-only implementation request/);
-  assert.match(skill('change-implement').body, /PRD.*not an implementation authorization/si);
-  assert.match(skill('legacy-doc-migrate').metadata.description, /legacy repository/);
-  assert.match(skill('change-plan').metadata.description, /task-level Spec and Design/);
-  assert.match(skill('change-plan').metadata.description, /technical design/);
-  assert.match(skill('change-plan').metadata.description, /Required first planning step/);
-  assert.match(skill('change-plan').body, /planning gate before business-code/);
+  assert.match(skill('knowledge-manage').metadata.description, /establish, preserve, reconcile, or refresh durable engineering knowledge/);
+  assert.match(skill('code-implement').metadata.description, /Continues planned development/);
+  assert.match(skill('code-implement').metadata.description, /existing ready task/);
+  assert.match(skill('code-implement').metadata.description, /plan a PRD-only request/);
+  assert.match(skill('code-implement').body, /PRD.*not an implementation authorization/si);
+  assert.match(skill('docs-migrate').metadata.description, /legacy repository/);
+  assert.match(skill('code-plan').metadata.description, /first planning step/);
+  assert.match(skill('code-plan').metadata.description, /confirmed scope, acceptance, technical direction/);
+  assert.match(skill('code-plan').metadata.description, /internal task documents/);
+  assert.match(skill('code-plan').body, /planning gate before business-code/);
   const bootstrap = readFileSync(resolve(pluginRoot, `skills/${bootstrapSkill}/SKILL.md`), 'utf8');
+  assert.match(bootstrap, /The user brings a goal, not an internal OEC process/);
   assert.match(bootstrap, /Before any response or action/);
-  assert.match(bootstrap, /PRD.*change-plan/s);
-  assert.match(bootstrap, /ready.*change-implement/s);
-  assert.match(skill('change-plan').metadata.description, /small obvious fix/);
-  assert.match(skill('decision-challenge').metadata.description, /asks to challenge/);
-  assert.match(skill('decision-challenge').metadata.description, /ordinary planning/);
-  assert.match(skill('change-implement').metadata.description, /Do not use to create task artifacts/);
-  assert.match(skill('change-implement').body, /Main Session/);
-  assert.match(skill('change-implement').body, /task check --dev-root/);
-  assert.match(skill('change-implement').body, /Do not dispatch an Agent by default/);
-  assert.match(skill('design-prototype').metadata.description, /throwaway/);
-  assert.match(skill('design-prototype').metadata.description, /production features/);
+  assert.match(bootstrap, /PRD.*code-plan/s);
+  assert.match(bootstrap, /ready.*code-implement/s);
+  assert.match(bootstrap, /Let the Skill choose any necessary internal planning or knowledge artifacts/);
+  assert.match(skill('code-plan').metadata.description, /small obvious fix/);
+  assert.match(skill('decision-review').metadata.description, /asks to challenge/);
+  assert.match(skill('decision-review').metadata.description, /ordinary planning/);
+  assert.match(skill('code-implement').metadata.description, /Do not use to plan a PRD-only request/);
+  assert.match(skill('code-implement').body, /Main Session/);
+  assert.match(skill('code-implement').body, /task check --dev-root/);
+  assert.match(skill('code-implement').body, /Do not dispatch an Agent by default/);
+  assert.match(skill('prototype').metadata.description, /throwaway/);
+  assert.match(skill('prototype').metadata.description, /production features/);
   assert.match(skill('test-first').metadata.description, /explicitly asks for TDD/);
   assert.match(skill('test-first').metadata.description, /merely because.*should have tests/);
-  assert.match(skill('failure-debug').metadata.description, /root cause is unclear/);
-  assert.match(skill('failure-debug').metadata.description, /obvious local error/);
+  assert.match(skill('debug').metadata.description, /root cause is unclear/);
+  assert.match(skill('debug').metadata.description, /obvious local error/);
   assert.match(skill('code-review').metadata.description, /read-only/);
   assert.match(skill('code-review').metadata.description, /Do not use to implement/);
 });
@@ -246,21 +253,21 @@ test('engineering Skill invocation boundaries remain explicit and no Skill recre
     assert.doesNotMatch(item.text, /OAuth|HTTP payload|token cache|partial resume/i);
     assert.equal(item.text.includes(forbiddenAgentSlash), false);
   }
-  const managing = skill('spec-manage');
+  const managing = skill('knowledge-manage');
   assert.equal(managing.metadata['disable-model-invocation'], undefined);
-  assert.equal(openaiSkill('spec-manage').policy, undefined);
-  for (const name of ['decision-challenge', 'change-close', 'legacy-doc-migrate', 'design-prototype']) {
+  assert.equal(openaiSkill('knowledge-manage').policy, undefined);
+  for (const name of ['decision-review', 'code-finish', 'docs-migrate', 'prototype']) {
     assert.equal(skill(name).metadata['disable-model-invocation'], undefined);
     assert.equal(openaiSkill(name).policy, undefined);
   }
 
-  const closing = skill('change-close');
+  const closing = skill('code-finish');
   assert.match(closing.metadata.description, /asks to close/);
   assert.match(closing.body, /Invoking this Skill does not authorize a commit/);
   assert.match(closing.body, /git add -- <exact code and engineering-document paths>/);
   assert.match(closing.body, /git commit -m .* -- <same exact paths>/);
 
-  const migration = skill('legacy-doc-migrate');
+  const migration = skill('docs-migrate');
   assert.match(migration.body, /preserve every existing `ai-docs` file in place/i);
   assert.match(migration.body, /Do not adopt E3 records/);
   assert.match(migration.body, /Do not create a migration state file/);
@@ -269,7 +276,7 @@ test('engineering Skill invocation boundaries remain explicit and no Skill recre
 });
 
 test('newly discoverable Skills have natural-language positive evals', () => {
-  for (const name of ['decision-challenge', 'change-close', 'legacy-doc-migrate', 'design-prototype']) {
+  for (const name of ['decision-review', 'code-finish', 'docs-migrate', 'prototype']) {
     const prompt = readFileSync(resolve(pluginRoot, 'evals', `${name}-positive/prompt.md`), 'utf8');
     assert.doesNotMatch(prompt, /\/oec-dev:/, `${name} positive eval should exercise natural-language discovery`);
   }
@@ -278,9 +285,9 @@ test('newly discoverable Skills have natural-language positive evals', () => {
 test('public Skill and Agent identifiers use scoped concise names without an oec prefix', () => {
   for (const name of expectedSkills) {
     assert.doesNotMatch(name, /^oec-/);
-    assert.match(name, /^(?:change|code|decision|design|failure|legacy|spec|test)-/);
+    assert.match(name, /^(?:code-|docs-|knowledge-|test-)|^decision-review$|^(?:debug|guide|prototype)$/);
   }
-  for (const name of ['change-checker', 'web-evaluator', 'task-implementer', 'task-researcher']) {
+  for (const name of ['checker', 'evaluator', 'implementer', 'researcher']) {
     assert.doesNotMatch(name, /^oec-/);
     assert.equal(claudeAgent(name).metadata.name, name);
     assert.equal(codexAgent(name).description.length > 0, true);
@@ -288,42 +295,42 @@ test('public Skill and Agent identifiers use scoped concise names without an oec
 });
 
 test('OEC Dev task assets expose one taskRef and paired Spec/Design contract', () => {
-  const development = skill('change-implement');
+  const development = skill('code-implement');
   assert.equal(development.metadata['disable-model-invocation'], undefined);
   assert.match(development.body, /oec-spec task check/);
   assert.match(development.body, /Do not dispatch an Agent by default/);
   assert.match(development.body, /Do not commit, push, merge/);
-  const planning = skill('change-plan');
+  const planning = skill('code-plan');
   assert.match(planning.body, /oec-spec task resolve/);
   assert.match(planning.body, /oec-spec task check/);
   assert.match(planning.body, /ai-docs\/versions\/vX\.Y\.Z\/dev-task/);
   assert.match(planning.body, /task-artifact-contract/);
   assert.match(planning.body, /Product Root/);
-  assert.match(readFileSync(resolve(pluginRoot, 'skills/change-plan/references/task-artifact-contract.md'), 'utf8'), /task_ref/);
-  assert.match(readFileSync(resolve(pluginRoot, 'skills/change-plan/assets/task-spec.md'), 'utf8'), /artifact: task-spec/);
-  assert.match(readFileSync(resolve(pluginRoot, 'skills/change-plan/assets/task-design.md'), 'utf8'), /artifact: task-design/);
-  const managing = skill('spec-manage');
+  assert.match(readFileSync(resolve(pluginRoot, 'skills/code-plan/references/task-artifact-contract.md'), 'utf8'), /task_ref/);
+  assert.match(readFileSync(resolve(pluginRoot, 'skills/code-plan/assets/task-spec.md'), 'utf8'), /artifact: task-spec/);
+  assert.match(readFileSync(resolve(pluginRoot, 'skills/code-plan/assets/task-design.md'), 'utf8'), /artifact: task-design/);
+  const managing = skill('knowledge-manage');
   assert.equal(managing.metadata['disable-model-invocation'], undefined);
   assert.match(managing.body, /oec-spec remind/);
   const reviewing = skill('code-review');
   assert.match(reviewing.body, /oec-spec remind/);
   assert.doesNotMatch(reviewing.body, /oec-spec task resolve/);
-  const closing = skill('change-close');
+  const closing = skill('code-finish');
   assert.match(closing.body, /oec-spec task check/);
   assert.match(closing.body, /oec-spec remind/);
   assert.doesNotMatch(closing.body, /oec-spec task resolve/);
-  assert.equal(existsSync(resolve(pluginRoot, 'skills/change-close/assets/evidence.md')), false);
+  assert.equal(existsSync(resolve(pluginRoot, 'skills/code-finish/assets/evidence.md')), false);
 });
 
 test('team Spec assets encode conditional artifacts and safe project ownership', () => {
-  const managing = skill('spec-manage');
+  const managing = skill('knowledge-manage');
   assert.match(managing.body, /absent category is better than an empty placeholder/);
   assert.match(managing.body, /oec-spec check --workspace/);
   assert.doesNotMatch(managing.metadata.description, /Creates, migrates/);
 
   const contract = readFileSync(resolve(
     pluginRoot,
-    'skills/spec-manage/references/team-spec-contract.md',
+    'skills/knowledge-manage/references/team-spec-contract.md',
   ), 'utf8');
   assert.match(contract, /specs\/.*system as it is now/s);
   assert.match(contract, /requires `spec\.md` plus `design\.md`/);

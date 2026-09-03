@@ -1,6 +1,6 @@
 # OEC Dev 契约与实施计划
 
-- **Status**: Implemented candidate — Engineering 1.9.4 and Dev Beta 0.1.0 follow-up pending commit and release decision
+- **Status**: Implemented candidate — Engineering 1.9.5 and Dev Beta 0.1.0 follow-up pending commit and release decision
 - **Owner**: `oec-dev` / OEC Dev
 - **Scope**: `plainOEC-infra/oec-dev` (stable execution) and `plainOEC-infra/oec-dev-beta` (experimental long-running orchestration)
 - **Last updated**: 2026-09-02
@@ -24,7 +24,7 @@ OEC Dev 是一个模块感知的工程上下文和交付能力，不是固定的
 3. 明确 Product Root 与 Dev Root，并安全解析跨空间来源；
 4. 在自然检查点对可能过期的 Team Specs 给出只读提醒；
 5. 通过静态 SessionStart 提示强化不确定性管理、Skill 匹配、Spec 复核和验证闭环；
-6. 为已有 ready 任务提供轻量的 `change-implement` Main Session 执行入口。
+6. 为已有 ready 任务提供轻量的 `code-implement` Main Session 执行入口。
 7. 对来自 PRD/Story/HANDOFF 的非平凡实现请求提供明确的规划门，避免需求文档被直接当作代码修改授权。
 8. 通过 SessionStart 注入 bootstrap Skill，让模型在首次行动前遵循 Skill 发现和任务交接规则。
 9. 在没有长期 Team Spec 根时允许 PRD 任务使用空上下文继续规划，同时保留缺失根的显式提醒。
@@ -38,7 +38,7 @@ OEC Dev 是一个模块感知的工程上下文和交付能力，不是固定的
 - Team Specs 描述长期当前事实，不能替代任务 Spec；
 - E3/Pipeline 仍由独立 MCP 处理外部副作用；
 - Plugin 安装不创建项目 `.claude`、`.codex` 或 `ai-docs`；
-- SessionStart 注入 `using-oec-dev` bootstrap 的稳定行为约束，不承载项目扫描、任务选择或状态；
+- SessionStart 注入 `guide` bootstrap 的稳定行为约束，不承载项目扫描、任务选择或状态；
 - 所有写入都遵循业务仓库所有权和显式路径确认。
 
 ### 1.3 非目标
@@ -101,7 +101,7 @@ change:2026-09-02-cache-fix
 ```
 
 - `versioned:<version>/<task-slug>` 对应版本化 `dev-task` 目录；
-- `change:<change-id>` 对应非版本化 `engineering/changes` 目录。
+- `change:<change-id>` 对应非版本化 `ai-docs/Spec/changes/<change-id>/` 目录。
 
 `featureName`、`task-slug` 和外部 E3 `changeId` 是不同字段：
 
@@ -385,13 +385,13 @@ Design 不要求固定 API、数据库、部署、性能等章节，也不复制
 - Spec 中存在已确认的 `CQ-*` 时，Design 必须引用；不存在时不创建确认矩阵；
 - 任务目录内不得出现第二份 Spec/Design 的 `final`、`v2` 或 `new` 副本。
 
-### 5.4 `change-implement` 执行契约
+### 5.4 `code-implement` 执行契约
 
-`change-implement` 是稳定 Engineering Plugin 的轻量执行入口，只处理已有且可验证的任务。它不是
+`code-implement` 是稳定 Engineering Plugin 的轻量执行入口，只处理已有且可验证的任务。它不是
 任务创建器、Agent 委派器或固定状态机。
 
 当请求只提供 PRD、Story、HANDOFF 或其他需求文档时，该文档属于来源，不属于 ready 任务；非平凡实现
-必须先经过 `change-plan`，在任务 Spec/Design 生成、路径展示并取得确认后，才允许进入实现。小而明确
+必须先经过 `code-plan`，在任务 Spec/Design 生成、路径展示并取得确认后，才允许进入实现。小而明确
 的直接修复不受此规划门影响。
 
 触发必须同时满足：
@@ -499,13 +499,13 @@ command
 
 ### 6.3 调用点
 
-- `change-plan`：模块选择后提醒相关长期事实；
+- `code-plan`：模块选择后提醒相关长期事实；
 - `code-review`：读取 diff 后报告候选；
-- `change-close`：收口前执行提醒，展示可能更新的精确路径；
-- `spec-manage remind`：用户显式请求时单独执行。
+- `code-finish`：收口前执行提醒，展示可能更新的精确路径；
+- `knowledge-manage remind`：用户显式请求时单独执行。
 
-`change-checker` 不重复执行 reminder；它只检查当前代码与已有契约。这样长时流程中的 fresh check 不会与随后
-的 `change-close` 重复报告同一批候选。Reminder 不通过 Hook、后台任务或状态文件执行；静态
+`checker` 不重复执行 reminder；它只检查当前代码与已有契约。这样长时流程中的 fresh check 不会与随后
+的 `code-finish` 重复报告同一批候选。Reminder 不通过 Hook、后台任务或状态文件执行；静态
 SessionStart 只提示模型主动识别复核时机。Direct Coding 不调用这些检查点时，不应被打断。
 
 ## 7. Skill 和 Agent 约定
@@ -516,22 +516,22 @@ SessionStart 只提示模型主动识别复核时机。Direct Coding 不调用�
 
 | Skill | Model invocation | 责任 |
 | --- | --- | --- |
-| `using-oec-dev` | SessionStart bootstrap；不作为业务任务入口 | 要求相关 Skill 先于响应或行动，并保持规划到实现的交接 |
-| `change-plan` | 可自动发现；PRD/Story/非平凡实现请求的首个规划门 | 解析来源并管理任务 Spec/Design |
-| `change-implement` | 可自动发现，仅限已有且 ready 的任务 | 在 Main Session 按任务边界实现并验证；PRD-only 请求先回到规划门 |
+| `guide` | SessionStart bootstrap；不作为业务任务入口 | 以用户目标指导 Skill 发现、下一步交互，并保持规划到实现的交接 |
+| `code-plan` | 可自动发现；PRD/Story/非平凡实现请求的首个规划门 | 解析来源并管理任务 Spec/Design |
+| `code-implement` | 可自动发现，仅限已有且 ready 的任务 | 在 Main Session 按任务边界实现并验证；PRD-only 请求先回到规划门 |
 | `code-review` | 可自动发现 | 只读 Review，并调用 reminder |
-| `spec-manage` | 可自动发现，仅限明确的 Spec/ADR 管理意图 | 写入长期 Spec/ADR；写前确认精确路径，`remind` 子模式只读 |
+| `knowledge-manage` | 可自动发现，仅限明确的 Spec/ADR 管理意图 | 写入长期 Spec/ADR；写前确认精确路径，`remind` 子模式只读 |
 | `test-first` | 仅明确 TDD 意图 | 可选测试方式 |
-| `failure-debug` | 根因不清时 | 可选排障 |
-| `decision-challenge` | 用户明确要求挑战决定时 | 对抗性决策检查；只读 |
-| `design-prototype` | 用户要求 throwaway 原型时 | 临时原型和 Human 方案选择 |
-| `legacy-doc-migrate` | 用户要求迁移旧工程知识时 | 一次性迁移，保留旧文件 |
-| `change-close` | 用户要求结束工程工作时 | 最终验证、知识收口和可选提交 |
+| `debug` | 根因不清时 | 可选排障 |
+| `decision-review` | 用户明确要求挑战决定时 | 对抗性决策检查；只读 |
+| `prototype` | 用户要求 throwaway 原型时 | 临时原型和 Human 方案选择 |
+| `docs-migrate` | 用户要求迁移旧工程知识时 | 一次性迁移，保留旧文件 |
+| `code-finish` | 用户要求结束工程工作时 | 最终验证、知识收口和可选提交 |
 
 稳定 Plugin 的 Skills 均可由模型根据精确 description 主动发现；本地写入仍需文件确认，commit 仍需
 单独确认。外部平台写入不属于这些 Skills。
 
-`delegate-agents` 不再作为 Skill 提供；单个 Agent 使用宿主原生 picker。`web-task-run` 移至
+`delegate-agents` 不再作为 Skill 提供；单个 Agent 使用宿主原生 picker。`web-develop` 移至
 独立的实验性 `oec-dev-beta` Plugin，保持 `disable-model-invocation: true`。
 
 Supporting references、assets、scripts 和 bundle 不作为独立 Skill 暴露。
@@ -540,10 +540,10 @@ Supporting references、assets、scripts 和 bundle 不作为独立 Skill 暴露
 
 保留当前四个 Agent，不新增 Planner/Architect/Dev Orchestrator：
 
-- `task-implementer`：接受 `taskRef`，读取 Spec/Design，只修改代码边界；
-- `change-checker`：接受可选 `taskRef`，检查 diff、任务契约和模块事实，可修复明确的代码机械问题；
-- `task-researcher`：接受已有 `taskRef`，只把研究写入对应任务的 `research/`；
-- `web-evaluator`：显式用于非生产 Web 运行态验证，不修改源码或工程文档。
+- `implementer`：接受 `taskRef`，读取 Spec/Design，只修改代码边界；
+- `checker`：接受可选 `taskRef`，检查 diff、任务契约和模块事实，可修复明确的代码机械问题；
+- `researcher`：接受已有 `taskRef`，只把研究写入对应任务的 `research/`；
+- `evaluator`：显式用于非生产 Web 运行态验证，不修改源码或工程文档。
 
 所有 Agent 支持：
 
@@ -552,8 +552,8 @@ versioned dev-task taskRef
 engineering change taskRef
 ```
 
-Agent 不负责创建或修改任务 Spec/Design；主 Session 或显式的 `change-plan` 负责任务文档。
-`web-evaluator` 以及实验性 `oec-dev-beta` 长时流程使用的运行态 checklist 必须从任务 Spec 的 `AC-NNN`
+Agent 不负责创建或修改任务 Spec/Design；主 Session 或显式的 `code-plan` 负责任务文档。
+`evaluator` 以及实验性 `oec-dev-beta` 长时流程使用的运行态 checklist 必须从任务 Spec 的 `AC-NNN`
 派生并保留 ID；它可以增加环境准备和观察方式，但不能成为第二份验收事实源。
 Claude Markdown 是 Agent 指令事实源，实验性 Codex TOML 由构建生成并保持正文一致；Codex 未完成
 真实宿主验收前不宣称完整支持。
@@ -614,7 +614,7 @@ oec-dev/scripts/contracts/task-artifacts.mjs
 
 ### Phase 4：Reminder
 
-新增只读 `findSpecReminders` 和 `remind` CLI；在 `change-plan`、`code-review`、`change-close` 的
+新增只读 `findSpecReminders` 和 `remind` CLI；在 `code-plan`、`code-review`、`code-finish` 的
 自然检查点调用。Reminder 不进入 SessionStart Hook，也不创建状态文件。
 
 ### Phase 5：Skill/Agent 适配
@@ -622,19 +622,19 @@ oec-dev/scripts/contracts/task-artifacts.mjs
 更新：
 
 ```text
-oec-dev/skills/change-plan/
-oec-dev/skills/change-implement/
-oec-dev/skills/spec-manage/
+oec-dev/skills/code-plan/
+oec-dev/skills/code-implement/
+oec-dev/skills/knowledge-manage/
 oec-dev/skills/code-review/
-oec-dev/skills/change-close/
-oec-dev/skills/legacy-doc-migrate/
+oec-dev/skills/code-finish/
+oec-dev/skills/docs-migrate/
 oec-dev/hooks/
 oec-dev/agents/
 oec-dev/.codex-plugin/agents/
-oec-dev-beta/skills/web-task-run/
+oec-dev-beta/skills/web-develop/
 ```
 
-删除稳定 Plugin 中的 `delegate-agents` 和 `web-task-run`。所有路径解析改为调用 runtime；不得在
+删除稳定 Plugin 中的 `delegate-agents` 和 `web-develop`。所有路径解析改为调用 runtime；不得在
 Markdown 中复制第二套解析规则。`oec-dev-beta` 不复制 Agent 或 runtime，只消费宿主已经发现的能力。
 
 ### Phase 6：测试、文档和发布
@@ -700,7 +700,7 @@ Markdown 中复制第二套解析规则。`oec-dev-beta` 不复制 Agent 或 run
 - [x] 新版本化任务的 Skill contract/assets 能生成 `spec.md` 和 `design.md`；
 - [x] Task checker 能在隔离 bundle 中确定性发现结构问题；
 - [x] Product/Dev 双空间来源可解析且写入边界安全；
-- [x] `spec-manage` reminder 在计划、Review、Close 检查点可见；
+- [x] `knowledge-manage` reminder 在计划、Review、Close 检查点可见；
 - [x] reminder 不自动写入、不阻断普通编码；
 - [x] 旧任务包可读取，不产生第二套任务目录；
 - [x] 现有四个 Agent 能读取两种任务来源；
@@ -717,9 +717,9 @@ Markdown 中复制第二套解析规则。`oec-dev-beta` 不复制 Agent 或 run
 - 新增 `oec-dev/scripts/contracts/` 下的 taskRef、Root/source 和任务产物契约实现；
 - 新增 `oec-dev/scripts/spec-reminder.mjs` 和 `oec-spec remind`；
 - `oec-spec` 增加 `task resolve` 与 `task check`，同时保留 `select`、`check` 和 `legacy-audit`；
-- `change-plan`、`change-implement`、`spec-manage`、`code-review`、`change-close` 和四个 Agent 已切换到
+- `code-plan`、`code-implement`、`knowledge-manage`、`code-review`、`code-finish` 和四个 Agent 已切换到
   canonical taskRef 语义；
-- `oec-dev-beta` 的 `web-task-run` 只复用宿主 Agent 和 `oec-spec`，不复制文件或 runtime；
+- `oec-dev-beta` 的 `web-develop` 只复用宿主 Agent 和 `oec-spec`，不复制文件或 runtime；
 - Product/Dev 双空间、legacy alias、结构化 Spec/Design、模块索引和 reminder 已加入隔离 fixture；
 - Claude 增加静态 SessionStart 行为注入，Codex 显式禁用 Hook 自动发现，稳定 Skills 改为由精确
   自然语言意图发现；实验性长时 Skill 仍保持显式调用。
@@ -728,7 +728,7 @@ Markdown 中复制第二套解析规则。`oec-dev-beta` 不复制 Agent 或 run
 
 ```bash
 npm run build
-npm test                         # 154 tests passed
+npm test                         # 156 tests passed
 claude plugin validate --strict ./oec-dev
 git diff --check
 ```

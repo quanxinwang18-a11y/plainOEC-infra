@@ -4,6 +4,18 @@
 
 **BREAKING RC CHANGE:** align the public Dev identity and names before the first stable release.
 
+- Rename the public Skills to goal-oriented names: `guide`, `code-plan`, `code-implement`, `code-finish`,
+  `knowledge-manage`, `decision-review`, `prototype`, `debug`, and `docs-migrate`.
+- Rename the optional Agents to `researcher`, `implementer`, `checker`, and `evaluator`.
+
+## 1.9.5
+
+- Refine the SessionStart bootstrap around user goals rather than internal OEC process vocabulary.
+- Make clear that users do not need to know Skill names or internal planning artifacts; the Main Session should
+  explain the next useful step and preserve the original goal across planning and implementation handoffs.
+- Keep existing negative boundaries: no forced phase/status/task/Agent sequence, no automatic durable-knowledge
+  updates from ordinary PRD/code work, and no experimental Web orchestration merely because a frontend exists.
+
 ## 1.9.4
 
 - Fix nested task Acceptance section parsing so headings such as `### AC-001` are included in the parent section.

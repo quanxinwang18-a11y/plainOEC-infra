@@ -1,0 +1,4 @@
+interface:
+  display_name: "Manage Knowledge"
+  short_description: "Preserve durable team engineering knowledge"
+  default_prompt: "Use $knowledge-manage to establish, preserve, reconcile, or refresh durable engineering knowledge."

@@ -6,18 +6,18 @@
 
 一次性 PRD 写作或评审可以直接描述目标，分别使用 `/oec-product:prd-write` 和
 `/oec-product:prd-review`。需要持续的产品经理工作身份时，在 `@` picker 中选择
-`oec-product:product-manager`，或启动完整 Agent 会话：
+`oec-product:prd-manager`，或启动完整 Agent 会话：
 
 Agent 只预加载 PRD 写作与评审能力。完整 PM 会话通过显式 Agent 启动：
 
 ```bash
-claude --agent oec-product:product-manager
+claude --agent oec-product:prd-manager
 ```
 
 E3 发布必须由用户显式调用：
 
 ```text
-/oec-product:prd-toe3 v1.2.3
+/oec-product:prd-publish v1.2.3
 ```
 
 发布采用 prepare/confirm/execute/status 四段边界。prepare 不创建远端对象；execute 只接受
@@ -37,7 +37,7 @@ POMP 和系统需求元数据只在存在唯一候选或唯一默认值时自动
 Product 定义 PRD、Story 和 HANDOFF 的产品语义；`oec-e3` 负责认证、远端对象、幂等和状态查询。
 安装 Product 会加载 `oec-e3@~1.0.0`，但普通 PRD 写作和评审不会触发远端发布。
 
-当前 1.0.2 仍是未打 tag 的候选版本。验证当前候选组合时先显式安装 `oec-e3@plainOEC-infra`，再安装
+当前 3.0.3 仍是未打 tag 的候选版本。验证当前候选组合时先显式安装 `oec-e3@plainOEC-infra`，再安装
 Product；Product 单独安装会按 semver 选择最近已发布的 E3 tag。
 
 ## 本地验证

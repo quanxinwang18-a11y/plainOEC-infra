@@ -2,7 +2,7 @@
 
 ## Next
 
-**BREAKING RC CHANGE:** rename the public Product Skills to `prd-write`, `prd-review`, and `prd-toe3`.
+**BREAKING RC CHANGE:** rename the public Product Skills to `prd-write`, `prd-review`, and `prd-publish`; expose the product manager Agent as `prd-manager`.
 
 ## 3.0.3
 

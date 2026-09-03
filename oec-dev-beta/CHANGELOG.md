@@ -2,7 +2,7 @@
 
 ## Next
 
-**BREAKING RC CHANGE:** rename the Plugin to `oec-dev-beta` and expose the Web task capability as `web-task-run`.
+**BREAKING RC CHANGE:** rename the Plugin to `oec-dev-beta` and expose the Web task capability as `web-develop`.
 
 ## 0.1.0
 

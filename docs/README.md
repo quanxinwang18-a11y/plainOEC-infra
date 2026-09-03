@@ -42,6 +42,7 @@ contract 为准；策略、迁移、评审和历史验收不能覆盖当前实�
 
 ### Architecture
 
+- [OEC-infra 系统全景 HTML 地图](architecture/oec-infra-system-map.html)：以可交互 HTML 展示当前分层、六个 Plugin、能力方法、完整工作流、契约和证据边界。
 - [平台 Plugin 层级与 MCP 迁移设计](architecture/platform-plugin-hierarchy.md)：当前领域/平台分层、
   依赖、工具链和状态归属。
 - [OEC Dev 契约与实施计划](architecture/oec-dev-contract-implementation-plan.md)：OEC Dev 的

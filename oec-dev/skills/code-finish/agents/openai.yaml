@@ -1,0 +1,4 @@
+interface:
+  display_name: "Finish Code Change"
+  short_description: "Verify and close a completed change"
+  default_prompt: "Use $code-finish to verify and close this completed change without deploying it."

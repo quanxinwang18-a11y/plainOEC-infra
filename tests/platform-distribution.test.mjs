@@ -119,18 +119,18 @@ test('current-facing documentation stays aligned with Marketplace components', a
     ['product', productReadme], ['engineering', engineeringReadme], ['beta', betaReadme], ['e3', e3Readme],
     ['pipeline', pipelineReadme], ['common', commonReadme],
   ]) assert.doesNotMatch(readme, /\]\(\.\.\/docs\//, `${plugin} README must not escape its installed Plugin root`);
-  assert.doesNotMatch(productReadme, /@oec-product:product-manager/);
-  assert.match(productReadme, /`@` picker 中选择\s+`oec-product:product-manager`/);
+  assert.doesNotMatch(productReadme, /@oec-product:prd-manager/);
+  assert.match(productReadme, /`@` picker 中选择\s+`oec-product:prd-manager`/);
   assert.match(e3Readme, /检查当前 PRD 的 E3 发布状态，不要更新任何对象/);
   assert.match(e3Readme, /准备研发任务计划[\s\S]{0,80}不要执行/);
   assert.match(pipelineReadme, /发现当前仓库可用的 test 流水线[\s\S]{0,80}不要运行/);
   assert.match(pipelineReadme, /查询当前计划对应的流水线运行状态，不要重新执行/);
-  assert.match(engineeringReadme, /`change-implement`/);
+  assert.match(engineeringReadme, /`code-implement`/);
   assert.match(engineeringReadme, /`code-review`/);
-  assert.match(engineeringReadme, /`change-checker`/);
-  assert.match(engineeringReadme, /`web-evaluator`/);
+  assert.match(engineeringReadme, /`checker`/);
+  assert.match(engineeringReadme, /`evaluator`/);
   assert.match(betaReadme, /`oec-dev-beta`/);
-  assert.match(betaReadme, /\/oec-dev-beta:web-task-run/);
+  assert.match(betaReadme, /\/oec-dev-beta:web-develop/);
 
   const productMigration = await readFile(resolve(
     repositoryRoot,
@@ -152,13 +152,13 @@ test('current-facing documentation stays aligned with Marketplace components', a
   }
 
   for (const name of [
-    'prd-write', 'prd-review', 'prd-toe3',
-    'spec-manage', 'legacy-doc-migrate', 'decision-challenge',
-    'design-prototype', 'change-plan', 'change-implement', 'test-first',
-    'failure-debug', 'code-review', 'change-close', 'web-task-run', 'create-slides',
+    'prd-write', 'prd-review', 'prd-publish',
+    'knowledge-manage', 'docs-migrate', 'decision-review',
+    'prototype', 'code-plan', 'code-implement', 'test-first',
+    'debug', 'code-review', 'code-finish', 'web-develop', 'create-slides',
   ]) assert.match(report, new RegExp(`\\b${name}\\b`), `${name} missing from report`);
 
-  for (const name of ['product-manager', 'task-implementer', 'web-evaluator', 'change-checker', 'task-researcher']) {
+  for (const name of ['prd-manager', 'implementer', 'evaluator', 'checker', 'researcher']) {
     assert.match(report, new RegExp(`\\b${name}\\b`), `${name} missing from report`);
   }
 
@@ -174,11 +174,11 @@ test('current-facing documentation stays aligned with Marketplace components', a
   assert.doesNotMatch(report, /\boec-(?:product|engineering|e3|pipeline|common)@[~^]?\d+\.\d+\.\d+\b/);
   assert.match(report, /简单、局部、低风险改动/);
   assert.match(report, /非平凡、高风险或需跨会话保存上下文的改动/);
-  assert.match(report, /prd-toe3[\s\S]{0,180}manual-only/);
-  assert.match(report, /decision-challenge[\s\S]{0,180}可自动发现/);
-  assert.match(report, /change-close[\s\S]{0,180}可自动发现/);
-  assert.match(report, /oec-dev-beta[\s\S]{0,180}web-task-run/);
-  assert.match(report, /change-implement[\s\S]{0,180}Main Session/);
+  assert.match(report, /prd-publish[\s\S]{0,180}manual-only/);
+  assert.match(report, /decision-review[\s\S]{0,180}可自动发现/);
+  assert.match(report, /code-finish[\s\S]{0,180}可自动发现/);
+  assert.match(report, /oec-dev-beta[\s\S]{0,180}web-develop/);
+  assert.match(report, /code-implement[\s\S]{0,180}Main Session/);
   assert.match(report, /prepared → executing → executed/);
   assert.match(report, /同一个 plan token 最多[\s\S]{0,80}一次 `runPipeline` POST/);
   assert.match(report, /无法确定账号时[\s\S]{0,100}prepare[\s\S]{0,100}失败/);
@@ -233,7 +233,7 @@ test('current-facing documentation stays aligned with Marketplace components', a
     'prototyping-decisions', 'test-driven-development', 'diagnosing-failures',
     'reviewing-code-changes', 'delegating-engineering-agents', 'orchestrating-long-running-coding',
     'closing-engineering-changes', 'html-slides', 'oec-pm', 'oec-research', 'oec-implement',
-    'oec-evaluate', 'oec-check', 'oec-dev:web-task-run',
+    'oec-evaluate', 'oec-check', 'oec-dev:web-develop',
   ]) assert.equal(currentUsage.includes(oldName), false, `current usage still contains ${oldName}`);
 
   const contributionRules = await readFile(resolve(repositoryRoot, 'CLAUDE.md'), 'utf8');
@@ -272,16 +272,16 @@ test('a Git archive contains self-contained Plugin payloads without node_modules
   assert.ok((await readFile(resolve(extracted, 'oec-pipeline', 'dist/pipeline-server.mjs'))).length > 0);
   // Engineering components are self-contained without node_modules.
   assert.ok((await readFile(resolve(extracted, 'oec-dev', 'dist/oec-spec.mjs'))).length > 0);
-  assert.ok((await readFile(resolve(extracted, 'oec-dev', 'agents/task-implementer.md'))).length > 0);
+  assert.ok((await readFile(resolve(extracted, 'oec-dev', 'agents/implementer.md'))).length > 0);
   assert.ok((await readFile(resolve(
     extracted,
     'oec-dev',
-    'skills/legacy-doc-migrate/SKILL.md',
+    'skills/docs-migrate/SKILL.md',
   ))).length > 0);
   for (const name of [
-    'decision-challenge',
-    'change-close',
-    'legacy-doc-migrate',
+    'decision-review',
+    'code-finish',
+    'docs-migrate',
   ]) {
     assert.ok((await readFile(resolve(
       extracted,
@@ -292,7 +292,7 @@ test('a Git archive contains self-contained Plugin payloads without node_modules
   assert.ok((await readFile(resolve(
     extracted,
     'oec-dev',
-    'skills/design-prototype/SKILL.md',
+    'skills/prototype/SKILL.md',
   ))).length > 0);
   assert.ok((await readFile(resolve(extracted, 'oec-common', 'skills/create-slides/assets/deck-index.html'))).length > 0);
   assert.ok((await readFile(resolve(extracted, 'oec-common', 'skills/create-slides/LICENSE.huashu-design'))).length > 0);

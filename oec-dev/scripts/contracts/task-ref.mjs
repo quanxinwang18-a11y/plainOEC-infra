@@ -213,7 +213,7 @@ function appendError(errors, error, fallbackCode = 'task-ref-invalid') {
 
 /**
  * Resolve every accepted taskRef form to one canonical task object.
- * `allowMissing` is intended only for a creator such as change-plan.
+ * `allowMissing` is intended only for a creator such as code-plan.
  */
 export async function resolveTaskRef({
   workspace,

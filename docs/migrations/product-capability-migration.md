@@ -1,5 +1,7 @@
 # OEC PM 能力迁移分析
 
+> 本文是历史迁移记录；旧结构中的 public names 和路径按当时形态保留作对照，当前名称以 Plugin README、manifest 和源码为准。
+>
 > 本文基于旧仓库 `oec-ai-infra` 的 commit
 > `79356008b9961c3e8a70c57e2fe5c9cf0c7ce424` 和当前 release candidate Marketplace `3.1.0`。分析对象分别是旧
 > `oec-ai@0.2.2`，以及当前 `oec-product@3.0.3` 与其平台依赖 `oec-e3@1.0.2`。旧结构的数据来自
@@ -383,7 +385,7 @@ ideate、generate、revise、finalize 和 split 是可能采用的内部工作�
 |---|---|---|
 | [prd-write](../../oec-product/skills/prd-write/SKILL.md) | 创建、修订、收口和拆分 PRD | 只写本地 PRD；提交前确认 |
 | [prd-review](../../oec-product/skills/prd-review/SKILL.md) | 对 PRD 做只读红队评审 | 不修改文件 |
-| [prd-toe3](../../oec-product/skills/prd-toe3/SKILL.md) | 显式发布最终产物 | 展示计划并确认后写 E3 |
+| [prd-publish](../../oec-product/skills/prd-publish/SKILL.md) | 显式发布最终产物 | 展示计划并确认后写 E3 |
 
 ### 5.2 Agent、Skill、MCP 各自只有一个主要职责
 
@@ -399,9 +401,9 @@ flowchart TB
     M1["roots / token / fingerprint<br/>mapping / remote identity"] -.->|约束| M
 ```
 
-当前 [product-manager Agent](../../oec-product/agents/product-manager.md) 通过 frontmatter 原生预加载 writing 和
-reviewing，完整 Skill 内容在 Agent 启动时注入，不需要记住 `SKILL.md` 文件路径。带外部副作用的
-publishing 不预加载，并设置为只能由用户显式调用。
+当前 [prd-manager Agent](../../oec-product/agents/prd-manager.md) 通过 frontmatter 原生预加载 `prd-write` 和
+`prd-review`，完整 Skill 内容在 Agent 启动时注入，不需要记住 `SKILL.md` 文件路径。带外部副作用的
+`prd-publish` 不预加载，并设置为只能由用户显式调用。
 
 ### 5.3 让模型处理语义，让代码处理不变量
 
@@ -451,10 +453,10 @@ publishing 不预加载，并设置为只能由用户显式调用。
 ```text
 Marketplace: plainOEC-infra
 ├── Plugin: oec-product@3.0.3
-│   ├── agents/product-manager.md
+│   ├── agents/prd-manager.md
 │   ├── skills/prd-write/
 │   ├── skills/prd-review/
-│   ├── skills/prd-toe3/
+│   ├── skills/prd-publish/
 │   └── dependency: oec-e3@~1.0.0
 └── Plugin: oec-e3@1.0.2
     ├── .mcp.json
@@ -478,7 +480,7 @@ Plugin cache 中运行。
 
 - [Marketplace](../../.claude-plugin/marketplace.json)
 - [Product manifest](../../oec-product/.claude-plugin/plugin.json)
-- [PM Agent](../../oec-product/agents/product-manager.md)
+- [PM Agent](../../oec-product/agents/prd-manager.md)
 - [E3 manifest](../../oec-e3/.claude-plugin/plugin.json)
 - [E3 MCP 注册](../../oec-e3/.mcp.json)
 
@@ -486,7 +488,7 @@ Plugin cache 中运行。
 
 Writing 的 artifact contract、versioning、product language、templates 和 artifact checker 都位于
 `prd-write/` 内；Review rubric 位于 `prd-review/`；E3 publish contract 位于
-`prd-toe3/`。没有 Plugin 根公共 `references/assets/lib`，也没有另一个 Mega Skill
+`prd-publish/`。没有 Plugin 根公共 `references/assets/lib`，也没有另一个 Mega Skill
 负责告诉模型去哪里找文件。
 
 Skill description 直接描述能力和触发边界，不再依赖无定义的品牌词帮助模型判断。Reference 只在
@@ -660,12 +662,12 @@ flowchart LR
 | Product Plugin MCP Servers | 0 | 0 | 产品知识不再持有平台运行时 |
 | E3 Plugin MCP Servers | 0 | 1（10 tools） | E3 从 Prompt/Bash 迁到独立类型化平台工具 |
 | SessionStart Hook | 1 | 0 | 不再隐式同步项目配置 |
-| Agent Skill 关系 | 描述发现 + 文件 Read | frontmatter 原生预加载 writing/reviewing | 减少路由歧义 |
+| Agent Skill 关系 | 描述发现 + 文件 Read | frontmatter 原生预加载 `prd-write`/`prd-review` | 减少路由歧义 |
 | E3 执行 | 模型驱动 Python/HTTP | 4 个发布 + 6 个研发任务 MCP 工具 | 外部副作用可验证 |
 
 行数和文件数不能直接等同于 token 成本。旧 Skills 并非全部同时加载，当前 MCP bundle 也包含大量
-确定性代码。真正的改善是模型判断面更单一：Agent 不重复 Skill 工作流，writing/reviewing 才被
-预加载，publishing 只在用户显式调用时出现，API 细节不进入 Prompt。
+确定性代码。真正的改善是模型判断面更单一：Agent 不重复 Skill 工作流，`prd-write`/`prd-review` 才被
+预加载，`prd-publish` 只在用户显式调用时出现，API 细节不进入 Prompt。
 
 ### 8.2 自动验证
 

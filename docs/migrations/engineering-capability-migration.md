@@ -303,7 +303,7 @@ Marketplace: plainOEC-infra
 │   ├── 4 optional Agents
 │   └── deterministic oec-spec runtime
 ├── Plugin: oec-dev-beta
-│   └── 1 explicit experimental web-task-run Skill
+│   └── 1 explicit experimental web-develop Skill
 ├── Plugin: oec-e3
 │   └── PRD publication + development task MCP
 └── Plugin: oec-pipeline
@@ -312,7 +312,7 @@ Marketplace: plainOEC-infra
 
 `oec-dev` 的稳定能力由主 Coding Agent 执行，十个 Skills 只在精确用户目标下改变判断；它
 不依赖 E3 或 Pipeline，开发者只在需要外部平台能力时单独安装对应 Plugin。1.9.0 提供四个可选 Agent，
-所有稳定 Skills 均可由模型发现，写入和 commit 仍有独立确认。新增 `change-implement` 负责已有 ready
+所有稳定 Skills 均可由模型发现，写入和 commit 仍有独立确认。新增 `code-implement` 负责已有 ready
 任务的轻量 Main Session 执行，不创建任务状态或固定流程。长时 Web 编排不再属于稳定 Plugin，而由
 独立 `oec-dev-beta` 提供；它复用宿主的 Agent 和 `oec-spec`，不复制文件或 runtime。Claude 通过一个不含
 能力元数据的静态 SessionStart Hook 注入行为边界。
@@ -354,8 +354,8 @@ flowchart LR
 |---|---|---|
 | `oec-dev-task` | 删除 | 与现代 Coding Agent 和 Superpowers 类能力重叠 |
 | `oec-dev-flow` | 删除编排 | E3 任务主链和既有流水线已迁入独立平台 MCP；SAE 尚未准入 |
-| `change-implement` | 新增稳定入口 | 对已有 ready task 提供 Main Session 轻量实现和最新验证，不创建第二套状态机 |
-| `web-task-run` | 移至 `oec-dev-beta` | 需要 Playwright、多轮 Agent 调度和非生产 Web 目标，不进入稳定 Engineering |
+| `code-implement` | 新增稳定入口 | 对已有 ready task 提供 Main Session 轻量实现和最新验证，不创建第二套状态机 |
+| `web-develop` | 移至 `oec-dev-beta` | 需要 Playwright、多轮 Agent 调度和非生产 Web 目标，不进入稳定 Engineering |
 | `oec-architecture-design` | 迁移 | 显式迁移 Skill 将有效事实导入 Specs、决策导入 ADR；变更方案进入 planning Skill |
 | `oec-detail-design` | 合并 | 成为 planning Skill 的条件产物 |
 | `code-view`、`oec-code-review` | 合并 | 单一只读代码评审 Skill |
@@ -415,12 +415,12 @@ Plugin 和独立证据；SAE/UTP 在类型化接口与非生产 E2E 完成前，
 
 `oec-dev@1.9.0` 已按上述边界实现：
 
-- 10 个原生、可由模型发现的 Skills，包含 `change-implement`；4 个可选 Agent，1 个静态 Hook，0 MCP，
+- 10 个原生、可由模型发现的 Skills，包含 `code-implement`；4 个可选 Agent，1 个静态 Hook，0 MCP，
   0 Command。固定 Agent 委派和长时 Web 编排不在稳定 Plugin 内。
 - `oec-spec` source、CLI、可执行入口和无依赖 bundle。
 - Spec/ADR/change contract、路径选择、链接与引用校验、旧安装只读审计。
 - Java/Spring 和前端路径 fixture、bundle 隔离执行及正负触发 cases。
-- `change-implement` 的 ready task 边界、Main Session 执行和禁止默认 Agent/commit 约束已有组件测试。
+- `code-implement` 的 ready task 边界、Main Session 执行和禁止默认 Agent/commit 约束已有组件测试。
 - `oec-product` 回归测试、稳定 Engineering 测试和 Dev Beta 组件测试在同一根测试命令中执行。
 
 工程 Plugin 本身没有实施外部写操作，也没有自动清理任何旧项目资产。Marketplace 另有：

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Decision"
+  short_description: "Pressure-test a technical decision with evidence"
+  default_prompt: "Use $decision-review to challenge this technical decision before planning or implementation."

@@ -14,8 +14,8 @@ function frontmatter(relativePath) {
 }
 
 test('product manager is explicit, inherits the model, and preloads only write and review skills', () => {
-  const { metadata, body } = frontmatter('agents/product-manager.md');
-  assert.equal(metadata.name, 'product-manager');
+  const { metadata, body } = frontmatter('agents/prd-manager.md');
+  assert.equal(metadata.name, 'prd-manager');
   assert.equal(metadata.model, 'inherit');
   assert.match(metadata.description, /explicitly asks/);
   assert.deepEqual(metadata.skills, ['prd-write', 'prd-review']);
@@ -25,7 +25,7 @@ test('product manager is explicit, inherits the model, and preloads only write a
 test('skills have distinct positive triggers and E3 publishing is manual-only', () => {
   const writing = frontmatter('skills/prd-write/SKILL.md');
   const reviewing = frontmatter('skills/prd-review/SKILL.md');
-  const publishing = frontmatter('skills/prd-toe3/SKILL.md');
+  const publishing = frontmatter('skills/prd-publish/SKILL.md');
   for (const item of [writing, reviewing, publishing]) {
     assert.match(item.metadata.description, /Do not use/i);
   }
@@ -50,7 +50,7 @@ test('skills have distinct positive triggers and E3 publishing is manual-only', 
 
 test('each Product Skill carries executable positive and negative eval cases', () => {
   const prompts = [];
-  for (const name of ['prd-write', 'prd-review', 'prd-toe3']) {
+  for (const name of ['prd-write', 'prd-review', 'prd-publish']) {
     for (const polarity of ['positive', 'negative']) {
       const directory = `evals/${name}-${polarity}`;
       const prompt = frontmatter(`${directory}/prompt.md`);
@@ -74,15 +74,15 @@ test('each Product Skill carries executable positive and negative eval cases', (
 
 test('model-facing capability text does not depend on the OEC label', () => {
   const paths = [
-    'agents/product-manager.md',
+    'agents/prd-manager.md',
     'skills/prd-write/SKILL.md',
     'skills/prd-write/references/artifact-contract.md',
     'skills/prd-write/references/product-language.md',
     'skills/prd-write/references/versioning.md',
     'skills/prd-review/SKILL.md',
     'skills/prd-review/references/review-rubric.md',
-    'skills/prd-toe3/SKILL.md',
-    'skills/prd-toe3/references/publish-contract.md',
+    'skills/prd-publish/SKILL.md',
+    'skills/prd-publish/references/publish-contract.md',
   ];
   for (const path of paths) {
     const content = readFileSync(resolve(pluginRoot, path), 'utf8');
@@ -132,6 +132,6 @@ test('plugin relies on native discovery and has no forbidden root component fram
 });
 
 test('public Product identifiers use concise scoped names without an oec prefix', () => {
-  for (const name of ['prd-write', 'prd-review', 'prd-toe3']) assert.doesNotMatch(name, /^oec-/);
-  assert.equal(frontmatter('agents/product-manager.md').metadata.name, 'product-manager');
+  for (const name of ['prd-write', 'prd-review', 'prd-publish']) assert.doesNotMatch(name, /^oec-/);
+  assert.equal(frontmatter('agents/prd-manager.md').metadata.name, 'prd-manager');
 });

@@ -40,20 +40,21 @@ claude plugin install oec-dev-beta@plainOEC-infra --scope user
 
 ## Bootstrap 与十个工作 Skills
 
-`using-oec-dev` 是在 SessionStart 注入的 bootstrap Skill，负责要求模型先匹配并调用适用的 Skill；
-它不是业务能力入口。其余十个 Engineering Skills 都可以由模型根据自然语言目标发现；描述中的负向
-边界仍然有效，自动发现不等于每个任务都必须调用。
+`guide` 是在 SessionStart 注入的 bootstrap Skill，帮助模型从用户目标发现适用的 Skill 并用用户
+语言解释下一步；它不是业务能力入口。用户不需要知道 Skill 名称、任务标识或内部文档类型。其余十个
+Engineering Skills 都可以由模型根据自然语言目标发现；描述中的负向边界仍然有效，自动发现不等于每个
+任务都必须调用。
 
 ```text
-/oec-dev:decision-challenge
-/oec-dev:change-close
-/oec-dev:change-implement
+/oec-dev:decision-review
+/oec-dev:code-finish
+/oec-dev:code-implement
 /oec-dev:test-first
-/oec-dev:failure-debug
-/oec-dev:spec-manage
-/oec-dev:legacy-doc-migrate
-/oec-dev:change-plan
-/oec-dev:design-prototype
+/oec-dev:debug
+/oec-dev:knowledge-manage
+/oec-dev:docs-migrate
+/oec-dev:code-plan
+/oec-dev:prototype
 /oec-dev:code-review
 ```
 
@@ -69,7 +70,7 @@ PRD → task context → spec.md + design.md → user confirmation → implement
 
 小而明确的修复不需要这道门，仍由 Main Session 直接修改和验证。
 
-### `change-implement`
+### `code-implement`
 
 这是已有任务的轻量执行入口。只有请求包含 canonical `taskRef` 或明确的现有 change ID，且任务
 已经有可通过 `ready` 检查的 `spec.md` / `design.md` 时才使用。只给出 PRD 而没有 ready 任务时，
@@ -85,37 +86,37 @@ resolve/check taskRef
 ```
 
 它不创建任务文档、不默认派发 Agent、不创建状态文件、不调用 E3/Pipeline、不 commit，也不替代
-`change-plan`、`code-review` 或 `change-close`。
+`code-plan`、`code-review` 或 `code-finish`。
 
 ### 其他 Skills
 
-- `spec-manage`：维护有代码证据支持的 current-state Specs、ADR 和必要的 change package；`remind`
+- `knowledge-manage`：维护有代码证据支持的 current-state Specs、ADR 和必要的 change package；`remind`
   模式只读。
-- `legacy-doc-migrate`：将旧 `ai-docs` 中仍有效的工程事实迁移到当前结构，保留原文件。
-- `change-plan`：为 PRD、Story、HANDOFF、issue 或非平凡变更创建任务级 `spec.md` 和 `design.md`。
-- `decision-challenge`：在规划或实现前压力测试技术决策。
-- `design-prototype`：用 throwaway artifact 回答一个交互、行为或状态设计问题。
+- `docs-migrate`：将旧 `ai-docs` 中仍有效的工程事实迁移到当前结构，保留原文件。
+- `code-plan`：为 PRD、Story、HANDOFF、issue 或非平凡变更创建任务级 `spec.md` 和 `design.md`。
+- `decision-review`：在规划或实现前压力测试技术决策。
+- `prototype`：用 throwaway artifact 回答一个交互、行为或状态设计问题。
 - `test-first`：只在用户明确要求 TDD/test-first 时采用 red-green-refactor。
-- `failure-debug`：处理难复现、flaky、性能回退或根因不清的问题。
+- `debug`：处理难复现、flaky、性能回退或根因不清的问题。
 - `code-review`：只读、风险优先地评审 diff、commit、branch 或 PR。
-- `change-close`：检查最终证据、收口 Team Specs/ADR，并在用户确认后提交精确路径。
+- `code-finish`：检查最终证据、收口 Team Specs/ADR，并在用户确认后提交精确路径。
 
-文档、Team Specs、迁移目标和提交都遵循“展示精确路径 → 用户确认”的边界；`change-implement` 只在用户
+文档、Team Specs、迁移目标和提交都遵循“展示精确路径 → 用户确认”的边界；`code-implement` 只在用户
 已确认的任务 Change Boundary 内实现。任何 Skill 被调用本身都不代表用户授权 commit。
 
 ## Agents
 
 需要隔离上下文时，通过宿主 `@` Agent picker 直接选择：
 
-- `task-implementer`：在已有任务边界内实现代码并运行相关检查。
-- `change-checker`：覆盖 staged、unstaged 和 untracked 变更，可修复明确的机械问题。
-- `task-researcher`：对已有任务进行有边界研究，只写入该任务的 `research/`。
-- `web-evaluator`：使用已连接的 Playwright 对本地或内部非生产 Web 应用做运行态验收。
+- `implementer`：在已有任务边界内实现代码并运行相关检查。
+- `checker`：覆盖 staged、unstaged 和 untracked 变更，可修复明确的机械问题。
+- `researcher`：对已有任务进行有边界研究，只写入该任务的 `research/`。
+- `evaluator`：使用已连接的 Playwright 对本地或内部非生产 Web 应用做运行态验收。
 
 Agent 不是 slash command，也不是普通编码的必经阶段。四个 Agent 都不允许 commit、push、merge、
 派生其他 Agent 或修改 Product 文件。
 
-`web-evaluator` 只能使用预配置的 Playwright MCP；Playwright 不可用、目标不明确或证据不完整时必须
+`evaluator` 只能使用预配置的 Playwright MCP；Playwright 不可用、目标不明确或证据不完整时必须
 报告 `blocked`/`incomplete`，不能用静态检查冒充运行态验收。
 
 Claude Markdown 是 Agent 指令事实源：
@@ -199,7 +200,7 @@ DEV_ROOT
 
 Product PRD、Child PRD 和 `HANDOFF.yaml` 只从 `PRODUCT_ROOT` 读取；任务文档、Team Specs 和 ADR 只写入
 `DEV_ROOT`。`ai-docs/Spec/` 是可选的长期工程知识根；缺少它不会阻止 PRD 任务生成 Spec/Design，只有
-用户明确维护团队工程知识时才使用 `spec-manage` 初始化。根目录通过 `--dev-root`、`--product-root` 或兼容的 `--workspace` 明确提供，不能在多个
+用户明确维护团队工程知识时才使用 `knowledge-manage` 初始化。根目录通过 `--dev-root`、`--product-root` 或兼容的 `--workspace` 明确提供，不能在多个
 候选目录中静默选择。
 
 ## oec-spec runtime
@@ -234,14 +235,14 @@ oec-spec legacy-audit --workspace "$DEV_ROOT"
 
 ```text
 PRD/需求
-→ change-plan 创建 spec.md + design.md
+→ code-plan 创建 spec.md + design.md
 → 用户确认任务边界
-→ change-implement 或 Main Session 实现
+→ code-implement 或 Main Session 实现
 → 测试、typecheck、lint
 ```
 
-已有明确 ready 任务或普通小改动不需要重复规划；code-review、change-checker、change-close、E3、
-Pipeline 和 web-task-run 均按需使用。
+已有明确 ready 任务或普通小改动不需要重复规划；code-review、checker、code-finish、E3、
+Pipeline 和 web-develop 均按需使用。
 
 这不是强制状态机。TDD、决策挑战、原型、诊断、Agent 和收口都按用户目标或实际风险启用。
 
@@ -254,12 +255,12 @@ Engineering 不自动创建 E3 任务、不更新 E3/Pipeline、不部署。需�
 长时 Web/full-stack 场景使用独立的实验性 Plugin：
 
 ```text
-/oec-dev-beta:web-task-run [existing taskRef]
+/oec-dev-beta:web-develop [existing taskRef]
 ```
 
 ## 迁移旧项目
 
-显式或自然语言请求迁移时，`legacy-doc-migrate` 会先运行只读 legacy audit，提出“源路径 → 分类
+显式或自然语言请求迁移时，`docs-migrate` 会先运行只读 legacy audit，提出“源路径 → 分类
 → 目标路径 → 证据”的计划，保留旧文件，只在确认后写入 `ai-docs/Spec/`。它不删除 `.oec-ai`、
 旧 `.claude`/`.codex`、E3 record 或历史文件。
 
@@ -274,5 +275,5 @@ claude plugin validate --strict ./oec-dev
 git diff --check
 ```
 
-当前 1.9.2 是候选版本。自动测试、bundle、Plugin validation、真实 Agent 发现和真实 Playwright
+当前 1.9.5 是候选版本。自动测试、bundle、Plugin validation、真实 Agent 发现和真实 Playwright
 旅程是不同证据等级；不能用其中一项替代另一项。

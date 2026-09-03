@@ -5,7 +5,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import YAML from 'yaml';
 
-export const DEV_AGENT_NAMES = ['change-checker', 'web-evaluator', 'task-implementer', 'task-researcher'];
+export const DEV_AGENT_NAMES = ['checker', 'evaluator', 'implementer', 'researcher'];
 
 function parseClaudeAgent(markdown, expectedName) {
   const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(markdown);

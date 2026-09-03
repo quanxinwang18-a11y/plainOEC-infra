@@ -1,4 +1,0 @@
-interface:
-  display_name: "Close Change"
-  short_description: "Verify and close a completed change"
-  default_prompt: "Use $change-close to verify and close this completed change without deploying it."

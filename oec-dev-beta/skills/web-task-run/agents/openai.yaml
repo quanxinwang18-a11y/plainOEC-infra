@@ -1,6 +1,0 @@
-interface:
-  display_name: "Web Task Run"
-  short_description: "Run bounded Web implementation and runtime QA cycles"
-  default_prompt: "Use $web-task-run for this existing Web or full-stack task with runtime evaluation."
-policy:
-  allow_implicit_invocation: false

@@ -1,12 +1,12 @@
 {
   "name": "oec-dev",
-  "version": "1.9.0",
+  "version": "1.9.5",
   "description": "OEC Dev 模块上下文、任务 Spec/Design、任务实现、团队工程知识、技术方案、故障诊断和代码评审。",
   "author": {
     "name": "OEC"
   },
   "license": "MIT",
-  "keywords": ["engineering", "oec-dev", "task-ref", "task-spec", "task-design", "team-specs", "module-context", "source-resolution", "migration", "planning", "decision-challenge", "prototype", "code-review", "tdd", "diagnosis", "runtime-evaluation", "closing"],
+  "keywords": ["engineering", "oec-dev", "task-ref", "task-spec", "task-design", "team-specs", "module-context", "source-resolution", "migration", "planning", "decision-review", "prototype", "code-review", "tdd", "diagnosis", "runtime-evaluation", "closing"],
   "skills": "./skills/",
   "hooks": {}
 }

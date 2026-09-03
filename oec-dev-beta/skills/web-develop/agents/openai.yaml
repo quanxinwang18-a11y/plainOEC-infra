@@ -1,0 +1,6 @@
+interface:
+  display_name: "Develop Web"
+  short_description: "Run bounded Web implementation and runtime QA cycles"
+  default_prompt: "Use $web-develop for this existing Web or full-stack task with runtime evaluation."
+policy:
+  allow_implicit_invocation: false

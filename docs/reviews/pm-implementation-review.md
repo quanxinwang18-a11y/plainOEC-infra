@@ -1,5 +1,7 @@
 # PM 实现迁移 Review
 
+> 本文为 2026-08-21 的时间点评审记录；其中版本和测试数字是当时基线，不代表当前工作树。
+>
 > 事实基线：旧实现取自 `oec-ai-infra` commit
 > `79356008b9961c3e8a70c57e2fe5c9cf0c7ce424`。当前实现为 Marketplace `3.0.0`、
 > `oec-product@3.0.0` 与 `oec-e3@1.0.0`；旧分发结构的完整还原见
@@ -53,11 +55,11 @@ flowchart LR
 
 ```text
 oec-product
-├── Agent: product-manager                         19 行
+├── Agent: prd-manager                         19 行
 ├── Skills
 │   ├── prd-write
 │   ├── prd-review
-│   └── prd-toe3             三个正文合计 105 行
+│   └── prd-publish             三个正文合计 105 行
 └── dependency: oec-e3@~1.0.0
 
 oec-e3
@@ -91,9 +93,9 @@ frontmatter `skills:` 预加载 PM 能力。模型必须自己完成意图路由
 
 ```mermaid
 flowchart TD
-    A["显式 product-manager Agent"] --> W["原生预加载 prd-write"]
+    A["显式 prd-manager Agent"] --> W["原生预加载 prd-write"]
     A --> R["原生预加载 prd-review"]
-    U["用户显式发布"] --> P["prd-toe3"]
+    U["用户显式发布"] --> P["prd-publish"]
     P --> M["oec-e3 类型化 MCP"]
 ```
 
