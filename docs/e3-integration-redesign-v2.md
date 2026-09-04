@@ -396,24 +396,57 @@ Git remote identity
 
 ### 6.5 Product Root 规则
 
-允许：
+#### 6.5.1 Product Root 的发现优先级
 
-- 用户显式提供 Product Root；
-- 验证路径是宿主授权 Root 或用户明确授权的可读目录；
+```text
+优先级 1: Git submodule
+  → 检查当前 Dev Root 是否有 PRD 仓库作为 submodule
+  → 如果有，直接使用 submodule 路径
+  → 示例: payment-backend/prd/ (git submodule)
+
+优先级 2: 用户手工指定
+  → 询问用户："PRD 仓库本地路径？"
+  → 用户提供已存在的本地路径
+  → 验证路径是宿主授权 Root 或用户明确授权的可读目录
+  → 保存到 workspace config
+
+优先级 3: 当前会话辅助 clone
+  → 询问用户："PRD 仓库 Git URL？"
+  → 建议 clone 位置（基于约定或用户选择）
+  → 用户确认后执行 git clone
+  → 保存路径到 workspace config
+```
+
+#### 6.5.2 允许的操作
+
+- 读取指定 revision 的 PRD；
+- 只读检查当前 checkout 和工作区状态；
 - 记录用户确认的 remote/revision；
-- 只读检查当前 checkout 和工作区状态。
+- 用户确认后的独立 git clone（优先级 3）；
+- 用户确认后的独立 git fetch/pull（过期同步）。
 
-不允许默认：
+#### 6.5.3 不允许默认
 
 ```text
 自动 git pull/fetch/checkout
 自动切换 branch
 自动解决冲突
 在工作区有修改时同步
+修改 submodule 状态（submodule update）
 ```
 
-如果 Product Root 可能过期，只报告当前 revision、可见的远端状态和建议操作。任何 Git 写操作必须由
-用户单独授权，且不属于 E3 查询流程的隐式步骤。
+#### 6.5.4 过期检测
+
+如果 Product Root 可能过期，只报告：
+
+```text
+当前 revision
+远端 revision（git fetch --dry-run 或 git log 只读检查）
+工作区是否干净
+建议用户手工同步或提供确认
+```
+
+任何 Git 写操作必须由用户单独授权，且不属于 E3 查询流程的隐式步骤。
 
 ### 6.6 Phase 2 验收
 
@@ -615,6 +648,24 @@ PRD version/path/revision
 独立验证命令
 ```
 
+#### 8.3.1 一致性保证
+
+**本方案采用人工协调机制**：
+
+```text
+Phase 1 实现方式：
+- code-plan 生成 design.md 时，LLM 提示开发者：
+  "注意：如果涉及跨仓接口变更，需手工确保多个仓库的 design.md 描述一致"
+
+- 不自动检查一致性
+- 不自动同步接口定义
+- 依赖开发者在 Code Review 时人工确认
+
+Phase 2 可选增强（如果用户反馈需要）：
+- code-finish 时，检查 design.md 中的"跨仓接口"字段
+- 如果发现不一致，警告用户（但不阻止）
+```
+
 本方案不创建跨仓库 workflow engine，也不保证多个仓库原子完成。
 
 ### 8.4 部分失败
@@ -784,7 +835,58 @@ prepare_task_progress
 
 ### Gate 0：API Evidence
 
-只有 Phase 0 的真实 API fixture、身份和分页契约完成后，才能实现查询工具。
+#### 执行计划
+
+**Phase 0 目标**：获取真实 E3 API fixture、验证身份和分页契约。
+
+**数据源**：`/Users/qxwang6/project/agent/harness/OBU-base/yunfan`
+
+**执行步骤**：
+
+1. **分析 yunfan 代码库**：
+   ```
+   - 查找 E3 API 调用代码
+   - 提取 API endpoint、请求/响应 schema
+   - 识别认证机制（OAuth/JWT）
+   - 记录分页字段和错误码
+   ```
+
+2. **真实 API 验证**：
+   ```
+   - 测试账号：qxwang6（域账号）
+   - 认证方式：OAuth 弹出登录页面，用户确认登录
+   - 验证 API：
+     * POST /api/workbench/v1/myWorkItem/task（我的任务）
+     * GET /api/dm/story/v1/{storyId}/info（系统需求）
+     * GET /api/panshi/v2/product/task/info（任务详情）
+   ```
+
+3. **保存非生产 fixture**：
+   ```
+   - 脱敏处理（移除真实用户名、敏感数据）
+   - 保存为 JSON fixture（用于单元测试）
+   - 记录字段 schema 和 null 值处理
+   - 记录 401/403/404/空结果的响应格式
+   ```
+
+4. **动态字段验证**：
+   ```
+   - 确认 workItemId 是否需要动态解析
+   - 确认分页字段（pageNo/pageSize/total）
+   - 确认 productId 的来源和格式
+   ```
+
+**验收标准**：
+
+```text
+✅ 真实 API 调用成功（使用 qxwang6 账号）
+✅ 保存至少 3 个成功响应 fixture
+✅ 保存至少 2 个错误响应 fixture（401/403/404）
+✅ 记录动态字段（workItemId）的解析逻辑
+✅ 记录分页字段和边界情况
+```
+
+只有 Gate 0 通过后，才能实现查询工具。
 
 ### Gate 1：Read-only Outcome
 

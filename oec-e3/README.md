@@ -3,7 +3,7 @@
 `oec-e3` 是 MCP-only Claude Code Plugin，负责受门禁保护的 E3 平台操作。它没有 Agent、Skill、
 Command、Hook、默认 settings 或通用 CRUD surface。
 
-Plugin 提供四个 PRD 发布工具，以及六个研发任务规划、需求选择、创建/复用、进度和状态验证工具。产品发布结果保存为 E3 publication record，研发任务结果保存为 E3 development task record。
+Plugin 提供四个 PRD 发布工具、六个研发任务规划/创建/复用/进度/状态验证工具，以及三个只读查询工具（我的任务、需求详情、任务详情）。产品发布结果保存为 E3 publication record，研发任务结果保存为 E3 development task record。
 `oec-product@3.x` 声明 `oec-e3@~1.0.0` 为原生依赖，因此安装 Product 会加载这一 Server，不会再
 内嵌第二套 E3 runtime。
 
@@ -21,6 +21,9 @@ prepare_prd_publish
 select_product_space
 execute_prd_publish
 get_prd_publish_status
+query_my_e3_tasks
+get_e3_requirement_detail
+get_e3_task_detail
 prepare_development_tasks
 select_development_requirement
 execute_development_tasks

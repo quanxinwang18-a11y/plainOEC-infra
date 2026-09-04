@@ -187,7 +187,7 @@ roots、artifact gate、workspace/space/fingerprint 绑定、精确查询、part
 和 status 只读语义已经迁入 `oec-e3`。共享 artifact contract 在构建时分别进入 Product artifact checker 与
 E3 bundle，不形成运行时跨 Plugin 文件依赖。
 
-Product 安装后能够看到 E3 的全部 10 个工具，而不只看到四个 publication tools。这是当前有意接受
+Product 安装后能够看到 E3 的全部 13 个工具，而不只看到四个 publication tools。这是当前有意接受
 的工具面取舍：publication 与 development tools 属于同一平台、同一认证、同一远端状态生命周期和
 同一 Owner，拆成两个 Plugin 会复制认证与状态边界，却不能形成独立可发布能力。Skill 仍只描述各自
 允许的工具语义，MCP 继续对每次写入实施确定性门禁。只有权限模型、Owner 或发布周期实际分离时，才

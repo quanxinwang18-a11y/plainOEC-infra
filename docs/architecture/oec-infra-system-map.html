@@ -662,8 +662,8 @@
               <div class="tag-row"><span class="tag">web-develop</span><span class="tag">Playwright</span><span class="tag">early access</span></div>
             </article>
             <article class="plugin-card e3" data-role-card="platform" data-searchable data-search="oec-e3 e3 mcp publication development tasks progress status oauth idempotency">
-              <div class="plugin-top"><h3 class="plugin-name">oec-e3</h3><span class="version">1.0.3</span></div><p class="plugin-purpose">PRD 发布、研发任务、进度和状态的受控平台操作。</p>
-              <div class="component-row"><span class="component-pill"><b>1</b> MCP Server</span><span class="component-pill"><b>10</b> Tools</span><span class="component-pill"><b>0</b> Skill</span></div>
+              <div class="plugin-top"><h3 class="plugin-name">oec-e3</h3><span class="version">1.0.3</span></div><p class="plugin-purpose">PRD 发布、研发任务、进度、状态和只读查询的受控平台操作。</p>
+              <div class="component-row"><span class="component-pill"><b>1</b> MCP Server</span><span class="component-pill"><b>13</b> Tools</span><span class="component-pill"><b>0</b> Skill</span></div>
               <div class="plugin-meta"><div class="meta-item"><span>副作用</span><strong class="guard">受控写 E3</strong></div><div class="meta-item"><span>权限</span><strong>明确 Owner / 授权</strong></div></div>
               <div class="tag-row"><span class="tag">prepare/execute/status</span><span class="tag">human confirmation</span><span class="tag">read-back</span></div>
             </article>
@@ -699,7 +699,7 @@
             <div><div class="section-index">03 / CAPABILITY CATALOG</div><h2>能力不是流程阶段：按用户目标发现并组合</h2><p class="section-intro">下方列出当前可用的 Skills、Agents、MCP Tools 和 <code>oec-spec</code> runtime。Skill 被调用不等于获得 commit 或远端写入授权；Agent 也不是普通任务的必经阶段。</p></div>
             <div class="section-aside">名称保持仓库原始标识；描述聚焦“做什么 / 不做什么”</div>
           </div>
-          <div class="tab-bar" role="tablist" aria-label="能力分类"><button class="tab-btn active" data-cap="product" role="tab" aria-selected="true">Product · 3 Skills</button><button class="tab-btn" data-cap="engineering" role="tab" aria-selected="false">Engineering · 10 + bootstrap</button><button class="tab-btn" data-cap="agents" role="tab" aria-selected="false">Agents · 5 total</button><button class="tab-btn" data-cap="e3" role="tab" aria-selected="false">E3 · 10 Tools</button><button class="tab-btn" data-cap="pipeline" role="tab" aria-selected="false">Pipeline · 4 Tools</button><button class="tab-btn" data-cap="utility" role="tab" aria-selected="false">Beta / Common · 2 Skills</button></div>
+          <div class="tab-bar" role="tablist" aria-label="能力分类"><button class="tab-btn active" data-cap="product" role="tab" aria-selected="true">Product · 3 Skills</button><button class="tab-btn" data-cap="engineering" role="tab" aria-selected="false">Engineering · 10 + bootstrap</button><button class="tab-btn" data-cap="agents" role="tab" aria-selected="false">Agents · 5 total</button><button class="tab-btn" data-cap="e3" role="tab" aria-selected="false">E3 · 13 Tools</button><button class="tab-btn" data-cap="pipeline" role="tab" aria-selected="false">Pipeline · 4 Tools</button><button class="tab-btn" data-cap="utility" role="tab" aria-selected="false">Beta / Common · 2 Skills</button></div>
 
           <div class="cap-panel active" data-cap-panel="product">
             <div class="subhead"><h3>Product Skills</h3><p>写作、评审与明确发布意图均可按目标发现；远端写入保持确认门</p></div>
@@ -753,14 +753,20 @@
           </div>
 
           <div class="cap-panel" data-cap-panel="e3">
-            <div class="subhead"><h3>E3 MCP · 10 typed tools</h3><p>同一认证、状态、Owner 和远端生命周期，因此暂不拆成两个平台 Plugin</p></div>
-            <div class="callout"><strong>共同门禁：</strong>prepare 只读且不创建远端对象；必要时 select 唯一候选；execute 只接受 workspace-bound 的短期 immutable plan，并要求宿主人类交互；status 独立 read-back。身份、漂移、未知响应和并发不确定时默认 blocked / partial / unknown。Product 依赖会让宿主看到完整 10 Tools，但 Product Skill 仍只允许对应的发布语义。</div>
+            <div class="subhead"><h3>E3 MCP · 13 typed tools</h3><p>同一认证、状态、Owner 和远端生命周期，因此暂不拆成两个平台 Plugin</p></div>
+            <div class="callout"><strong>共同门禁：</strong>prepare 只读且不创建远端对象；必要时 select 唯一候选；execute 只接受 workspace-bound 的短期 immutable plan，并要求宿主人类交互；status 独立 read-back。身份、漂移、未知响应和并发不确定时默认 blocked / partial / unknown。Product 依赖会让宿主看到完整 13 Tools，但 Product Skill 仍只允许对应的发布语义。</div>
             <div class="tool-group">PRD publication · 发布主链</div>
             <div class="matrix-wrap"><table class="tool-table"><thead><tr><th>Tool</th><th>阶段</th><th>功能</th><th>副作用 / 关键约束</th></tr></thead><tbody>
               <tr data-searchable data-search="prepare_prd_publish e3 prd validate plan readonly"><td><code>prepare_prd_publish</code></td><td>prepare</td><td>验证 PRD / HANDOFF artifact contract，生成非变更发布计划。</td><td class="no">只读；绑定 workspace、version、fingerprint、账号上下文。</td></tr>
               <tr data-searchable data-search="select_product_space e3 product space selection"><td><code>select_product_space</code></td><td>select</td><td>从发布准备返回的候选中选择并持久化 workspace-bound product space / POMP。</td><td class="guard">短期 selection token；不接受模糊默认。</td></tr>
               <tr data-searchable data-search="execute_prd_publish e3 execute publish human confirmation checkpoint"><td><code>execute_prd_publish</code></td><td>execute</td><td>执行已经准备好的不可变 PRD 发布计划，并在每个成功远端结果后 checkpoint。</td><td class="guard">destructive；需要 Human confirmation；漂移或未知结果不盲重试。</td></tr>
               <tr data-searchable data-search="get_prd_publish_status e3 status read back publication record"><td><code>get_prd_publish_status</code></td><td>status</td><td>读取 publication record，验证 requirement、tasks、空间归属和当前远端状态。</td><td class="no">只读；以历史 record 空间验证，不因当前配置改变归属。</td></tr>
+            </tbody></table></div>
+            <div class="tool-group">Read-only queries · 开发者查询</div>
+            <div class="matrix-wrap"><table class="tool-table"><thead><tr><th>Tool</th><th>阶段</th><th>功能</th><th>副作用 / 关键约束</th></tr></thead><tbody>
+              <tr data-searchable data-search="query_my_e3_tasks e3 workbench my tasks readonly pagination account"><td><code>query_my_e3_tasks</code></td><td>query</td><td>查询当前认证账号的 E3 任务，支持有限筛选与分页。</td><td class="no">只读；账号由可信认证身份确定，不接受调用者伪造。</td></tr>
+              <tr data-searchable data-search="get_e3_requirement_detail e3 story requirement readonly work item"><td><code>get_e3_requirement_detail</code></td><td>query</td><td>动态解析产品空间的 system-requirement work item 后读取需求详情。</td><td class="no">只读；不硬编码 workItemId，404 与权限错误分别报告。</td></tr>
+              <tr data-searchable data-search="get_e3_task_detail e3 task detail readonly"><td><code>get_e3_task_detail</code></td><td>query</td><td>读取单个研发任务的稳定身份、标题、父需求和状态字段。</td><td class="no">只读；不改变状态、worklog 或任务映射。</td></tr>
             </tbody></table></div>
             <div class="tool-group">Development tasks · 研发任务与进度</div>
             <div class="matrix-wrap"><table class="tool-table"><thead><tr><th>Tool</th><th>阶段</th><th>功能</th><th>副作用 / 关键约束</th></tr></thead><tbody>

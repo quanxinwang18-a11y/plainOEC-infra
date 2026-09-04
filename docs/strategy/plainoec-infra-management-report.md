@@ -219,7 +219,7 @@ Product 明确向用户承诺 E3 发布，因此通过对 `oec-e3` 的必需依�
 的完成条件不以 E3 或 Pipeline 为前提，因此不声明强依赖。主 Session 可以在用户目标需要时组合这些
 Plugin，但组合不会产生新的 `oec-delivery` 状态或包装层。
 
-Product 安装后可以看到 E3 的全部十个工具，而不只看到四个 publication tools。这是当前有意接受的
+Product 安装后可以看到 E3 的全部十三个工具，而不只看到四个 publication tools。这是当前有意接受的
 工具面：publication 和 development tools 共享同一平台、认证、状态生命周期和 Owner。拆成两个
 Plugin 会复制认证和状态边界。只有权限模型、Owner 或发布周期真实分离时，才重新评估拆分。
 

@@ -31,7 +31,7 @@
   详细实施事实源为 `docs/architecture/oec-dev-contract-implementation-plan.md`。
 - Dev Beta：独立的 `oec-dev-beta@0.1.0`，只提供显式的实验性 `web-develop`，复用宿主 Engineering
   Agent 和 `oec-spec`，不复制文件或 runtime。
-- E3：独立 MCP-only Plugin，提供十个受控工具。
+- E3：独立 MCP-only Plugin，提供十个受控写入/状态工具和三个只读查询工具。
 - Pipeline：独立 MCP-only Plugin，提供四个既有流水线工具。
 - Common：一个零运行时依赖的 HTML-first 幻灯片 Skill。
 - 分发：Git Marketplace + 自足 bundle，不再通过 SessionStart 向业务仓库同步配置；Engineering
@@ -551,7 +551,7 @@ Claude Code 官方将这些能力放在不同扩展位置：[扩展模型](https
 | 通用产品/系统需求 CRUD | 会把受控发布扩张为平台管理 SDK，权限与失败面明显增大 | 不迁移；只保留 PRD 发布所需的受限 E3 原子操作 |
 | 文件写入策略 | Claude Code 已有原生文件工具，旧 Prompt 规则不提供额外领域价值 | 交还主 Agent；Skill 只保留产物契约和精确提交边界 |
 | `oec-dev-task` + `oec-dev-flow` | 大部分是现代 Coding Agent 已具备的通用研发流程；团队长期事实和已有任务执行仍有独立价值 | 删除总控流程；稳定 Engineering 保留十个聚焦 Skills（含 `code-implement`）和项目侧团队 Specs；固定 Agent 委派与长时 Web 编排不进入稳定 Plugin，后者只在独立 `oec-dev-beta` 中实验 |
-| `oec-manage-task` 及 E3 scripts | “何时同步哪些任务”需要业务语义；认证、候选、远端写入和恢复必须确定执行 | 研发规划留在主 Agent/Engineering Skills；平台动作进入 `oec-e3` 六个研发任务工具 |
+| `oec-manage-task` 及 E3 scripts | “何时同步哪些任务”需要业务语义；认证、候选、远端写入和恢复必须确定执行 | 研发规划留在主 Agent/Engineering Skills；平台动作进入 `oec-e3` 的受控研发任务工具，查询能力保持只读 |
 | PRD 发布说明 + E3 scripts | 子 PRD、Story 和发布确认属于产品语义；HTTP、record 和幂等属于平台执行 | publishing Skill 编排 `oec-e3` 四个 PRD 发布工具 |
 | `oec-dev-flow` 中的流水线步骤及平台 Client | 普通开发流程不应强制绑定流水线；运行既有流水线是独立高副作用能力 | 删除固定开发阶段；`oec-pipeline` 提供四个受控运行工具 |
 | `oec-test-dispatcher` + 71 内部 Skills + Agent 文件树 | 不能把嵌套路由器整体搬入新 Plugin | 先逐项审计，再决定 Skill、script、UTP MCP、Agent 候选或删除 |
@@ -702,7 +702,7 @@ Plugin 的粒度则由生命周期决定：当外部事实来源、认证权限�
 | `oec-product@3.0.4` | 1 | 3 | 0 | 0 | PRD 写作、只读评审和发布语义；依赖 E3 |
 | `oec-dev@1.9.6` | 4 | 10 | 1 | 0 | 稳定任务执行、团队 Specs、决策、诊断、review 和 close |
 | `oec-dev-beta@0.1.0` | 0 | 1 | 0 | 0 | 实验性长时 Web/full-stack 编排 |
-| `oec-e3@1.0.3` | 0 | 0 | 0 | 1 | 4 个 PRD 发布工具 + 6 个研发任务工具 |
+| `oec-e3@1.0.3` | 0 | 0 | 0 | 1 | 4 个 PRD 发布工具 + 6 个研发任务工具 + 3 个只读查询工具 |
 | `oec-pipeline@1.0.2` | 0 | 0 | 0 | 1 | 既有 dev/test 流水线的受控 prepare/execute/status |
 | `oec-common@0.3.0` | 0 | 1 | 0 | 0 | 零依赖 HTML-first 幻灯片 |
 

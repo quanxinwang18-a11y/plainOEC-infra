@@ -28592,6 +28592,41 @@ function normalizeTask(item) {
     ...item.status === void 0 && item.taskStatus === void 0 && item.state === void 0 ? {} : { status: String(item.status ?? item.taskStatus ?? item.state) }
   };
 }
+function normalizeWorkbenchTask(item) {
+  if (!item || typeof item !== "object") return null;
+  const id = item.id ?? item.taskId ?? item.workItemId;
+  if (id === void 0 || id === null) return null;
+  const title = item.name ?? item.taskName ?? item.title;
+  const status = item.status ?? item.taskStatus ?? item.state;
+  const priority = item.priority ?? item.priorityValue;
+  const productId = item.productId ?? item.ztProductId ?? item.product?.id ?? item.product?.productId;
+  const requirementId = item.storyId ?? item.requirementId ?? item.parentStoryId ?? item.story?.id;
+  return {
+    id: String(id),
+    title: title === void 0 || title === null ? "" : String(title),
+    ...productId === void 0 || productId === null ? {} : { productId: String(productId) },
+    ...item.productName === void 0 && item.ztProductName === void 0 && item.product?.name === void 0 ? {} : { productName: String(item.productName ?? item.ztProductName ?? item.product?.name ?? "") },
+    ...requirementId === void 0 || requirementId === null ? {} : { requirementId: String(requirementId) },
+    ...status === void 0 || status === null ? {} : { status: String(status) },
+    ...item.statusDesc === void 0 && item.statusName === void 0 ? {} : { statusDisplay: String(item.statusDesc ?? item.statusName ?? "") },
+    ...priority === void 0 || priority === null ? {} : { priority: String(priority) },
+    ...item.priorityDesc === void 0 && item.priorityName === void 0 ? {} : { priorityDisplay: String(item.priorityDesc ?? item.priorityName ?? "") },
+    ...item.pompProjectCode === void 0 && item.projectCode === void 0 ? {} : { pompProjectCode: String(item.pompProjectCode ?? item.projectCode ?? "") },
+    ...item.pompProjectName === void 0 && item.projectName === void 0 ? {} : { pompProjectName: String(item.pompProjectName ?? item.projectName ?? "") }
+  };
+}
+function normalizeRequirementDetail(item, fallbackId) {
+  const requirement = normalizeRequirement(item, fallbackId);
+  if (!requirement) return null;
+  const statusField = item?.fieldInfoMap?.status;
+  const status = statusField && typeof statusField === "object" ? statusField.value ?? statusField.displayValue : fieldValue(item, "status") ?? item.status ?? item.statusValue;
+  const statusDisplay = statusField && typeof statusField === "object" ? statusField.displayValue : item.statusDesc ?? item.statusName;
+  return {
+    ...requirement,
+    ...status === void 0 || status === null ? {} : { status },
+    ...statusDisplay === void 0 || statusDisplay === null ? {} : { statusDisplay: String(statusDisplay) }
+  };
+}
 function normalizeTaskLogInfo(item) {
   if (!item || typeof item !== "object") return null;
   return {
@@ -28611,6 +28646,17 @@ function normalizeTaskLogInfo(item) {
 function listFromPage(data) {
   if (Array.isArray(data)) return data;
   return data?.list ?? data?.records ?? data?.info ?? [];
+}
+function pageMetadata(data, defaults) {
+  const page = Number(data?.pageNo ?? data?.curPage ?? data?.page ?? defaults.page);
+  const pageSize = Number(data?.size ?? data?.pageSize ?? data?.page_size ?? defaults.pageSize);
+  const totalValue = data?.total ?? data?.totalCount ?? data?.count ?? defaults.total;
+  const total = Number(totalValue);
+  return {
+    page: Number.isInteger(page) && page > 0 ? page : defaults.page,
+    pageSize: Number.isInteger(pageSize) && pageSize > 0 ? pageSize : defaults.pageSize,
+    total: Number.isFinite(total) && total >= 0 ? total : defaults.total
+  };
 }
 function optionsFrom(data, fieldKey) {
   if (!data) return [];
@@ -28774,16 +28820,24 @@ var E3Client = class {
     });
     return listFromPage(data).map((item) => normalizeRequirement(item)).filter(Boolean);
   }
-  async getRequirement(spaceId, workItemId, requirementId) {
+  async getRequirement(spaceId, workItemId, requirementId, { detailed = false } = {}) {
     try {
       const { data } = await this.request("GET", `/api/dm/story/v1/${requirementId}/info`, {
         query: { workItemId, productId: spaceId }
       });
-      return normalizeRequirement(data, requirementId);
+      return detailed ? normalizeRequirementDetail(data, requirementId) : normalizeRequirement(data, requirementId);
     } catch (error2) {
       if (/HTTP 404|not found/i.test(error2.message)) return null;
       throw error2;
     }
+  }
+  async getRequirementDetail(spaceId, requirementId) {
+    const workItemId = await this.getWorkItemId(spaceId);
+    if (!workItemId) throw new Error("Selected E3 space has no system-requirement work item");
+    return {
+      workItemId: String(workItemId),
+      requirement: await this.getRequirement(spaceId, workItemId, requirementId, { detailed: true })
+    };
   }
   async createRequirement(spaceId, metadata, requirement) {
     const formJson = {
@@ -28827,6 +28881,42 @@ var E3Client = class {
       if (/HTTP 404|not found/i.test(error2.message)) return null;
       throw error2;
     }
+  }
+  async queryMyTasks({ filter = "MyToDo", productIds, status, keyword, page = 1, pageSize = 20 } = {}) {
+    const normalizedPage = Number(page);
+    const normalizedPageSize = Number(pageSize);
+    if (!Number.isInteger(normalizedPage) || normalizedPage < 1) throw new Error("page must be a positive integer");
+    if (!Number.isInteger(normalizedPageSize) || normalizedPageSize < 1 || normalizedPageSize > 100) {
+      throw new Error("pageSize must be an integer between 1 and 100");
+    }
+    const normalizedProductIds = productIds?.map((value) => String(value).trim()).filter(Boolean);
+    const normalizedStatus = status?.map((value) => Number(value));
+    if (normalizedStatus?.some((value) => !Number.isInteger(value) || value < 0)) {
+      throw new Error("status must contain non-negative integer values");
+    }
+    const param = {
+      size: normalizedPageSize,
+      pageNo: normalizedPage,
+      orders: [{ asc: true, column: "createTime" }],
+      ...keyword?.trim() ? { condition: keyword.trim() } : {}
+    };
+    const body = {
+      param,
+      filter,
+      ...normalizedProductIds?.length ? { productId: normalizedProductIds } : {},
+      ...normalizedStatus?.length ? { status: normalizedStatus } : {}
+    };
+    const { data } = await this.request("POST", "/api/workbench/v1/myWorkItem/task", { body });
+    const rawTasks = listFromPage(data);
+    const tasks = rawTasks.map(normalizeWorkbenchTask).filter(Boolean);
+    const metadata = pageMetadata(data, { page: normalizedPage, pageSize: normalizedPageSize, total: tasks.length });
+    return {
+      status: "success",
+      filter,
+      ...metadata,
+      tasks,
+      ...tasks.length !== rawTasks.length ? { warnings: ["E3 returned task records without a verifiable ID"] } : {}
+    };
   }
   async findTasksByExactTitle(spaceId, requirementId, title) {
     return (await this.listTasks(spaceId, requirementId)).filter((item) => item.title === title);
@@ -30772,6 +30862,11 @@ function result(value, isError = false) {
     ...isError ? { isError: true } : {}
   };
 }
+function readOnlyError(error2) {
+  const message = redactSecrets(error2 instanceof Error ? error2.message : String(error2));
+  const notFound = /HTTP 404|not found/i.test(message);
+  return result({ status: notFound ? "not-found" : "blocked", errors: [message] }, !notFound);
+}
 async function rootsFor(mcpServer) {
   try {
     return (await mcpServer.server.listRoots()).roots ?? [];
@@ -30779,9 +30874,9 @@ async function rootsFor(mcpServer) {
     return [];
   }
 }
-function createE3McpServer({ service, developmentService } = {}) {
+function createE3McpServer({ service, developmentService, client: clientOverride } = {}) {
   const mcpServer = new McpServer({ name: "oec-e3", version: "1.0.3" });
-  const client = new E3Client({ auth: new AuthManager() });
+  const client = clientOverride ?? new E3Client({ auth: new AuthManager() });
   const publisher = service ?? new PublisherService({
     client
   });
@@ -30791,6 +30886,13 @@ function createE3McpServer({ service, developmentService } = {}) {
       return result(await handler(input));
     } catch (error2) {
       return result({ status: "blocked", errors: [redactSecrets(error2.message)] }, true);
+    }
+  };
+  const readOnlyGuarded = (handler) => async (input) => {
+    try {
+      return result(await handler(input));
+    } catch (error2) {
+      return readOnlyError(error2);
     }
   };
   mcpServer.registerTool("prepare_prd_publish", {
@@ -30828,6 +30930,72 @@ function createE3McpServer({ service, developmentService } = {}) {
     },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
   }, guarded(async (input) => publisher.status(input, await rootsFor(mcpServer))));
+  mcpServer.registerTool("query_my_e3_tasks", {
+    title: "Query my E3 tasks",
+    description: "Read the current authenticated account's E3 tasks with bounded filters and pagination.",
+    inputSchema: object({
+      filter: _enum(["MyToDo", "MyCharged", "MyParticipated"]).default("MyToDo"),
+      productId: string2().trim().min(1).max(128).optional(),
+      productIds: array(string2().trim().min(1).max(128)).max(100).optional(),
+      status: array(number2().int().min(0).max(99)).max(20).optional(),
+      keyword: string2().trim().max(200).optional(),
+      page: number2().int().min(1).max(1e4).default(1),
+      pageSize: number2().int().min(1).max(100).default(20)
+    }).strict(),
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  }, readOnlyGuarded(async (input) => {
+    if (input.productId && input.productIds) {
+      throw new Error("productId and productIds may not be supplied together");
+    }
+    return client.queryMyTasks({
+      ...input,
+      productIds: input.productIds ?? (input.productId ? [input.productId] : void 0)
+    });
+  }));
+  mcpServer.registerTool("get_e3_requirement_detail", {
+    title: "Get E3 requirement detail",
+    description: "Read one E3 system requirement after resolving its product-specific work item type.",
+    inputSchema: object({
+      productId: string2().trim().min(1).max(128),
+      requirementId: string2().trim().min(1).max(128)
+    }).strict(),
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  }, readOnlyGuarded(async (input) => {
+    const resolved = await client.getRequirementDetail(input.productId, input.requirementId);
+    if (!resolved.requirement) {
+      return {
+        status: "not-found",
+        source: { productId: input.productId, workItemId: resolved.workItemId, requirementId: input.requirementId }
+      };
+    }
+    return {
+      status: "success",
+      requirement: resolved.requirement,
+      source: { productId: input.productId, workItemId: resolved.workItemId }
+    };
+  }));
+  mcpServer.registerTool("get_e3_task_detail", {
+    title: "Get E3 task detail",
+    description: "Read one E3 development task without changing its status or worklog.",
+    inputSchema: object({
+      productId: string2().trim().min(1).max(128),
+      taskId: string2().trim().min(1).max(128)
+    }).strict(),
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  }, readOnlyGuarded(async (input) => {
+    const task = await client.getTask(input.productId, input.taskId);
+    if (!task) {
+      return {
+        status: "not-found",
+        source: { productId: input.productId, taskId: input.taskId }
+      };
+    }
+    return {
+      status: "success",
+      task,
+      source: { productId: input.productId }
+    };
+  }));
   mcpServer.registerTool("prepare_development_tasks", {
     title: "Prepare E3 development tasks",
     description: "Resolve a parent requirement and prepare an immutable plan to create or reuse bounded E3 development tasks.",

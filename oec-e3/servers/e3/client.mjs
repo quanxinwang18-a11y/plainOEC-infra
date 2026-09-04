@@ -80,6 +80,52 @@ export function normalizeTask(item) {
   };
 }
 
+export function normalizeWorkbenchTask(item) {
+  if (!item || typeof item !== 'object') return null;
+  const id = item.id ?? item.taskId ?? item.workItemId;
+  if (id === undefined || id === null) return null;
+  const title = item.name ?? item.taskName ?? item.title;
+  const status = item.status ?? item.taskStatus ?? item.state;
+  const priority = item.priority ?? item.priorityValue;
+  const productId = item.productId ?? item.ztProductId ?? item.product?.id ?? item.product?.productId;
+  const requirementId = item.storyId ?? item.requirementId ?? item.parentStoryId ?? item.story?.id;
+  return {
+    id: String(id),
+    title: title === undefined || title === null ? '' : String(title),
+    ...(productId === undefined || productId === null ? {} : { productId: String(productId) }),
+    ...(item.productName === undefined && item.ztProductName === undefined && item.product?.name === undefined
+      ? {} : { productName: String(item.productName ?? item.ztProductName ?? item.product?.name ?? '') }),
+    ...(requirementId === undefined || requirementId === null ? {} : { requirementId: String(requirementId) }),
+    ...(status === undefined || status === null ? {} : { status: String(status) }),
+    ...(item.statusDesc === undefined && item.statusName === undefined
+      ? {} : { statusDisplay: String(item.statusDesc ?? item.statusName ?? '') }),
+    ...(priority === undefined || priority === null ? {} : { priority: String(priority) }),
+    ...(item.priorityDesc === undefined && item.priorityName === undefined
+      ? {} : { priorityDisplay: String(item.priorityDesc ?? item.priorityName ?? '') }),
+    ...(item.pompProjectCode === undefined && item.projectCode === undefined
+      ? {} : { pompProjectCode: String(item.pompProjectCode ?? item.projectCode ?? '') }),
+    ...(item.pompProjectName === undefined && item.projectName === undefined
+      ? {} : { pompProjectName: String(item.pompProjectName ?? item.projectName ?? '') }),
+  };
+}
+
+export function normalizeRequirementDetail(item, fallbackId) {
+  const requirement = normalizeRequirement(item, fallbackId);
+  if (!requirement) return null;
+  const statusField = item?.fieldInfoMap?.status;
+  const status = statusField && typeof statusField === 'object'
+    ? statusField.value ?? statusField.displayValue
+    : fieldValue(item, 'status') ?? item.status ?? item.statusValue;
+  const statusDisplay = statusField && typeof statusField === 'object'
+    ? statusField.displayValue
+    : item.statusDesc ?? item.statusName;
+  return {
+    ...requirement,
+    ...(status === undefined || status === null ? {} : { status }),
+    ...(statusDisplay === undefined || statusDisplay === null ? {} : { statusDisplay: String(statusDisplay) }),
+  };
+}
+
 export function normalizeTaskLogInfo(item) {
   if (!item || typeof item !== 'object') return null;
   return {
@@ -100,6 +146,18 @@ export function normalizeTaskLogInfo(item) {
 function listFromPage(data) {
   if (Array.isArray(data)) return data;
   return data?.list ?? data?.records ?? data?.info ?? [];
+}
+
+function pageMetadata(data, defaults) {
+  const page = Number(data?.pageNo ?? data?.curPage ?? data?.page ?? defaults.page);
+  const pageSize = Number(data?.size ?? data?.pageSize ?? data?.page_size ?? defaults.pageSize);
+  const totalValue = data?.total ?? data?.totalCount ?? data?.count ?? defaults.total;
+  const total = Number(totalValue);
+  return {
+    page: Number.isInteger(page) && page > 0 ? page : defaults.page,
+    pageSize: Number.isInteger(pageSize) && pageSize > 0 ? pageSize : defaults.pageSize,
+    total: Number.isFinite(total) && total >= 0 ? total : defaults.total,
+  };
 }
 
 function optionsFrom(data, fieldKey) {
@@ -278,16 +336,25 @@ export class E3Client {
     return listFromPage(data).map((item) => normalizeRequirement(item)).filter(Boolean);
   }
 
-  async getRequirement(spaceId, workItemId, requirementId) {
+  async getRequirement(spaceId, workItemId, requirementId, { detailed = false } = {}) {
     try {
       const { data } = await this.request('GET', `/api/dm/story/v1/${requirementId}/info`, {
         query: { workItemId, productId: spaceId },
       });
-      return normalizeRequirement(data, requirementId);
+      return detailed ? normalizeRequirementDetail(data, requirementId) : normalizeRequirement(data, requirementId);
     } catch (error) {
       if (/HTTP 404|not found/i.test(error.message)) return null;
       throw error;
     }
+  }
+
+  async getRequirementDetail(spaceId, requirementId) {
+    const workItemId = await this.getWorkItemId(spaceId);
+    if (!workItemId) throw new Error('Selected E3 space has no system-requirement work item');
+    return {
+      workItemId: String(workItemId),
+      requirement: await this.getRequirement(spaceId, workItemId, requirementId, { detailed: true }),
+    };
   }
 
   async createRequirement(spaceId, metadata, requirement) {
@@ -334,6 +401,43 @@ export class E3Client {
       if (/HTTP 404|not found/i.test(error.message)) return null;
       throw error;
     }
+  }
+
+  async queryMyTasks({ filter = 'MyToDo', productIds, status, keyword, page = 1, pageSize = 20 } = {}) {
+    const normalizedPage = Number(page);
+    const normalizedPageSize = Number(pageSize);
+    if (!Number.isInteger(normalizedPage) || normalizedPage < 1) throw new Error('page must be a positive integer');
+    if (!Number.isInteger(normalizedPageSize) || normalizedPageSize < 1 || normalizedPageSize > 100) {
+      throw new Error('pageSize must be an integer between 1 and 100');
+    }
+    const normalizedProductIds = productIds?.map((value) => String(value).trim()).filter(Boolean);
+    const normalizedStatus = status?.map((value) => Number(value));
+    if (normalizedStatus?.some((value) => !Number.isInteger(value) || value < 0)) {
+      throw new Error('status must contain non-negative integer values');
+    }
+    const param = {
+      size: normalizedPageSize,
+      pageNo: normalizedPage,
+      orders: [{ asc: true, column: 'createTime' }],
+      ...(keyword?.trim() ? { condition: keyword.trim() } : {}),
+    };
+    const body = {
+      param,
+      filter,
+      ...(normalizedProductIds?.length ? { productId: normalizedProductIds } : {}),
+      ...(normalizedStatus?.length ? { status: normalizedStatus } : {}),
+    };
+    const { data } = await this.request('POST', '/api/workbench/v1/myWorkItem/task', { body });
+    const rawTasks = listFromPage(data);
+    const tasks = rawTasks.map(normalizeWorkbenchTask).filter(Boolean);
+    const metadata = pageMetadata(data, { page: normalizedPage, pageSize: normalizedPageSize, total: tasks.length });
+    return {
+      status: 'success',
+      filter,
+      ...metadata,
+      tasks,
+      ...(tasks.length !== rawTasks.length ? { warnings: ['E3 returned task records without a verifiable ID'] } : {}),
+    };
   }
 
   async findTasksByExactTitle(spaceId, requirementId, title) {

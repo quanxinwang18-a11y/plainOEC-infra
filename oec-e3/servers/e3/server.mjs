@@ -13,6 +13,12 @@ function result(value, isError = false) {
   };
 }
 
+function readOnlyError(error) {
+  const message = redactSecrets(error instanceof Error ? error.message : String(error));
+  const notFound = /HTTP 404|not found/i.test(message);
+  return result({ status: notFound ? 'not-found' : 'blocked', errors: [message] }, !notFound);
+}
+
 async function rootsFor(mcpServer) {
   try {
     return (await mcpServer.server.listRoots()).roots ?? [];
@@ -21,9 +27,9 @@ async function rootsFor(mcpServer) {
   }
 }
 
-export function createE3McpServer({ service, developmentService } = {}) {
+export function createE3McpServer({ service, developmentService, client: clientOverride } = {}) {
   const mcpServer = new McpServer({ name: 'oec-e3', version: '1.0.3' });
-  const client = new E3Client({ auth: new AuthManager() });
+  const client = clientOverride ?? new E3Client({ auth: new AuthManager() });
   const publisher = service ?? new PublisherService({
     client,
   });
@@ -34,6 +40,13 @@ export function createE3McpServer({ service, developmentService } = {}) {
       return result(await handler(input));
     } catch (error) {
       return result({ status: 'blocked', errors: [redactSecrets(error.message)] }, true);
+    }
+  };
+  const readOnlyGuarded = (handler) => async (input) => {
+    try {
+      return result(await handler(input));
+    } catch (error) {
+      return readOnlyError(error);
     }
   };
 
@@ -75,6 +88,75 @@ export function createE3McpServer({ service, developmentService } = {}) {
     },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
   }, guarded(async (input) => publisher.status(input, await rootsFor(mcpServer))));
+
+  mcpServer.registerTool('query_my_e3_tasks', {
+    title: 'Query my E3 tasks',
+    description: 'Read the current authenticated account\'s E3 tasks with bounded filters and pagination.',
+    inputSchema: z.object({
+      filter: z.enum(['MyToDo', 'MyCharged', 'MyParticipated']).default('MyToDo'),
+      productId: z.string().trim().min(1).max(128).optional(),
+      productIds: z.array(z.string().trim().min(1).max(128)).max(100).optional(),
+      status: z.array(z.number().int().min(0).max(99)).max(20).optional(),
+      keyword: z.string().trim().max(200).optional(),
+      page: z.number().int().min(1).max(10000).default(1),
+      pageSize: z.number().int().min(1).max(100).default(20),
+    }).strict(),
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+  }, readOnlyGuarded(async (input) => {
+    if (input.productId && input.productIds) {
+      throw new Error('productId and productIds may not be supplied together');
+    }
+    return client.queryMyTasks({
+      ...input,
+      productIds: input.productIds ?? (input.productId ? [input.productId] : undefined),
+    });
+  }));
+
+  mcpServer.registerTool('get_e3_requirement_detail', {
+    title: 'Get E3 requirement detail',
+    description: 'Read one E3 system requirement after resolving its product-specific work item type.',
+    inputSchema: z.object({
+      productId: z.string().trim().min(1).max(128),
+      requirementId: z.string().trim().min(1).max(128),
+    }).strict(),
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+  }, readOnlyGuarded(async (input) => {
+    const resolved = await client.getRequirementDetail(input.productId, input.requirementId);
+    if (!resolved.requirement) {
+      return {
+        status: 'not-found',
+        source: { productId: input.productId, workItemId: resolved.workItemId, requirementId: input.requirementId },
+      };
+    }
+    return {
+      status: 'success',
+      requirement: resolved.requirement,
+      source: { productId: input.productId, workItemId: resolved.workItemId },
+    };
+  }));
+
+  mcpServer.registerTool('get_e3_task_detail', {
+    title: 'Get E3 task detail',
+    description: 'Read one E3 development task without changing its status or worklog.',
+    inputSchema: z.object({
+      productId: z.string().trim().min(1).max(128),
+      taskId: z.string().trim().min(1).max(128),
+    }).strict(),
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+  }, readOnlyGuarded(async (input) => {
+    const task = await client.getTask(input.productId, input.taskId);
+    if (!task) {
+      return {
+        status: 'not-found',
+        source: { productId: input.productId, taskId: input.taskId },
+      };
+    }
+    return {
+      status: 'success',
+      task,
+      source: { productId: input.productId },
+    };
+  }));
 
   mcpServer.registerTool('prepare_development_tasks', {
     title: 'Prepare E3 development tasks',

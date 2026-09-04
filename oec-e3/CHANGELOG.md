@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Add three guarded read-only query tools for the authenticated user's E3 tasks, system-requirement
+  details, and development-task details. Query tools use dynamic work-item resolution, bounded
+  pagination, product-space scoping, and no remote write path.
+
 ## 1.0.3
 
 - Bind PRD publication plans to the resolved E3 account and reject account changes before execution.

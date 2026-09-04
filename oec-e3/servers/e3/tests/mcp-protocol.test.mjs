@@ -51,7 +51,21 @@ test('MCP protocol exposes publication and development-planning tools with guard
       return { status: 'synced' };
     },
   };
-  const server = createE3McpServer({ service, developmentService });
+  const queryClient = {
+    async queryMyTasks(input) {
+      observed.push({ operation: 'query-my-tasks', input });
+      return { status: 'success', filter: input.filter, page: input.page, pageSize: input.pageSize, total: 0, tasks: [] };
+    },
+    async getRequirementDetail(productId, requirementId) {
+      observed.push({ operation: 'requirement-detail', productId, requirementId });
+      return { workItemId: '1073', requirement: null };
+    },
+    async getTask(productId, taskId) {
+      observed.push({ operation: 'task-detail', productId, taskId });
+      return null;
+    },
+  };
+  const server = createE3McpServer({ service, developmentService, client: queryClient });
   const client = new Client(
     { name: 'oec-mcp-protocol-test', version: '1.0.0' },
     { capabilities: { roots: { listChanged: false } } },
@@ -69,6 +83,9 @@ test('MCP protocol exposes publication and development-planning tools with guard
       'select_product_space',
       'execute_prd_publish',
       'get_prd_publish_status',
+      'query_my_e3_tasks',
+      'get_e3_requirement_detail',
+      'get_e3_task_detail',
       'prepare_development_tasks',
       'select_development_requirement',
       'execute_development_tasks',
@@ -79,6 +96,13 @@ test('MCP protocol exposes publication and development-planning tools with guard
     const execute = tools.tools.find((tool) => tool.name === 'execute_prd_publish');
     assert.equal(execute.annotations.destructiveHint, true);
     assert.equal(execute._meta['anthropic/requiresUserInteraction'], true);
+    for (const name of ['query_my_e3_tasks', 'get_e3_requirement_detail', 'get_e3_task_detail']) {
+      const queryTool = tools.tools.find((tool) => tool.name === name);
+      assert.equal(queryTool.annotations.readOnlyHint, true);
+      assert.equal(queryTool.annotations.destructiveHint, false);
+      assert.equal(queryTool.annotations.idempotentHint, true);
+      assert.equal(queryTool.inputSchema.additionalProperties, false);
+    }
     const developmentExecute = tools.tools.find((tool) => tool.name === 'execute_development_tasks');
     assert.equal(developmentExecute.annotations.destructiveHint, true);
     assert.equal(developmentExecute._meta['anthropic/requiresUserInteraction'], true);
@@ -100,6 +124,21 @@ test('MCP protocol exposes publication and development-planning tools with guard
       name: 'get_prd_publish_status',
       arguments: { workspaceUri: 'file:///authorized/workspace', version: 'v1.2.3' },
     });
+    const myTasks = await client.callTool({
+      name: 'query_my_e3_tasks',
+      arguments: { filter: 'MyToDo', productId: 'space-1', page: 1, pageSize: 20 },
+    });
+    assert.equal(myTasks.structuredContent.status, 'success');
+    const requirementDetail = await client.callTool({
+      name: 'get_e3_requirement_detail',
+      arguments: { productId: 'space-1', requirementId: 'req-1' },
+    });
+    assert.equal(requirementDetail.structuredContent.status, 'not-found');
+    const taskDetail = await client.callTool({
+      name: 'get_e3_task_detail',
+      arguments: { productId: 'space-1', taskId: 'task-1' },
+    });
+    assert.equal(taskDetail.structuredContent.status, 'not-found');
     await client.callTool({
       name: 'prepare_development_tasks',
       arguments: {
@@ -127,10 +166,29 @@ test('MCP protocol exposes publication and development-planning tools with guard
       name: 'get_development_task_status',
       arguments: { workspaceUri: 'file:///authorized/workspace', changeId: 'v1.2.3-alpha' },
     });
-    assert.equal(observed.length, 10);
+    assert.equal(observed.filter((item) => item.operation.startsWith('query-') || item.operation.endsWith('-detail')).length, 3);
+    assert.equal(observed.filter((item) => item.roots).length, 10);
     for (const entry of observed.filter((item) => item.roots)) {
       assert.deepEqual(entry.roots, [{ uri: 'file:///authorized/workspace', name: 'fixture' }]);
     }
+  } finally {
+    await Promise.all([client.close(), server.close()]);
+  }
+});
+
+test('MCP protocol classifies and redacts read-only query failures', async () => {
+  const queryClient = {
+    async queryMyTasks() { throw new Error('E3 HTTP 403: access_token=super-secret'); },
+  };
+  const server = createE3McpServer({ client: queryClient });
+  const client = new Client({ name: 'oec-read-query-error-test', version: '1.0.0' }, { capabilities: {} });
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+  try {
+    const response = await client.callTool({ name: 'query_my_e3_tasks', arguments: {} });
+    assert.equal(response.isError, true);
+    assert.equal(response.structuredContent.status, 'blocked');
+    assert.doesNotMatch(response.content[0].text, /super-secret/);
   } finally {
     await Promise.all([client.close(), server.close()]);
   }

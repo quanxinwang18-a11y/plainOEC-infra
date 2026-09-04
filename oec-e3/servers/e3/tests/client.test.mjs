@@ -6,8 +6,10 @@ import {
   extractE3Data,
   isE3Success,
   normalizeRequirement,
+  normalizeRequirementDetail,
   normalizeTask,
   normalizeTaskLogInfo,
+  normalizeWorkbenchTask,
   selectMetadataOption,
 } from '../client.mjs';
 
@@ -125,6 +127,126 @@ test('E3 client keeps business APIs under fixed /cyxt origin and CCF APIs at the
   assert.deepEqual(urls, [
     'https://one.iflytek.com/cyxt/api/example',
     'https://one.iflytek.com/ccf/example',
+  ]);
+});
+
+test('E3 client normalizes workbench task fields without accepting a caller-supplied account', () => {
+  assert.deepEqual(normalizeWorkbenchTask({
+    workItemId: 34,
+    title: 'Task',
+    productId: 123,
+    productName: 'Payment',
+    storyId: 12,
+    status: 2,
+    statusDesc: 'In progress',
+    priority: 3,
+    priorityDesc: 'High',
+  }), {
+    id: '34',
+    title: 'Task',
+    productId: '123',
+    productName: 'Payment',
+    requirementId: '12',
+    status: '2',
+    statusDisplay: 'In progress',
+    priority: '3',
+    priorityDisplay: 'High',
+  });
+  assert.equal(normalizeWorkbenchTask({ title: 'Missing ID' }), null);
+});
+
+test('E3 client queries my tasks with bounded pagination and current-account API scope', async () => {
+  const requests = [];
+  const client = new E3Client({
+    auth: { async getAccessToken() { return { token: 'test-token', source: 'local' }; } },
+    fetchFn: async (url, options) => {
+      requests.push({ url: url.toString(), method: options.method, body: JSON.parse(options.body) });
+      return new Response(JSON.stringify({
+        code: '200',
+        data: {
+          total: 2,
+          pageNo: 2,
+          size: 2,
+          list: [{
+            workItemId: 34,
+            title: 'Task',
+            productId: 123,
+            storyId: 12,
+            status: 2,
+          }],
+        },
+      }), { status: 200 });
+    },
+  });
+  assert.deepEqual(await client.queryMyTasks({
+    filter: 'MyCharged',
+    productIds: ['123', '456'],
+    status: [1, 2],
+    keyword: 'payment',
+    page: 2,
+    pageSize: 2,
+  }), {
+    status: 'success',
+    filter: 'MyCharged',
+    page: 2,
+    pageSize: 2,
+    total: 2,
+    tasks: [{ id: '34', title: 'Task', productId: '123', requirementId: '12', status: '2' }],
+  });
+  assert.deepEqual(requests, [{
+    url: 'https://one.iflytek.com/cyxt/api/workbench/v1/myWorkItem/task',
+    method: 'POST',
+    body: {
+      param: {
+        size: 2,
+        pageNo: 2,
+        orders: [{ asc: true, column: 'createTime' }],
+        condition: 'payment',
+      },
+      filter: 'MyCharged',
+      productId: ['123', '456'],
+      status: [1, 2],
+    },
+  }]);
+});
+
+test('E3 client resolves requirement workItemId dynamically before detail query', async () => {
+  const requests = [];
+  const client = new E3Client({
+    auth: { async getAccessToken() { return { token: 'test-token', source: 'local' }; } },
+    fetchFn: async (url, options) => {
+      requests.push({ url: url.toString(), method: options.method, body: options.body ? JSON.parse(options.body) : undefined });
+      if (url.pathname.endsWith('/workItemId/list')) {
+        return new Response(JSON.stringify({ code: 'E00000000', info: [{ workItemKey: 'system_requirement', workItemId: 1073 }] }), { status: 200 });
+      }
+      return new Response(JSON.stringify({
+        code: 'E00000000',
+        info: {
+          id: 456,
+          fieldInfoMap: {
+            title: { value: 'Requirement' },
+            description: { value: '<p>Body</p>' },
+            priority: { value: 3 },
+            status: { value: 'developing', displayValue: 'Developing' },
+          },
+        },
+      }), { status: 200 });
+    },
+  });
+  assert.deepEqual(await client.getRequirementDetail('123', '456'), {
+    workItemId: '1073',
+    requirement: {
+      id: '456',
+      title: 'Requirement',
+      description: '<p>Body</p>',
+      priority: 3,
+      status: 'developing',
+      statusDisplay: 'Developing',
+    },
+  });
+  assert.deepEqual(requests.map(({ url, method }) => [method, url]), [
+    ['POST', 'https://one.iflytek.com/cyxt/api/panshi/v1/ccf/workItemId/list'],
+    ['GET', 'https://one.iflytek.com/cyxt/api/dm/story/v1/456/info?workItemId=1073&productId=123'],
   ]);
 });
 
