@@ -196,7 +196,7 @@ get_e3_task_detail(productId=202330, taskId=<non-production task>)
 结果：
 
 ```text
-toolCount: 13
+toolCount: 15
 read-only query tools discovered: true
 query_my_e3_tasks: status=success, taskCount=2, isError=false
 get_e3_requirement_detail: status=success, workItemId=1057, isError=false

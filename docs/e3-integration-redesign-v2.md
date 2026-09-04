@@ -2,8 +2,8 @@
 
 **文档版本**: 2.1
 **制定日期**: 2026-09-04
-**状态**: Approved design baseline；尚未开始实施
-**代码基线**: `0f9ee81`，`oec-e3@1.0.3`
+**状态**: Approved design baseline；Phase 0/1 已完成，Phase 2 核心能力已实现，Gate 2 宿主持久化验收及后续 Phase 3-5 待完成
+**代码基线**: `e4823eb`，`oec-e3@1.0.3`
 **负责人**: [待定]
 
 ---
