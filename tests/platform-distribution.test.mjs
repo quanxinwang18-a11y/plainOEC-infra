@@ -62,7 +62,7 @@ test('only platform Plugins own MCP Servers and tool counts remain bounded', asy
   await assert.rejects(readFile(resolve(repositoryRoot, 'oec-product', '.mcp.json')), /ENOENT/);
   await assert.rejects(readFile(resolve(repositoryRoot, 'oec-dev', '.mcp.json')), /ENOENT/);
   for (const [plugin, server, count] of [
-    ['oec-e3', 'servers/e3/server.mjs', 13],
+    ['oec-e3', 'servers/e3/server.mjs', 15],
     ['oec-pipeline', 'servers/pipeline/server.mjs', 4],
   ]) {
     const mcp = JSON.parse(await readFile(resolve(repositoryRoot, plugin, '.mcp.json'), 'utf8'));

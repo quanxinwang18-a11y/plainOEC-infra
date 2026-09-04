@@ -35,6 +35,8 @@ test('bundled E3 server completes MCP stdio discovery without node_modules', asy
       'select_product_space',
       'execute_prd_publish',
       'get_prd_publish_status',
+      'prepare_e3_workspace_binding',
+      'get_e3_workspace_binding',
       'query_my_e3_tasks',
       'get_e3_requirement_detail',
       'get_e3_task_detail',

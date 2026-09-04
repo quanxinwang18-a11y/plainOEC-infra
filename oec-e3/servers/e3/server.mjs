@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import * as z from 'zod/v4';
 import { AuthManager, redactSecrets } from './auth.mjs';
-import { E3Client } from './client.mjs';
+import { E3Client, isE3NotFoundError } from './client.mjs';
 import { DevelopmentTaskService } from './development.mjs';
 import { PublisherService } from './publisher.mjs';
 
@@ -15,7 +15,7 @@ function result(value, isError = false) {
 
 function readOnlyError(error) {
   const message = redactSecrets(error instanceof Error ? error.message : String(error));
-  const notFound = /HTTP 404|not found/i.test(message);
+  const notFound = isE3NotFoundError(error);
   return result({ status: notFound ? 'not-found' : 'blocked', errors: [message] }, !notFound);
 }
 
@@ -62,7 +62,7 @@ export function createE3McpServer({ service, developmentService, client: clientO
 
   mcpServer.registerTool('select_product_space', {
     title: 'Select E3 product space',
-    description: 'Persist a workspace-bound product space returned by publication preparation.',
+    description: 'Persist a workspace-bound product space returned by PRD publication or workspace-binding preparation.',
     inputSchema: {
       selectionToken: z.string().min(32),
       spaceId: z.string().min(1),
@@ -88,6 +88,24 @@ export function createE3McpServer({ service, developmentService, client: clientO
     },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
   }, guarded(async (input) => publisher.status(input, await rootsFor(mcpServer))));
+
+  mcpServer.registerTool('prepare_e3_workspace_binding', {
+    title: 'Prepare E3 workspace binding',
+    description: 'Read the authenticated E3 spaces and prepare a workspace-scoped selection without changing E3.',
+    inputSchema: {
+      workspaceUri: z.string().url().describe('A file URI returned by MCP roots/list'),
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+  }, readOnlyGuarded(async (input) => publisher.prepareWorkspaceBinding(input, await rootsFor(mcpServer))));
+
+  mcpServer.registerTool('get_e3_workspace_binding', {
+    title: 'Get E3 workspace binding',
+    description: 'Read the E3 product-space binding for one client-authorized workspace.',
+    inputSchema: {
+      workspaceUri: z.string().url().describe('A file URI returned by MCP roots/list'),
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+  }, readOnlyGuarded(async (input) => publisher.workspaceBinding(input, await rootsFor(mcpServer))));
 
   mcpServer.registerTool('query_my_e3_tasks', {
     title: 'Query my E3 tasks',

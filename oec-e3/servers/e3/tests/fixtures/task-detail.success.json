@@ -1,0 +1,26 @@
+{
+  "code": "E00000000",
+  "msg": "ok",
+  "headers": {},
+  "info": {
+    "id": 900201,
+    "parentId": 0,
+    "planId": 0,
+    "productId": 900001,
+    "taskType": 3,
+    "taskTypeName": "通用任务",
+    "name": "[TEST] sanitized development task",
+    "priority": 2,
+    "priorityName": "中",
+    "status": 1,
+    "statusName": "未开始",
+    "storyId": "900101",
+    "storyTitle": "[TEST] sanitized requirement",
+    "planWorkload": 0.5,
+    "progressPercentage": null,
+    "pompProjectCode": "SANITIZED-POMP",
+    "pompProjectName": "Sanitized POMP project",
+    "createTime": "2026-08-20 10:00:00",
+    "editTime": "2026-08-20 10:00:00"
+  }
+}

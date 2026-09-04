@@ -886,7 +886,11 @@ prepare_task_progress
 ✅ 记录分页字段和边界情况
 ```
 
-只有 Gate 0 通过后，才能实现查询工具。
+**当前结果**：只读成功响应、动态字段、分页以及 401/业务 not-found 已通过真实非生产验证，
+脱敏 fixture 和执行记录见 [`docs/evidence/e3-readonly-query-gate-0.md`](evidence/e3-readonly-query-gate-0.md)。
+真实 403 fixture 尚未取得，因此完整权限矩阵仍未完成；它不阻塞当前只读实现，但阻塞完整真实权限验收。
+
+Gate 0 的只读查询范围已通过，可以进入 Gate 1 的真实 outcome 验收。
 
 ### Gate 1：Read-only Outcome
 
@@ -900,7 +904,13 @@ prepare_task_progress
 错误表达可操作
 ```
 
-通过后才考虑 workspace binding。
+**当前结果**：使用当前 `oec-e3/dist/e3-server.mjs` 的 MCP stdio transport 已完成真实非生产只读
+查询，三个查询工具均返回 `success`，没有调用任何写入工具。详细证据见
+[`docs/evidence/e3-readonly-query-gate-0.md`](evidence/e3-readonly-query-gate-0.md)。
+
+真实 403 权限错误仍待安全的非生产权限边界验证；它不阻塞当前只读功能，但阻塞完整权限矩阵声明。
+
+Gate 1 的成功查询范围已通过，可以进入 workspace binding 的设计和测试；不得因此跳过 Gate 2 的隔离验收。
 
 ### Gate 2：Binding Safety
 
@@ -913,6 +923,11 @@ workspace binding 必须证明：
 不注入 SessionStart
 配置损坏安全失败
 ```
+
+**当前结果**：`prepare_e3_workspace_binding` 和 `get_e3_workspace_binding` 已在当前 MCP bundle 和授权
+workspace root 上完成只读/prepare 验收，首次调用返回 `needs_space_selection`，未绑定状态返回 `unbound`。
+用户明确选择 `202330` 后，已在隔离的临时 Plugin Data 中验证 `select_product_space` 返回 `selected`，并由
+`get_e3_workspace_binding` 读回 `bound`；由于当前 shell 未提供宿主的 `${CLAUDE_PLUGIN_DATA}`，没有擅自写入猜测的用户级目录。
 
 通过后才开放跨仓映射试点。
 

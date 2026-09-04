@@ -139,6 +139,29 @@ test('MCP roots require an exact client-provided workspace and HTML is escaped',
   assert.equal(escapeHtml('<script> & "x"'), '&lt;script&gt; &amp; &quot;x&quot;');
 });
 
+test('workspace binding uses an explicit selection and exposes only the current workspace config', async () => {
+  const value = await fixture();
+  const service = new PublisherService({ client: new FakeE3Client(), dataDirectory: value.dataDirectory });
+
+  assert.deepEqual(await service.workspaceBinding({ workspaceUri: value.workspaceUri }, value.roots), {
+    status: 'unbound',
+  });
+  const prepared = await service.prepareWorkspaceBinding({ workspaceUri: value.workspaceUri }, value.roots);
+  assert.equal(prepared.status, 'needs_space_selection');
+  assert.equal(prepared.candidates.length, 1);
+  assert.match(prepared.selectionToken, /^[A-Za-z0-9_-]{32,}$/);
+
+  const selected = await service.selectProductSpace({
+    selectionToken: prepared.selectionToken,
+    spaceId: 'space-1',
+  }, value.roots);
+  assert.equal(selected.status, 'selected');
+  const binding = await service.workspaceBinding({ workspaceUri: value.workspaceUri }, value.roots);
+  assert.equal(binding.status, 'bound');
+  assert.equal(binding.productSpace.id, 'space-1');
+  assert.equal(binding.pompProject.code, 'pomp-1');
+});
+
 test('workspace selections and product-space configuration are isolated by canonical root', async () => {
   const dataDirectory = await mkdtemp(join(tmpdir(), 'oec-publish-shared-data-'));
   const first = await fixture(1, dataDirectory);

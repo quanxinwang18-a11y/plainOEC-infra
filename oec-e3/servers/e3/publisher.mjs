@@ -597,6 +597,47 @@ export class PublisherService {
     }
   }
 
+  async prepareWorkspaceBinding({ workspaceUri }, roots) {
+    const workspace = await resolveAuthorizedWorkspace(workspaceUri, roots);
+    const config = await loadConfig(workspace, this.dataDirectory);
+    if (config?.productSpace) {
+      return {
+        status: 'bound',
+        productSpace: config.productSpace,
+        ...(config.pompProject ? { pompProject: config.pompProject } : {}),
+        ...(config.productRoot ? { productRoot: config.productRoot } : {}),
+      };
+    }
+    const candidates = await this.client.listSpaces();
+    if (candidates.length === 0) return { status: 'blocked', errors: ['E3 returned no product spaces'] };
+    const expiresAt = this.now() + PLAN_TTL_MS;
+    const selectionToken = await storeSelection({
+      workspace,
+      phase: 'space',
+      candidates,
+      createdAt: this.now(),
+      expiresAt,
+    }, this.dataDirectory);
+    return {
+      status: 'needs_space_selection',
+      selectionToken,
+      expiresAt: new Date(expiresAt).toISOString(),
+      candidates,
+    };
+  }
+
+  async workspaceBinding({ workspaceUri }, roots) {
+    const workspace = await resolveAuthorizedWorkspace(workspaceUri, roots);
+    const config = await loadConfig(workspace, this.dataDirectory);
+    if (!config?.productSpace) return { status: 'unbound' };
+    return {
+      status: 'bound',
+      productSpace: config.productSpace,
+      ...(config.pompProject ? { pompProject: config.pompProject } : {}),
+      ...(config.productRoot ? { productRoot: config.productRoot } : {}),
+    };
+  }
+
   async selectProductSpace({ selectionToken, spaceId, pompProjectCode }, roots) {
     const selection = await loadSelection(selectionToken, this.dataDirectory, this.now());
     const workspace = await assertSelectionWorkspace(selection, roots);

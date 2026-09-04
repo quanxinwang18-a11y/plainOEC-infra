@@ -32,6 +32,11 @@ function errorMessage(response) {
   return response.msg ?? response.message ?? response.error ?? `E3 code ${response.code ?? 'unknown'}`;
 }
 
+export function isE3NotFoundError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  return /HTTP 404|\bnot found\b|请求数据不存在|任务不存在|需求不存在/i.test(message);
+}
+
 function decodeJwtAccount(token) {
   const parts = token.split('.');
   if (parts.length !== 3) return null;
@@ -343,7 +348,7 @@ export class E3Client {
       });
       return detailed ? normalizeRequirementDetail(data, requirementId) : normalizeRequirement(data, requirementId);
     } catch (error) {
-      if (/HTTP 404|not found/i.test(error.message)) return null;
+      if (isE3NotFoundError(error)) return null;
       throw error;
     }
   }
@@ -398,7 +403,7 @@ export class E3Client {
       });
       return normalizeTask(data);
     } catch (error) {
-      if (/HTTP 404|not found/i.test(error.message)) return null;
+      if (isE3NotFoundError(error)) return null;
       throw error;
     }
   }

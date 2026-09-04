@@ -596,7 +596,7 @@
 
               <text x="15" y="250" class="s-label">PLATFORM INTEGRATION PLUGINS</text>
               <rect x="175" y="266" width="340" height="93" rx="12" fill="#302417" stroke="#ffb86c" stroke-opacity=".65"/>
-              <text x="197" y="297" class="s-mono" fill="#ffe0b3">oec-e3</text><text x="197" y="321" class="s-sub">E3 MCP · PRD 发布 · 研发任务 · 状态回读</text><text x="197" y="344" class="s-small">1 Server · 10 typed tools · controlled writes</text>
+              <text x="197" y="297" class="s-mono" fill="#ffe0b3">oec-e3</text><text x="197" y="321" class="s-sub">E3 MCP · PRD 发布 · 研发任务 · 状态回读</text><text x="197" y="344" class="s-small">1 Server · 15 typed tools · controlled writes and read-only queries</text>
               <rect x="605" y="266" width="340" height="93" rx="12" fill="#163027" stroke="#7be0a8" stroke-opacity=".63"/>
               <text x="627" y="297" class="s-mono" fill="#bff4d3">oec-pipeline</text><text x="627" y="321" class="s-sub">既有 dev / test Pipeline 发现与运行</text><text x="627" y="344" class="s-small">1 Server · 4 typed tools · no prod</text>
 
@@ -699,7 +699,7 @@
             <div><div class="section-index">03 / CAPABILITY CATALOG</div><h2>能力不是流程阶段：按用户目标发现并组合</h2><p class="section-intro">下方列出当前可用的 Skills、Agents、MCP Tools 和 <code>oec-spec</code> runtime。Skill 被调用不等于获得 commit 或远端写入授权；Agent 也不是普通任务的必经阶段。</p></div>
             <div class="section-aside">名称保持仓库原始标识；描述聚焦“做什么 / 不做什么”</div>
           </div>
-          <div class="tab-bar" role="tablist" aria-label="能力分类"><button class="tab-btn active" data-cap="product" role="tab" aria-selected="true">Product · 3 Skills</button><button class="tab-btn" data-cap="engineering" role="tab" aria-selected="false">Engineering · 10 + bootstrap</button><button class="tab-btn" data-cap="agents" role="tab" aria-selected="false">Agents · 5 total</button><button class="tab-btn" data-cap="e3" role="tab" aria-selected="false">E3 · 13 Tools</button><button class="tab-btn" data-cap="pipeline" role="tab" aria-selected="false">Pipeline · 4 Tools</button><button class="tab-btn" data-cap="utility" role="tab" aria-selected="false">Beta / Common · 2 Skills</button></div>
+          <div class="tab-bar" role="tablist" aria-label="能力分类"><button class="tab-btn active" data-cap="product" role="tab" aria-selected="true">Product · 3 Skills</button><button class="tab-btn" data-cap="engineering" role="tab" aria-selected="false">Engineering · 10 + bootstrap</button><button class="tab-btn" data-cap="agents" role="tab" aria-selected="false">Agents · 5 total</button><button class="tab-btn" data-cap="e3" role="tab" aria-selected="false">E3 · 15 Tools</button><button class="tab-btn" data-cap="pipeline" role="tab" aria-selected="false">Pipeline · 4 Tools</button><button class="tab-btn" data-cap="utility" role="tab" aria-selected="false">Beta / Common · 2 Skills</button></div>
 
           <div class="cap-panel active" data-cap-panel="product">
             <div class="subhead"><h3>Product Skills</h3><p>写作、评审与明确发布意图均可按目标发现；远端写入保持确认门</p></div>
@@ -753,14 +753,19 @@
           </div>
 
           <div class="cap-panel" data-cap-panel="e3">
-            <div class="subhead"><h3>E3 MCP · 13 typed tools</h3><p>同一认证、状态、Owner 和远端生命周期，因此暂不拆成两个平台 Plugin</p></div>
-            <div class="callout"><strong>共同门禁：</strong>prepare 只读且不创建远端对象；必要时 select 唯一候选；execute 只接受 workspace-bound 的短期 immutable plan，并要求宿主人类交互；status 独立 read-back。身份、漂移、未知响应和并发不确定时默认 blocked / partial / unknown。Product 依赖会让宿主看到完整 13 Tools，但 Product Skill 仍只允许对应的发布语义。</div>
+            <div class="subhead"><h3>E3 MCP · 15 typed tools</h3><p>同一认证、状态、Owner 和远端生命周期，因此暂不拆成两个平台 Plugin</p></div>
+            <div class="callout"><strong>共同门禁：</strong>prepare 只读且不创建远端对象；必要时 select 唯一候选；execute 只接受 workspace-bound 的短期 immutable plan，并要求宿主人类交互；status 独立 read-back。身份、漂移、未知响应和并发不确定时默认 blocked / partial / unknown。Product 依赖会让宿主看到完整 15 Tools，但 Product Skill 仍只允许对应的发布语义。</div>
             <div class="tool-group">PRD publication · 发布主链</div>
             <div class="matrix-wrap"><table class="tool-table"><thead><tr><th>Tool</th><th>阶段</th><th>功能</th><th>副作用 / 关键约束</th></tr></thead><tbody>
               <tr data-searchable data-search="prepare_prd_publish e3 prd validate plan readonly"><td><code>prepare_prd_publish</code></td><td>prepare</td><td>验证 PRD / HANDOFF artifact contract，生成非变更发布计划。</td><td class="no">只读；绑定 workspace、version、fingerprint、账号上下文。</td></tr>
               <tr data-searchable data-search="select_product_space e3 product space selection"><td><code>select_product_space</code></td><td>select</td><td>从发布准备返回的候选中选择并持久化 workspace-bound product space / POMP。</td><td class="guard">短期 selection token；不接受模糊默认。</td></tr>
               <tr data-searchable data-search="execute_prd_publish e3 execute publish human confirmation checkpoint"><td><code>execute_prd_publish</code></td><td>execute</td><td>执行已经准备好的不可变 PRD 发布计划，并在每个成功远端结果后 checkpoint。</td><td class="guard">destructive；需要 Human confirmation；漂移或未知结果不盲重试。</td></tr>
               <tr data-searchable data-search="get_prd_publish_status e3 status read back publication record"><td><code>get_prd_publish_status</code></td><td>status</td><td>读取 publication record，验证 requirement、tasks、空间归属和当前远端状态。</td><td class="no">只读；以历史 record 空间验证，不因当前配置改变归属。</td></tr>
+            </tbody></table></div>
+            <div class="tool-group">Workspace binding · 当前工作区绑定</div>
+            <div class="matrix-wrap"><table class="tool-table"><thead><tr><th>Tool</th><th>阶段</th><th>功能</th><th>副作用 / 关键约束</th></tr></thead><tbody>
+              <tr data-searchable data-search="prepare_e3_workspace_binding e3 workspace binding readonly selection"><td><code>prepare_e3_workspace_binding</code></td><td>prepare</td><td>读取当前授权 workspace 可用的 E3 空间并准备一次性选择。</td><td class="no">只读远端；选择 token 仅保存短期 Plugin Data。</td></tr>
+              <tr data-searchable data-search="get_e3_workspace_binding e3 workspace binding readonly config"><td><code>get_e3_workspace_binding</code></td><td>query</td><td>读取当前授权 workspace 的 E3 空间绑定。</td><td class="no">只读；未绑定返回 unbound，不扫描其他仓库。</td></tr>
             </tbody></table></div>
             <div class="tool-group">Read-only queries · 开发者查询</div>
             <div class="matrix-wrap"><table class="tool-table"><thead><tr><th>Tool</th><th>阶段</th><th>功能</th><th>副作用 / 关键约束</th></tr></thead><tbody>

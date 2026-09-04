@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import test from 'node:test';
 import {
   E3Client,
@@ -12,6 +14,10 @@ import {
   normalizeWorkbenchTask,
   selectMetadataOption,
 } from '../client.mjs';
+
+function readFixture(name) {
+  return JSON.parse(readFileSync(resolve(import.meta.dirname, 'fixtures', name), 'utf8'));
+}
 
 test('E3 success classifier accepts known codes and rejects permission errors', () => {
   for (const code of ['E00000000', '0', 0, '200', 200]) assert.equal(isE3Success({ code }), true);
@@ -161,21 +167,7 @@ test('E3 client queries my tasks with bounded pagination and current-account API
     auth: { async getAccessToken() { return { token: 'test-token', source: 'local' }; } },
     fetchFn: async (url, options) => {
       requests.push({ url: url.toString(), method: options.method, body: JSON.parse(options.body) });
-      return new Response(JSON.stringify({
-        code: '200',
-        data: {
-          total: 2,
-          pageNo: 2,
-          size: 2,
-          list: [{
-            workItemId: 34,
-            title: 'Task',
-            productId: 123,
-            storyId: 12,
-            status: 2,
-          }],
-        },
-      }), { status: 200 });
+      return new Response(JSON.stringify(readFixture('query-my-tasks.success.json')), { status: 200 });
     },
   });
   assert.deepEqual(await client.queryMyTasks({
@@ -183,15 +175,40 @@ test('E3 client queries my tasks with bounded pagination and current-account API
     productIds: ['123', '456'],
     status: [1, 2],
     keyword: 'payment',
-    page: 2,
+    page: 1,
     pageSize: 2,
   }), {
     status: 'success',
     filter: 'MyCharged',
-    page: 2,
+    page: 1,
     pageSize: 2,
     total: 2,
-    tasks: [{ id: '34', title: 'Task', productId: '123', requirementId: '12', status: '2' }],
+    tasks: [
+      {
+        id: '900001',
+        title: '[TEST] read-only task one',
+        productId: '900001',
+        productName: 'Sanitized non-production space',
+        status: '1',
+        statusDisplay: '未开始',
+        priority: '2',
+        priorityDisplay: '中',
+        pompProjectCode: '',
+        pompProjectName: '',
+      },
+      {
+        id: '900002',
+        title: '[TEST] read-only task two',
+        productId: '900001',
+        productName: 'Sanitized non-production space',
+        status: '3',
+        statusDisplay: '已完成',
+        priority: '3',
+        priorityDisplay: '高',
+        pompProjectCode: 'SANITIZED-POMP',
+        pompProjectName: 'Sanitized POMP project',
+      },
+    ],
   });
   assert.deepEqual(requests, [{
     url: 'https://one.iflytek.com/cyxt/api/workbench/v1/myWorkItem/task',
@@ -199,7 +216,7 @@ test('E3 client queries my tasks with bounded pagination and current-account API
     body: {
       param: {
         size: 2,
-        pageNo: 2,
+        pageNo: 1,
         orders: [{ asc: true, column: 'createTime' }],
         condition: 'payment',
       },
@@ -248,6 +265,42 @@ test('E3 client resolves requirement workItemId dynamically before detail query'
     ['POST', 'https://one.iflytek.com/cyxt/api/panshi/v1/ccf/workItemId/list'],
     ['GET', 'https://one.iflytek.com/cyxt/api/dm/story/v1/456/info?workItemId=1073&productId=123'],
   ]);
+});
+
+test('sanitized Gate 0 fixtures preserve the live E3 response wrappers', () => {
+  const page = readFixture('query-my-tasks.success.json');
+  assert.equal(page.code, 'E00000000');
+  assert.equal(page.info.list.length, 2);
+  assert.equal(page.info.total, 2);
+
+  const requirement = readFixture('requirement-detail.success.json');
+  assert.equal(requirement.info.fieldInfoMap.id.value, 900101);
+  assert.equal(requirement.info.fieldInfoMap.status.displayValue, '设计中');
+
+  const task = readFixture('task-detail.success.json');
+  assert.equal(task.info.id, 900201);
+  assert.equal(task.info.storyId, '900101');
+});
+
+test('E3 client classifies localized business not-found responses for detail queries', async () => {
+  const requirementClient = new E3Client({
+    auth: { async getAccessToken() { return { token: 'test-token', source: 'local' }; } },
+    fetchFn: async (url) => new Response(JSON.stringify(
+      url.pathname.endsWith('/workItemId/list')
+        ? { code: 'E00000000', info: [{ workItemKey: 'system_requirement', workItemId: 1057 }] }
+        : readFixture('error-404.business-not-found.json').body,
+    ), { status: 200 }),
+  });
+  assert.deepEqual(await requirementClient.getRequirementDetail('900001', '999999999'), {
+    workItemId: '1057',
+    requirement: null,
+  });
+
+  const taskClient = new E3Client({
+    auth: { async getAccessToken() { return { token: 'test-token', source: 'local' }; } },
+    fetchFn: async () => new Response(JSON.stringify(readFixture('error-404.business-not-found.json').body), { status: 200 }),
+  });
+  assert.equal(await taskClient.getTask('900001', '999999999'), null);
 });
 
 test('E3 client fetches and normalizes task identity by ID', async () => {

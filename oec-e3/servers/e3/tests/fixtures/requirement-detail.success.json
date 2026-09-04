@@ -1,0 +1,17 @@
+{
+  "code": "E00000000",
+  "msg": null,
+  "info": {
+    "fieldInfoMap": {
+      "id": { "fieldKey": "id", "value": 900101, "label": "900101" },
+      "title": { "fieldKey": "title", "value": "[TEST] sanitized requirement" },
+      "description": { "fieldKey": "description", "value": "<p>Sanitized non-production requirement.</p>" },
+      "priority": { "fieldKey": "priority", "value": "3", "label": "高" },
+      "status": { "fieldKey": "status", "value": "designing", "displayValue": "设计中" }
+    },
+    "nodeId": "sanitized-node",
+    "instanceId": "sanitized-instance",
+    "sourcePlatForm": "e3",
+    "ztProductId": 900001
+  }
+}

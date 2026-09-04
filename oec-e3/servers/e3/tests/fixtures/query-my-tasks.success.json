@@ -1,0 +1,50 @@
+{
+  "code": "E00000000",
+  "msg": null,
+  "info": {
+    "total": 2,
+    "totalPages": 1,
+    "curPage": 1,
+    "pageSize": 2,
+    "list": [
+      {
+        "id": 900001,
+        "name": "[TEST] read-only task one",
+        "status": 1,
+        "statusDesc": "未开始",
+        "priority": 2,
+        "priorityDesc": "中",
+        "progressPercentage": null,
+        "planStartTime": null,
+        "planEndTime": null,
+        "planId": 0,
+        "planName": "",
+        "productId": 900001,
+        "productName": "Sanitized non-production space",
+        "flowType": 2,
+        "processType": 0,
+        "pompProjectCode": null,
+        "pompProjectName": null
+      },
+      {
+        "id": 900002,
+        "name": "[TEST] read-only task two",
+        "status": 3,
+        "statusDesc": "已完成",
+        "priority": 3,
+        "priorityDesc": "高",
+        "progressPercentage": "100",
+        "planStartTime": "2026-08-20",
+        "planEndTime": "2026-08-20",
+        "planId": 0,
+        "planName": "",
+        "productId": 900001,
+        "productName": "Sanitized non-production space",
+        "flowType": 2,
+        "processType": 0,
+        "pompProjectCode": "SANITIZED-POMP",
+        "pompProjectName": "Sanitized POMP project"
+      }
+    ]
+  }
+}

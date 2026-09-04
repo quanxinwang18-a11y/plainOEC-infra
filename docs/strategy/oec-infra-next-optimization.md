@@ -31,7 +31,7 @@
   详细实施事实源为 `docs/architecture/oec-dev-contract-implementation-plan.md`。
 - Dev Beta：独立的 `oec-dev-beta@0.1.0`，只提供显式的实验性 `web-develop`，复用宿主 Engineering
   Agent 和 `oec-spec`，不复制文件或 runtime。
-- E3：独立 MCP-only Plugin，提供十个受控写入/状态工具和三个只读查询工具。
+- E3：独立 MCP-only Plugin，提供十个受控写入/状态工具、三个只读查询工具和两个 workspace binding 工具。
 - Pipeline：独立 MCP-only Plugin，提供四个既有流水线工具。
 - Common：一个零运行时依赖的 HTML-first 幻灯片 Skill。
 - 分发：Git Marketplace + 自足 bundle，不再通过 SessionStart 向业务仓库同步配置；Engineering
@@ -702,7 +702,7 @@ Plugin 的粒度则由生命周期决定：当外部事实来源、认证权限�
 | `oec-product@3.0.4` | 1 | 3 | 0 | 0 | PRD 写作、只读评审和发布语义；依赖 E3 |
 | `oec-dev@1.9.6` | 4 | 10 | 1 | 0 | 稳定任务执行、团队 Specs、决策、诊断、review 和 close |
 | `oec-dev-beta@0.1.0` | 0 | 1 | 0 | 0 | 实验性长时 Web/full-stack 编排 |
-| `oec-e3@1.0.3` | 0 | 0 | 0 | 1 | 4 个 PRD 发布工具 + 6 个研发任务工具 + 3 个只读查询工具 |
+| `oec-e3@1.0.3` | 0 | 0 | 0 | 1 | 4 个 PRD 发布工具 + 6 个研发任务工具 + 3 个只读查询工具 + 2 个 workspace binding 工具 |
 | `oec-pipeline@1.0.2` | 0 | 0 | 0 | 1 | 既有 dev/test 流水线的受控 prepare/execute/status |
 | `oec-common@0.3.0` | 0 | 1 | 0 | 0 | 零依赖 HTML-first 幻灯片 |
 

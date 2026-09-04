@@ -24,6 +24,14 @@ test('MCP protocol exposes publication and development-planning tools with guard
       observed.push({ operation: 'status', input, roots });
       return { status: 'published' };
     },
+    async prepareWorkspaceBinding(input, roots) {
+      observed.push({ operation: 'prepare-workspace-binding', input, roots });
+      return { status: 'needs_space_selection', selectionToken: 'w'.repeat(43), candidates: [] };
+    },
+    async workspaceBinding(input, roots) {
+      observed.push({ operation: 'workspace-binding', input, roots });
+      return { status: 'unbound' };
+    },
   };
   const developmentService = {
     async prepare(input, roots) {
@@ -83,6 +91,8 @@ test('MCP protocol exposes publication and development-planning tools with guard
       'select_product_space',
       'execute_prd_publish',
       'get_prd_publish_status',
+      'prepare_e3_workspace_binding',
+      'get_e3_workspace_binding',
       'query_my_e3_tasks',
       'get_e3_requirement_detail',
       'get_e3_task_detail',
@@ -124,6 +134,16 @@ test('MCP protocol exposes publication and development-planning tools with guard
       name: 'get_prd_publish_status',
       arguments: { workspaceUri: 'file:///authorized/workspace', version: 'v1.2.3' },
     });
+    const bindingPreparation = await client.callTool({
+      name: 'prepare_e3_workspace_binding',
+      arguments: { workspaceUri: 'file:///authorized/workspace' },
+    });
+    assert.equal(bindingPreparation.structuredContent.status, 'needs_space_selection');
+    const binding = await client.callTool({
+      name: 'get_e3_workspace_binding',
+      arguments: { workspaceUri: 'file:///authorized/workspace' },
+    });
+    assert.equal(binding.structuredContent.status, 'unbound');
     const myTasks = await client.callTool({
       name: 'query_my_e3_tasks',
       arguments: { filter: 'MyToDo', productId: 'space-1', page: 1, pageSize: 20 },
@@ -167,7 +187,7 @@ test('MCP protocol exposes publication and development-planning tools with guard
       arguments: { workspaceUri: 'file:///authorized/workspace', changeId: 'v1.2.3-alpha' },
     });
     assert.equal(observed.filter((item) => item.operation.startsWith('query-') || item.operation.endsWith('-detail')).length, 3);
-    assert.equal(observed.filter((item) => item.roots).length, 10);
+    assert.equal(observed.filter((item) => item.roots).length, 12);
     for (const entry of observed.filter((item) => item.roots)) {
       assert.deepEqual(entry.roots, [{ uri: 'file:///authorized/workspace', name: 'fixture' }]);
     }
@@ -189,6 +209,26 @@ test('MCP protocol classifies and redacts read-only query failures', async () =>
     assert.equal(response.isError, true);
     assert.equal(response.structuredContent.status, 'blocked');
     assert.doesNotMatch(response.content[0].text, /super-secret/);
+  } finally {
+    await Promise.all([client.close(), server.close()]);
+  }
+});
+
+test('MCP protocol classifies localized business not-found query failures without marking them as tool errors', async () => {
+  const queryClient = {
+    async getTask() { throw new Error('E3 API rejected request: 请求数据不存在'); },
+  };
+  const server = createE3McpServer({ client: queryClient });
+  const client = new Client({ name: 'oec-read-query-not-found-test', version: '1.0.0' }, { capabilities: {} });
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+  try {
+    const response = await client.callTool({
+      name: 'get_e3_task_detail',
+      arguments: { productId: 'space-1', taskId: 'missing-task' },
+    });
+    assert.notEqual(response.isError, true);
+    assert.equal(response.structuredContent.status, 'not-found');
   } finally {
     await Promise.all([client.close(), server.close()]);
   }

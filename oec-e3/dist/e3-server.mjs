@@ -28549,6 +28549,10 @@ function errorMessage(response) {
   if (!response || typeof response !== "object") return "Unknown E3 error";
   return response.msg ?? response.message ?? response.error ?? `E3 code ${response.code ?? "unknown"}`;
 }
+function isE3NotFoundError(error2) {
+  const message = error2 instanceof Error ? error2.message : String(error2);
+  return /HTTP 404|\bnot found\b|请求数据不存在|任务不存在|需求不存在/i.test(message);
+}
 function decodeJwtAccount(token) {
   const parts = token.split(".");
   if (parts.length !== 3) return null;
@@ -28827,7 +28831,7 @@ var E3Client = class {
       });
       return detailed ? normalizeRequirementDetail(data, requirementId) : normalizeRequirement(data, requirementId);
     } catch (error2) {
-      if (/HTTP 404|not found/i.test(error2.message)) return null;
+      if (isE3NotFoundError(error2)) return null;
       throw error2;
     }
   }
@@ -28878,7 +28882,7 @@ var E3Client = class {
       });
       return normalizeTask(data);
     } catch (error2) {
-      if (/HTTP 404|not found/i.test(error2.message)) return null;
+      if (isE3NotFoundError(error2)) return null;
       throw error2;
     }
   }
@@ -29873,6 +29877,45 @@ var PublisherService = class {
       return { status: "blocked", version: artifacts.version, errors: [error2.message] };
     }
   }
+  async prepareWorkspaceBinding({ workspaceUri }, roots) {
+    const workspace = await resolveAuthorizedWorkspace(workspaceUri, roots);
+    const config2 = await loadConfig(workspace, this.dataDirectory);
+    if (config2?.productSpace) {
+      return {
+        status: "bound",
+        productSpace: config2.productSpace,
+        ...config2.pompProject ? { pompProject: config2.pompProject } : {},
+        ...config2.productRoot ? { productRoot: config2.productRoot } : {}
+      };
+    }
+    const candidates = await this.client.listSpaces();
+    if (candidates.length === 0) return { status: "blocked", errors: ["E3 returned no product spaces"] };
+    const expiresAt = this.now() + PLAN_TTL_MS;
+    const selectionToken = await storeSelection({
+      workspace,
+      phase: "space",
+      candidates,
+      createdAt: this.now(),
+      expiresAt
+    }, this.dataDirectory);
+    return {
+      status: "needs_space_selection",
+      selectionToken,
+      expiresAt: new Date(expiresAt).toISOString(),
+      candidates
+    };
+  }
+  async workspaceBinding({ workspaceUri }, roots) {
+    const workspace = await resolveAuthorizedWorkspace(workspaceUri, roots);
+    const config2 = await loadConfig(workspace, this.dataDirectory);
+    if (!config2?.productSpace) return { status: "unbound" };
+    return {
+      status: "bound",
+      productSpace: config2.productSpace,
+      ...config2.pompProject ? { pompProject: config2.pompProject } : {},
+      ...config2.productRoot ? { productRoot: config2.productRoot } : {}
+    };
+  }
   async selectProductSpace({ selectionToken, spaceId, pompProjectCode }, roots) {
     const selection = await loadSelection(selectionToken, this.dataDirectory, this.now());
     const workspace = await assertSelectionWorkspace(selection, roots);
@@ -30864,7 +30907,7 @@ function result(value, isError = false) {
 }
 function readOnlyError(error2) {
   const message = redactSecrets(error2 instanceof Error ? error2.message : String(error2));
-  const notFound = /HTTP 404|not found/i.test(message);
+  const notFound = isE3NotFoundError(error2);
   return result({ status: notFound ? "not-found" : "blocked", errors: [message] }, !notFound);
 }
 async function rootsFor(mcpServer) {
@@ -30906,7 +30949,7 @@ function createE3McpServer({ service, developmentService, client: clientOverride
   }, guarded(async (input) => publisher.prepare(input, await rootsFor(mcpServer))));
   mcpServer.registerTool("select_product_space", {
     title: "Select E3 product space",
-    description: "Persist a workspace-bound product space returned by publication preparation.",
+    description: "Persist a workspace-bound product space returned by PRD publication or workspace-binding preparation.",
     inputSchema: {
       selectionToken: string2().min(32),
       spaceId: string2().min(1),
@@ -30930,6 +30973,22 @@ function createE3McpServer({ service, developmentService, client: clientOverride
     },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
   }, guarded(async (input) => publisher.status(input, await rootsFor(mcpServer))));
+  mcpServer.registerTool("prepare_e3_workspace_binding", {
+    title: "Prepare E3 workspace binding",
+    description: "Read the authenticated E3 spaces and prepare a workspace-scoped selection without changing E3.",
+    inputSchema: {
+      workspaceUri: string2().url().describe("A file URI returned by MCP roots/list")
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  }, readOnlyGuarded(async (input) => publisher.prepareWorkspaceBinding(input, await rootsFor(mcpServer))));
+  mcpServer.registerTool("get_e3_workspace_binding", {
+    title: "Get E3 workspace binding",
+    description: "Read the E3 product-space binding for one client-authorized workspace.",
+    inputSchema: {
+      workspaceUri: string2().url().describe("A file URI returned by MCP roots/list")
+    },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  }, readOnlyGuarded(async (input) => publisher.workspaceBinding(input, await rootsFor(mcpServer))));
   mcpServer.registerTool("query_my_e3_tasks", {
     title: "Query my E3 tasks",
     description: "Read the current authenticated account's E3 tasks with bounded filters and pagination.",
