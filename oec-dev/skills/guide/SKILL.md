@@ -22,12 +22,15 @@ changes scope or risk. Ask only the question that changes the work.
 ## Skill matching
 
 For an engineering request that may change code, engineering documents, or external engineering state,
-use native Skill descriptions to find a clear match. Do not enumerate or read every Skill file for
-each request. Invoke at most one primary Skill unless the selected Skill explicitly delegates another
-capability. If no Skill clearly matches, answer or work directly.
+use native Skill descriptions to find a clear match. Do not enumerate or read every Skill file for each
+request. Choose one primary Skill for the current decision. A selected Skill may hand off a strongly
+related capability when the original goal or an explicit user confirmation covers it. If no Skill
+clearly matches, answer or work directly.
 
 A matching Skill must satisfy both its positive trigger and its negative boundary. Prefer the narrowest
-capability that fits the user's goal.
+capability that fits the user's goal. Before crossing into a new write scope, independent judgment,
+Git commit, or external side effect, explain the next action in user-facing terms and obtain the needed
+confirmation.
 
 ## Routing priority
 
@@ -46,8 +49,8 @@ ready task uses review, not implementation.
 ## Safety and handoff
 
 For broad, destructive, cross-module, public-contract, or materially ambiguous work, summarize the
-intended scope, affected paths, and verification approach before editing. Do not create workflow
-artifacts or durable knowledge by default.
+intended scope, affected paths, and verification approach, then wait for explicit user confirmation
+before editing. Do not create workflow artifacts or durable knowledge by default.
 
 When planning is required, show the user-facing scope and exact paths that need confirmation. After a
 confirmed ready planning result, continue the original implementation request without asking the user

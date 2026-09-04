@@ -41,8 +41,11 @@ test('skills have distinct positive triggers and E3 publishing is model-discover
   assert.match(publishing.metadata.description, /Do not use for PRD writing/);
   assert.match(publishing.body, /Natural-language discovery is allowed/);
   assert.match(publishing.body, /Never execute merely because the\s+initial user request said/);
-  assert.match(publishing.body, /explicit confirmation tied to this displayed plan/);
-  assert.match(publishing.body, /original\s+`spaceId`.*selected\s+`pompProjectCode`/s);
+  assert.match(publishing.body, /explicit confirmation tied to\s+this displayed plan/);
+  assert.match(publishing.body, /preparation directly returns `needs_pomp_selection`/);
+  assert.match(publishing.body, /After every successful selection, prepare again/);
+  assert.match(publishing.body, /exact version, product-space name, POMP project name and code/);
+  assert.match(publishing.body, /returned\s+`spaceId`.*selected\s+`pompProjectCode`/s);
   assert.match(publishing.body, /published-version-changed/);
   assert.match(publishing.body, /remote-object-drift/);
   assert.match(publishing.body, /git add -- <recordPath>/);

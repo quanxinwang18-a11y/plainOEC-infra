@@ -74,6 +74,7 @@ class FakeE3Client {
     this.unknownRequirementResult = false;
     this.createDelayMs = 0;
     this.projects = [{ code: 'pomp-1', name: 'Default POMP', isDefault: true }];
+    this.account = 'owner';
     this.calls = 0;
     this.metadataSpaces = [];
   }
@@ -82,7 +83,7 @@ class FakeE3Client {
   async listPompProjects() { return this.projects; }
   async requirementMetadata(spaceId) {
     this.metadataSpaces.push(String(spaceId));
-    return { workItemId: 12, flowDefinition: 'flow-1', pomProjectId: 'pom-1', inChargeBy: 'owner', rdManager: 'rd', qaManager: 'qa' };
+    return { workItemId: 12, flowDefinition: 'flow-1', pomProjectId: 'pom-1', inChargeBy: this.account, rdManager: 'rd', qaManager: 'qa' };
   }
   async findRequirementsByExactTitle(_spaceId, title) { return this.requirements.filter((item) => item.title === title); }
   async getRequirement(_spaceId, _workItemId, id) { return this.requirements.find((item) => String(item.id) === String(id)) ?? null; }
@@ -211,6 +212,49 @@ test('execute repeats the complete artifact contract before remote writes', asyn
   assert.equal(client.requirements.length, 0);
 });
 
+test('execute blocks when the E3 account changes after publication prepare', async () => {
+  const value = await fixture();
+  const client = new FakeE3Client();
+  const service = new PublisherService({ client, dataDirectory: value.dataDirectory });
+  await configure(service, value);
+  const prepared = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  client.account = 'different-owner';
+  const result = await service.execute({ planToken: prepared.planToken }, value.roots);
+  assert.equal(result.status, 'blocked');
+  assert.match(result.errors.join('\\n'), /account changed/);
+  assert.equal(client.requirements.length, 0);
+});
+
+test('execute blocks when a remote object appears after the confirmed publication plan', async () => {
+  const value = await fixture();
+  const client = new FakeE3Client();
+  const service = new PublisherService({ client, dataDirectory: value.dataDirectory });
+  await configure(service, value);
+  const prepared = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  client.requirements.push({ id: 'r-external', title: '[v1.2.3] Alpha module' });
+  const result = await service.execute({ planToken: prepared.planToken }, value.roots);
+  assert.equal(result.status, 'blocked');
+  assert.match(result.errors.join('\\n'), /plan changed/);
+  assert.equal([...client.tasks.values()].flat().length, 0);
+});
+
+test('execute blocks when a planned reused task disappears before execution', async () => {
+  const value = await fixture();
+  const client = new FakeE3Client();
+  client.requirements.push({ id: 'r-1', title: '[v1.2.3] Alpha module' });
+  client.tasks.set('r-1', [{ id: 't-1', title: '[US-001] Story 1', requirementId: 'r-1' }]);
+  const service = new PublisherService({ client, dataDirectory: value.dataDirectory });
+  await configure(service, value);
+  const prepared = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
+  assert.equal(prepared.counts.reuseRequirements, 1);
+  assert.equal(prepared.counts.reuseTasks, 1);
+  client.tasks.set('r-1', []);
+  const result = await service.execute({ planToken: prepared.planToken }, value.roots);
+  assert.equal(result.status, 'blocked');
+  assert.match(result.errors.join('\\n'), /plan changed/);
+  assert.equal(client.tasks.get('r-1').length, 0);
+});
+
 test('prepare is read-only, execute recovers an unknown POST result, and status verifies publication', async () => {
   const value = await fixture();
   const client = new FakeE3Client();
@@ -220,6 +264,7 @@ test('prepare is read-only, execute recovers an unknown POST result, and status 
 
   const prepared = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
   assert.equal(prepared.status, 'ready');
+  assert.deepEqual(prepared.pompProject, { code: 'pomp-1', name: 'Default POMP' });
   assert.deepEqual(prepared.counts, { createRequirements: 1, reuseRequirements: 0, createTasks: 1, reuseTasks: 0 });
   assert.equal(client.requirements.length, 0);
 

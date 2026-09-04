@@ -13,17 +13,21 @@ re-split PRD content in this Skill.
 1. Call the bundled E3 MCP tool `prepare_prd_publish` with the current workspace root and the version
    from `$ARGUMENTS`, or omit the version only when the user explicitly asks for the current/latest
    finalized version.
-2. If it returns `needs_space_selection`, show only the candidate space names, obtain the user's
-   choice, and call `select_product_space` with the returned `selectionToken` and chosen `spaceId`.
-   If that returns `needs_pomp_selection`, show the POMP project names, obtain the user's choice, and
-   call the same tool with that response's `selectionToken`, the original `spaceId`, and the selected
-   `pompProjectCode`. Then prepare again.
-3. If it returns `blocked`, report the exact artifact or configuration problems and stop.
-4. For `ready`, show the product-space name, requirements to create or reuse, story tasks to create
-   or reuse, and warnings. Ask for explicit confirmation tied to this displayed plan.
-5. Call `execute_prd_publish` only after that explicit confirmation. Never execute merely because the
+2. If preparation returns `needs_space_selection`, show only the candidate space names, obtain the
+   user's choice, and call `select_product_space` with the returned `selectionToken` and chosen `spaceId`.
+   If that selection returns `needs_pomp_selection`, show the POMP project names, obtain the user's choice,
+   and call the same tool with that response's `selectionToken`, the returned `spaceId`, and the selected
+   `pompProjectCode`. If selection returns `selected`, prepare again.
+3. If preparation directly returns `needs_pomp_selection`, show the POMP project names, obtain the user's
+   choice, call `select_product_space` with its `selectionToken`, `spaceId`, and selected `pompProjectCode`,
+   then prepare again. After every successful selection, prepare again before presenting a publish plan.
+4. If preparation returns `blocked`, report the exact artifact or configuration problems and stop.
+5. For `ready`, show the exact version, product-space name, POMP project name and code, requirements to
+   create or reuse, story tasks to create or reuse, and warnings. Ask for explicit confirmation tied to
+   this displayed plan.
+6. Call `execute_prd_publish` only after that explicit confirmation. Never execute merely because the
    initial user request said "publish".
-6. Always call `get_prd_publish_status` after execution for independent verification.
+7. Always call `get_prd_publish_status` after execution for independent verification.
 
 Say “已发布” only when the verified state is `published`. For `partial` or `blocked`, report created
 objects, missing objects, the record path, and the safe resume action. Never improvise an E3 payload or

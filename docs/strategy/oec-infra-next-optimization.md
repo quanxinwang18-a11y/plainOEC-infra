@@ -42,7 +42,7 @@
 MCP 和项目文档。对于原来“Skill 读取说明后执行 Python/TypeScript 调平台”的能力，业务语义仍留在
 Skill，认证、远端选择、写入、幂等和状态验证则进入 MCP；完整拆分方法见第 5.3 节。
 
-当前执行根目录 `npm test` 的 156/156 项自动测试全部通过。E3 的 PRD 发布与研发任务主链已在授权非生产空间完成真实验收；Pipeline
+当前执行根目录 `npm test` 的 159/159 项自动测试全部通过。E3 的 PRD 发布与研发任务主链已在授权非生产空间完成真实验收；Pipeline
 当前只有 mock/integration 证据；Testing、UTP、SAE 尚未进入 Marketplace。
 
 ### 1.3 下一阶段建议
@@ -702,7 +702,7 @@ Plugin 的粒度则由生命周期决定：当外部事实来源、认证权限�
 | `oec-product@3.0.4` | 1 | 3 | 0 | 0 | PRD 写作、只读评审和发布语义；依赖 E3 |
 | `oec-dev@1.9.6` | 4 | 10 | 1 | 0 | 稳定任务执行、团队 Specs、决策、诊断、review 和 close |
 | `oec-dev-beta@0.1.0` | 0 | 1 | 0 | 0 | 实验性长时 Web/full-stack 编排 |
-| `oec-e3@1.0.2` | 0 | 0 | 0 | 1 | 4 个 PRD 发布工具 + 6 个研发任务工具 |
+| `oec-e3@1.0.3` | 0 | 0 | 0 | 1 | 4 个 PRD 发布工具 + 6 个研发任务工具 |
 | `oec-pipeline@1.0.2` | 0 | 0 | 0 | 1 | 既有 dev/test 流水线的受控 prepare/execute/status |
 | `oec-common@0.3.0` | 0 | 1 | 0 | 0 | 零依赖 HTML-first 幻灯片 |
 
@@ -759,7 +759,7 @@ claude plugin install oec-common@plainOEC-infra --scope user
 
 *图：真实旅程证明创建、复用、进度和 read-back 主链；图中同时标明不能由此推出的结论。*
 
-当前执行根目录 `npm test` 的 156/156 项自动测试全部通过。E3 的真实验收不是“工具能够注册”或“mock 返回成功”，而是完成了图中的远端
+当前执行根目录 `npm test` 的 159/159 项自动测试全部通过。E3 的真实验收不是“工具能够注册”或“mock 返回成功”，而是完成了图中的远端
 旅程。
 
 [脱敏验收记录](../evidence/e3-platform-3.0.0-real-acceptance.md)没有保存 token、远端内部 ID 或原始
@@ -1018,10 +1018,10 @@ OEC-infra 后续不应继续做“更多 Prompt、更多角色路由、更多统
 | Product | `3.0.4` release candidate，未创建新 tag |
 | Engineering | `1.9.6` release candidate，未创建新 tag |
 | Dev Beta | `0.1.0` experimental candidate，未创建新 tag |
-| E3 | `1.0.2` release candidate，未创建新 tag |
+| E3 | `1.0.3` release candidate，未创建新 tag |
 | Pipeline | `1.0.2` release candidate，未创建新 tag |
 | Common | `0.3.0` release candidate，未创建新 tag |
-| 当前自动测试 | `npm test` 通过，156/156 tests |
+| 当前自动测试 | `npm test` 通过，159/159 tests |
 | Skill 行为 eval | 15 个 Skill 的正负场景已可执行；Dev Beta 长时 Coding 的 Agent/Playwright outcome 仍待验收 |
 | 远端发布 | LICENSE/notice Owner 决定及外部写入证据完成前阻塞；不创建或推送新 tag |
 

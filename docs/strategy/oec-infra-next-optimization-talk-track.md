@@ -171,7 +171,7 @@ MCP Tool 适合：
 - `oec-product@3.0.4`：1 Agent、3 Skills、0 MCP；明确依赖 `oec-e3`。
 - `oec-dev@1.9.6`：10 个可自动发现的稳定 Skills、4 个可选 Agent、1 个静态 SessionStart 行为 Hook、0 MCP；普通编码仍由主 Coding Agent 负责。
 - `oec-dev-beta@0.1.0`：1 个显式实验性 Skill；复用宿主 Engineering 的 Agent 和 `oec-spec`，不复制文件或 runtime。
-- `oec-e3@1.0.2`：1 MCP Server、10 Tools；负责 PRD 发布和研发任务主链。
+- `oec-e3@1.0.3`：1 MCP Server、10 Tools；负责 PRD 发布和研发任务主链。
 - `oec-pipeline@1.0.2`：1 MCP Server、4 Tools；只运行既有 dev/test 流水线。
 - `oec-common@0.3.0`：1 Skill、0 Agent、0 MCP；提供零依赖 HTML-first 幻灯片。
 
@@ -194,7 +194,7 @@ MCP Tool 适合：
 
 当前能够明确说明：
 
-- 执行根目录 `npm test` 的 156/156 项自动测试全部通过。
+- 执行根目录 `npm test` 的 159/159 项自动测试全部通过。
 - E3 PRD 发布和研发任务主链已在授权的“OBU-AI提效组”完成真实非生产验收。
 - E3 验证了精确空间选择、发布、status、重复 prepare、任务创建、start/log/complete 和最终 verified。
 - Pipeline 目前只有 mock/integration 和 bundle 证据，没有真实非生产流水线运行结论。

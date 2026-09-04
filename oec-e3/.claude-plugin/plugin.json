@@ -1,6 +1,6 @@
 {
   "name": "oec-e3",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "PRD 发布与研发任务的受控准备、执行和状态查询。",
   "author": {
     "name": "OEC"

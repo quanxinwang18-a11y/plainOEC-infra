@@ -8,7 +8,9 @@ argument-hint: "[failure, regression, logs, or reproduction]"
 
 The first deliverable is a fast, repeatable signal that distinguishes the failure from success. Use
 an existing failing test when it reaches the behavior; otherwise construct the smallest safe
-reproduction, measurement, log query, or targeted probe available in the repository.
+reproduction, measurement, log query, or targeted probe available in the repository. A diagnosis-only
+request is read-only: do not edit code, tests, or project documents unless the user separately
+authorizes a repair or the original request explicitly includes fixing the problem.
 
 Ground the diagnosis in observed evidence:
 
@@ -16,7 +18,7 @@ Ground the diagnosis in observed evidence:
 - Reduce irrelevant variables while preserving the symptom.
 - Form a small set of falsifiable hypotheses from the code and runtime path.
 - Choose the cheapest observation that separates those hypotheses.
-- Fix the root cause with the smallest compatible change.
+- When repair is authorized, fix the root cause with the smallest compatible change.
 - Re-run the original signal and a regression check that would catch recurrence.
 
 Change one diagnostic variable at a time when practical. Do not stack speculative fixes, infer a
@@ -25,9 +27,11 @@ fail on the same symptom, stop and re-examine architecture or assumptions before
 fourth. Remove temporary instrumentation unless it provides justified ongoing observability.
 
 Return the original failure goal, the reproduced signal, observed facts, falsifiable hypotheses,
-root cause (or the evidence gap), changed files, verification result, and residual risk. If a fix is
-ready, return it to the Main Session without automatically invoking planning, review, or closing.
+root cause (or the evidence gap), changed files, verification result, and residual risk. If repair was
+not authorized, return a read-only diagnosis. If a fix is ready and authorized, return it to the Main
+Session without automatically invoking planning, review, or closing.
 
 Use a durable change note only when the investigation reveals a lasting system fact, decision, or
-residual operational risk. Ordinary debugging does not require a stage file, state directory, or
+residual operational risk and the user separately authorizes that write. Otherwise report the fact or
+risk in the response only. Ordinary debugging does not require a stage file, state directory, or
 mandatory report.

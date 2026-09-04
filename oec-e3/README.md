@@ -48,7 +48,9 @@ ai-docs/Spec/integrations/e3/development-tasks/<changeId>.yaml
 为当前 Change 准备研发任务计划，展示将创建或复用的对象，不要执行。
 ```
 
-所有远端写入都来自短期不可变 plan，并要求宿主人类交互。Server 不提供通用 E3 CRUD、缺陷/测试
+所有远端写入都来自短期不可变 plan，并要求宿主人类交互。PRD publication plan 同时绑定解析出的
+E3 account、产物 fingerprint、目标空间/POMP 和 requirement/task create-or-reuse 快照；execute 发现
+账号、配置、对象身份或确认快照变化时必须重新 prepare。Server 不提供通用 E3 CRUD、缺陷/测试
 请求工作流、任意字段编辑或任意 payload。在同一 Plugin Data 内，PRD publication 按 canonical
 workspace 与 version 串行，研发任务创建和 progress 按 canonical workspace 与 change ID 串行；并发
 竞争者返回 partial 并要求查询 status 后重试，不会同时创建对象或重复写 worklog。项目仓库中的 publication record 和 development task record 只保存远端身份、关联和恢复所需信息；资源锁只存在于

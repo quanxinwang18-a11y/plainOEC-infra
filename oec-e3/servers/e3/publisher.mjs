@@ -334,8 +334,8 @@ async function resolveTask(client, config, requirementId, story, mappingItem) {
   return matches[0] ?? null;
 }
 
-async function planRemoteObjects(client, config, artifacts, mapping) {
-  const metadata = await client.requirementMetadata(config.productSpace.id);
+async function planRemoteObjects(client, config, artifacts, mapping, providedMetadata) {
+  const metadata = providedMetadata ?? await client.requirementMetadata(config.productSpace.id);
   const requirements = [];
   let createRequirements = 0;
   let reuseRequirements = 0;
@@ -371,6 +371,64 @@ async function planRemoteObjects(client, config, artifacts, mapping) {
     });
   }
   return { metadata, requirements, counts: { createRequirements, reuseRequirements, createTasks, reuseTasks } };
+}
+
+function canonicalRemotePlan(requirements) {
+  return (requirements ?? []).map((requirement) => ({
+    featureName: requirement.featureName,
+    title: requirement.title,
+    action: requirement.action,
+    id: requirement.id === undefined || requirement.id === null ? null : String(requirement.id),
+    tasks: (requirement.tasks ?? []).map((task) => ({
+      storyId: task.storyId,
+      title: task.title,
+      action: task.action,
+      id: task.id === undefined || task.id === null ? null : String(task.id),
+    })),
+  })).sort((left, right) => left.featureName.localeCompare(right.featureName));
+}
+
+function mappedRequirementId(mapping, featureName) {
+  return mapping?.requirements?.find((item) => item.featureName === featureName)?.e3_requirement?.id;
+}
+
+function mappedTaskId(mapping, featureName, storyId) {
+  const requirement = mapping?.requirements?.find((item) => item.featureName === featureName);
+  return requirement?.story_tasks?.find((item) => item.story_id === storyId)?.e3_task?.id;
+}
+
+function remotePlanMatches(expectedRequirements, actualRequirements, mapping) {
+  const expected = canonicalRemotePlan(expectedRequirements);
+  const actual = canonicalRemotePlan(actualRequirements);
+  if (expected.length !== actual.length) return false;
+  const actualByFeature = new Map(actual.map((item) => [item.featureName, item]));
+  for (const planned of expected) {
+    const current = actualByFeature.get(planned.featureName);
+    if (!current || current.title !== planned.title) return false;
+    const mappedId = mappedRequirementId(mapping, planned.featureName);
+    const requirementIdentityMatches = planned.action === current.action && planned.id === current.id;
+    const requirementCheckpointMatches = planned.action === 'create'
+      && current.action === 'reuse'
+      && mappedId !== undefined
+      && String(mappedId) === current.id;
+    if (!requirementIdentityMatches && !requirementCheckpointMatches) return false;
+
+    const plannedTasks = new Map(planned.tasks.map((item) => [item.storyId, item]));
+    const currentTasks = new Map(current.tasks.map((item) => [item.storyId, item]));
+    if (plannedTasks.size !== currentTasks.size) return false;
+    for (const [storyId, plannedTask] of plannedTasks) {
+      const currentTask = currentTasks.get(storyId);
+      if (!currentTask || currentTask.title !== plannedTask.title) return false;
+      const mappedTask = mappedTaskId(mapping, planned.featureName, storyId);
+      const taskIdentityMatches = plannedTask.action === currentTask.action && plannedTask.id === currentTask.id;
+      const taskCheckpointMatches = plannedTask.action === 'create'
+        && currentTask.action === 'reuse'
+        && mappedTask !== undefined
+        && String(mappedTask) === currentTask.id;
+      if (!taskIdentityMatches && !taskCheckpointMatches) return false;
+    }
+  }
+  return true;
 }
 
 async function storePlan(plan, dataDirectory) {
@@ -514,6 +572,8 @@ export class PublisherService {
         version: artifacts.version,
         fingerprint: artifacts.fingerprint,
         config,
+        account: remote.metadata.inChargeBy,
+        remotePlan: canonicalRemotePlan(remote.requirements),
         createdAt: this.now(),
         expiresAt: this.now() + PLAN_TTL_MS,
       };
@@ -524,6 +584,10 @@ export class PublisherService {
         planToken,
         expiresAt: new Date(plan.expiresAt).toISOString(),
         productSpace: config.productSpace.name,
+        pompProject: {
+          code: String(config.pompProject.code),
+          name: config.pompProject.name,
+        },
         counts: remote.counts,
         requirements: remote.requirements,
         warnings,
@@ -587,6 +651,9 @@ export class PublisherService {
 
   async execute({ planToken }, roots) {
     const plan = await loadPlan(planToken, this.dataDirectory, this.now());
+    if (!Array.isArray(plan.remotePlan) || typeof plan.account !== 'string' || !plan.account) {
+      throw new Error('Publication plan is missing immutable execution details; prepare a new plan');
+    }
     const workspace = await resolveAuthorizedWorkspace(plan.workspaceUri, roots);
     if (workspace !== plan.workspace) throw new Error('Workspace root changed after prepare');
     const artifacts = await loadValidatedPublishArtifacts(workspace, plan.version);
@@ -608,73 +675,98 @@ export class PublisherService {
       };
     }
     try {
-    const existing = await readMapping(workspace, artifacts.version);
-    const compatibility = mappingCompatibility(existing.mapping, artifacts, config);
-    const metadata = await this.client.requirementMetadata(config.productSpace.id);
-    const warnings = normalizeWarnings(artifacts.warnings, compatibility.warnings, metadata.warnings);
-    try {
-      await planRemoteObjects(this.client, config, artifacts.artifacts, compatibility.usableMapping);
-    } catch (error) {
-      return {
-        status: 'blocked',
-        recordPath: existing.path,
-        counts: mappingCounts(existing.mapping),
-        errors: [error.message],
-      };
-    }
-    let mapping = compatibility.adoption || !compatibility.usableMapping
-      ? adoptMappingCheckpoints(newMapping({
-        version: artifacts.version,
-        handoffPath: artifacts.handoffPath,
-        fingerprint: artifacts.fingerprint,
-        config,
-        artifacts: artifacts.artifacts,
-        warnings,
-      }), compatibility.usableMapping)
-      : compatibility.usableMapping;
-    mapping.quality_gate = { ...mapping.quality_gate, warnings };
-    mapping.sync_state = 'partial';
-    let checkpoint = await writeMapping(workspace, artifacts.version, mapping);
-    mapping = checkpoint.mapping;
-    const changes = [];
-    try {
-      for (const artifact of artifacts.artifacts) {
-        const mappingItem = mapping.requirements.find((item) => item.featureName === artifact.featureName);
-        const requirement = await reconcileRequirement(this.client, config, metadata, artifact, mappingItem);
-        mappingItem.e3_requirement = {
-          id: requirement.id,
-          title: artifact.remoteTitle,
-          url: requirementUrl(config.productSpace.id, requirement.id),
-          action: requirement.action,
+      const existing = await readMapping(workspace, artifacts.version);
+      const compatibility = mappingCompatibility(existing.mapping, artifacts, config);
+      const metadata = await this.client.requirementMetadata(config.productSpace.id);
+      if (metadata.inChargeBy !== plan.account) {
+        return {
+          status: 'blocked',
+          recordPath: existing.path,
+          counts: mappingCounts(existing.mapping),
+          errors: ['E3 account changed after publication prepare; prepare a new plan'],
         };
-        changes.push({ type: 'requirement', featureName: artifact.featureName, ...requirement });
-        checkpoint = await writeMapping(workspace, artifacts.version, mapping);
-        mapping = checkpoint.mapping;
+      }
 
-        for (const story of artifact.stories) {
-          const taskItem = mappingItem.story_tasks.find((item) => item.story_id === story.id);
-          const task = await reconcileTask(this.client, config, metadata.inChargeBy, requirement.id, story, taskItem);
-          taskItem.e3_task = {
-            id: task.id,
-            title: story.remoteTitle,
-            url: taskUrl(config.productSpace.id, task.id),
-            action: task.action,
+      let currentRemote;
+      try {
+        currentRemote = await planRemoteObjects(
+          this.client,
+          config,
+          artifacts.artifacts,
+          compatibility.usableMapping,
+          metadata,
+        );
+      } catch (error) {
+        return {
+          status: 'blocked',
+          recordPath: existing.path,
+          counts: mappingCounts(existing.mapping),
+          errors: [error.message],
+        };
+      }
+      if (!remotePlanMatches(plan.remotePlan, currentRemote.requirements, compatibility.usableMapping)) {
+        return {
+          status: 'blocked',
+          recordPath: existing.path,
+          counts: mappingCounts(existing.mapping),
+          errors: ['E3 publication plan changed after prepare; prepare a new plan'],
+        };
+      }
+
+      const warnings = normalizeWarnings(artifacts.warnings, compatibility.warnings, metadata.warnings);
+      let mapping = compatibility.adoption || !compatibility.usableMapping
+        ? adoptMappingCheckpoints(newMapping({
+          version: artifacts.version,
+          handoffPath: artifacts.handoffPath,
+          fingerprint: artifacts.fingerprint,
+          config,
+          artifacts: artifacts.artifacts,
+          warnings,
+        }), compatibility.usableMapping)
+        : compatibility.usableMapping;
+      mapping.quality_gate = { ...mapping.quality_gate, warnings };
+      mapping.sync_state = 'partial';
+      let checkpoint = await writeMapping(workspace, artifacts.version, mapping);
+      mapping = checkpoint.mapping;
+      const changes = [];
+      try {
+        for (const artifact of artifacts.artifacts) {
+          const mappingItem = mapping.requirements.find((item) => item.featureName === artifact.featureName);
+          const requirement = await reconcileRequirement(this.client, config, metadata, artifact, mappingItem);
+          mappingItem.e3_requirement = {
+            id: requirement.id,
+            title: artifact.remoteTitle,
+            url: requirementUrl(config.productSpace.id, requirement.id),
+            action: requirement.action,
           };
-          changes.push({ type: 'task', storyId: story.id, ...task });
+          changes.push({ type: 'requirement', featureName: artifact.featureName, ...requirement });
           checkpoint = await writeMapping(workspace, artifacts.version, mapping);
           mapping = checkpoint.mapping;
+
+          for (const story of artifact.stories) {
+            const taskItem = mappingItem.story_tasks.find((item) => item.story_id === story.id);
+            const task = await reconcileTask(this.client, config, metadata.inChargeBy, requirement.id, story, taskItem);
+            taskItem.e3_task = {
+              id: task.id,
+              title: story.remoteTitle,
+              url: taskUrl(config.productSpace.id, task.id),
+              action: task.action,
+            };
+            changes.push({ type: 'task', storyId: story.id, ...task });
+            checkpoint = await writeMapping(workspace, artifacts.version, mapping);
+            mapping = checkpoint.mapping;
+          }
         }
+        mapping.sync_state = mappingIsComplete(mapping) ? 'published' : 'partial';
+        checkpoint = await writeMapping(workspace, artifacts.version, mapping);
+        return { status: checkpoint.mapping.sync_state, recordPath: checkpoint.path, changes, counts: mappingCounts(checkpoint.mapping) };
+      } catch (error) {
+        mapping.sync_state = 'partial';
+        mapping.last_error = error.message;
+        checkpoint = await writeMapping(workspace, artifacts.version, mapping);
+        const status = /remote-object-drift|Ambiguous E3/i.test(error.message) ? 'blocked' : 'partial';
+        return { status, recordPath: checkpoint.path, changes, counts: mappingCounts(checkpoint.mapping), errors: [error.message] };
       }
-      mapping.sync_state = mappingIsComplete(mapping) ? 'published' : 'partial';
-      checkpoint = await writeMapping(workspace, artifacts.version, mapping);
-      return { status: checkpoint.mapping.sync_state, recordPath: checkpoint.path, changes, counts: mappingCounts(checkpoint.mapping) };
-    } catch (error) {
-      mapping.sync_state = 'partial';
-      mapping.last_error = error.message;
-      checkpoint = await writeMapping(workspace, artifacts.version, mapping);
-      const status = /remote-object-drift|Ambiguous E3/i.test(error.message) ? 'blocked' : 'partial';
-      return { status, recordPath: checkpoint.path, changes, counts: mappingCounts(checkpoint.mapping), errors: [error.message] };
-    }
     } finally {
       await releaseLock();
     }

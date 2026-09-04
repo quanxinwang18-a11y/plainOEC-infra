@@ -1,7 +1,7 @@
 # 平台 Plugin 层级与 MCP 迁移设计
 
 > 当前候选实现：Marketplace `3.1.0`、`oec-product@3.0.4`、`oec-dev@1.9.6`、`oec-dev-beta@0.1.0`、
-> `oec-e3@1.0.2`、`oec-pipeline@1.0.2`、`oec-common@0.3.0`。本文区分“代码和自动验证已完成”与“真实外部平台已验收”；
+> `oec-e3@1.0.3`、`oec-pipeline@1.0.2`、`oec-common@0.3.0`。本文区分“代码和自动验证已完成”与“真实外部平台已验收”；
 > SAE、UTP 和 `oec-testing` 仍未进入 Marketplace。
 
 ## 1. 设计结论
@@ -78,7 +78,7 @@ flowchart TB
 | `oec-product@3.0.4` | 1 | 3 | 0 | 0 | PRD 领域知识和发布语义 |
 | `oec-dev@1.9.6` | 4 | 11 | 1 | 0 | 稳定 OEC Dev 任务执行、Specs、模块上下文和工程辅助；含一个 SessionStart bootstrap |
 | `oec-dev-beta@0.1.0` | 0 | 1 | 0 | 0 | 实验性长时 Web/full-stack 编排；复用宿主 Engineering 能力 |
-| `oec-e3@1.0.2` | 0 | 0 | 0 | 1 | E3 PRD 发布与研发任务执行 |
+| `oec-e3@1.0.3` | 0 | 0 | 0 | 1 | E3 PRD 发布与研发任务执行 |
 | `oec-pipeline@1.0.2` | 0 | 0 | 0 | 1 | 既有 dev/test 流水线受控执行 |
 | `oec-common@0.3.0` | 0 | 1 | 0 | 0 | 零依赖 HTML-first 幻灯片 |
 
@@ -337,6 +337,6 @@ Server 并存期。
 [E3 平台 3.0.0 真实验收记录](../evidence/e3-platform-3.0.0-real-acceptance.md)。Pipeline 的实现状态不因
 E3 验收而改变，仍需另行获得目标仓库、流水线和授权后才能形成真实证据。
 
-当前 patch 只形成 release candidate：`oec-e3@1.0.2` 的账号归属、`oec-pipeline@1.0.2` 的单 POST
+当前 patch 只形成 release candidate：`oec-e3@1.0.3` 的账号归属、`oec-pipeline@1.0.2` 的单 POST
 不变量和 `oec-dev-beta@0.1.0` 的宿主运行边界都有自动测试，但尚未完成明确授权的真实非生产复验。仓库 LICENSE/notice 的 Owner 决定也是
 正式发布前置，因此本轮不创建或推送新 tag。

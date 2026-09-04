@@ -728,7 +728,7 @@ Markdown 中复制第二套解析规则。`oec-dev-beta` 不复制 Agent 或 run
 
 ```bash
 npm run build
-npm test                         # 156 tests passed
+npm test                         # 159 tests passed
 claude plugin validate --strict ./oec-dev
 git diff --check
 ```

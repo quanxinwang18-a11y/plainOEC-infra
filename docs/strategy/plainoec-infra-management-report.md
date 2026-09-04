@@ -66,7 +66,7 @@ E3 或 Pipeline；Dev Beta 只在明确的 Web/full-stack 场景中复用 Engine
 由主 Session 负责，稳定 Engineering 不安装一个默认接管研发过程的总控 Agent。Claude 的一个静态
 SessionStart（会话启动）Hook 只注入行为边界，不注入能力清单、项目状态或任务路由。
 
-当前可以确认的事实包括：执行根目录 `npm test` 的 156/156 项自动测试全部通过；Marketplace 与六个 Plugin 通过固定 Claude Code
+当前可以确认的事实包括：执行根目录 `npm test` 的 159/159 项自动测试全部通过；Marketplace 与六个 Plugin 通过固定 Claude Code
 环境的严格结构校验；Git 归档包和隔离安装验证了六个 Plugin、十五个 Skills、五个 Agents 以及两个
 MCP Server；Engineering 的 `oec-spec` bundle 还通过了 taskRef、任务 Spec/Design、双空间来源和
 reminder 隔离 fixture；E3 和 Pipeline MCP 均能独立启动并显示 Connected（已连接）。
@@ -1083,7 +1083,7 @@ Product、Engineering、E3 和 Pipeline 有不同事实来源、权限、状态�
 ### 15.1 当前可以声明
 
 - 本地完整修复已形成 release candidate。
-- 156/156 自动测试通过（根目录执行 `npm test`）。
+- 159/159 自动测试通过（根目录执行 `npm test`）。
 - Marketplace 和六个 Plugin strict validation 通过。
 - Git archive 与隔离安装通过。
 - 隔离安装结果包含 6 Plugins、15 Skills 和 5 Agents。

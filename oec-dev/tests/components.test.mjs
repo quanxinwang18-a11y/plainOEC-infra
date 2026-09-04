@@ -136,7 +136,8 @@ test('SessionStart injects bounded behavioral guidance without duplicating capab
   assert.match(context, /ordinary\s+conversation, non-engineering requests/);
   assert.match(context, /one recommended next step/);
   assert.match(context, /Do not enumerate or read every Skill file/);
-  assert.match(context, /at most one primary Skill/);
+  assert.match(context, /one primary Skill for the current decision/);
+  assert.match(context, /strongly\s+related capability/);
   assert.match(context, /code-plan/);
   assert.match(context, /code-implement/);
   assert.match(context, /positive trigger and its negative boundary/);
@@ -229,7 +230,9 @@ test('skill descriptions make positive and negative judgment boundaries explicit
   assert.match(bootstrap, /Do not enumerate or read every Skill file/);
   assert.match(bootstrap, /PRD.*code-plan/s);
   assert.match(bootstrap, /ready task.*implementation request.*code-implement/s);
-  assert.match(bootstrap, /one primary Skill/);
+  assert.match(bootstrap, /one primary Skill for the current decision/);
+  assert.match(bootstrap, /new write scope, independent judgment/);
+  assert.match(bootstrap, /wait for explicit user confirmation\s+before editing/);
   assert.match(skill('code-plan').metadata.description, /small obvious fix/);
   assert.match(skill('decision-review').metadata.description, /asks to challenge/);
   assert.match(skill('decision-review').metadata.description, /ordinary planning/);
@@ -243,6 +246,8 @@ test('skill descriptions make positive and negative judgment boundaries explicit
   assert.match(skill('test-first').metadata.description, /merely because.*should have tests/);
   assert.match(skill('debug').metadata.description, /root cause is unclear/);
   assert.match(skill('debug').metadata.description, /obvious local error/);
+  assert.match(skill('debug').body, /diagnosis-only.*read-only/s);
+  assert.match(skill('debug').body, /repair was\s+not authorized/s);
   assert.match(skill('code-review').metadata.description, /read-only/);
   assert.match(skill('code-review').metadata.description, /Do not use to implement/);
 });

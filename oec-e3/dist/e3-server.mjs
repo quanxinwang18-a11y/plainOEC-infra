@@ -29541,8 +29541,8 @@ async function resolveTask(client, config2, requirementId, story, mappingItem) {
   if (matches[0]) assertTaskParent(matches[0], requirementId);
   return matches[0] ?? null;
 }
-async function planRemoteObjects(client, config2, artifacts, mapping) {
-  const metadata = await client.requirementMetadata(config2.productSpace.id);
+async function planRemoteObjects(client, config2, artifacts, mapping, providedMetadata) {
+  const metadata = providedMetadata ?? await client.requirementMetadata(config2.productSpace.id);
   const requirements = [];
   let createRequirements = 0;
   let reuseRequirements = 0;
@@ -29578,6 +29578,53 @@ async function planRemoteObjects(client, config2, artifacts, mapping) {
     });
   }
   return { metadata, requirements, counts: { createRequirements, reuseRequirements, createTasks, reuseTasks } };
+}
+function canonicalRemotePlan(requirements) {
+  return (requirements ?? []).map((requirement) => ({
+    featureName: requirement.featureName,
+    title: requirement.title,
+    action: requirement.action,
+    id: requirement.id === void 0 || requirement.id === null ? null : String(requirement.id),
+    tasks: (requirement.tasks ?? []).map((task) => ({
+      storyId: task.storyId,
+      title: task.title,
+      action: task.action,
+      id: task.id === void 0 || task.id === null ? null : String(task.id)
+    }))
+  })).sort((left, right) => left.featureName.localeCompare(right.featureName));
+}
+function mappedRequirementId(mapping, featureName) {
+  return mapping?.requirements?.find((item) => item.featureName === featureName)?.e3_requirement?.id;
+}
+function mappedTaskId(mapping, featureName, storyId) {
+  const requirement = mapping?.requirements?.find((item) => item.featureName === featureName);
+  return requirement?.story_tasks?.find((item) => item.story_id === storyId)?.e3_task?.id;
+}
+function remotePlanMatches(expectedRequirements, actualRequirements, mapping) {
+  const expected = canonicalRemotePlan(expectedRequirements);
+  const actual = canonicalRemotePlan(actualRequirements);
+  if (expected.length !== actual.length) return false;
+  const actualByFeature = new Map(actual.map((item) => [item.featureName, item]));
+  for (const planned of expected) {
+    const current = actualByFeature.get(planned.featureName);
+    if (!current || current.title !== planned.title) return false;
+    const mappedId = mappedRequirementId(mapping, planned.featureName);
+    const requirementIdentityMatches = planned.action === current.action && planned.id === current.id;
+    const requirementCheckpointMatches = planned.action === "create" && current.action === "reuse" && mappedId !== void 0 && String(mappedId) === current.id;
+    if (!requirementIdentityMatches && !requirementCheckpointMatches) return false;
+    const plannedTasks = new Map(planned.tasks.map((item) => [item.storyId, item]));
+    const currentTasks = new Map(current.tasks.map((item) => [item.storyId, item]));
+    if (plannedTasks.size !== currentTasks.size) return false;
+    for (const [storyId, plannedTask] of plannedTasks) {
+      const currentTask = currentTasks.get(storyId);
+      if (!currentTask || currentTask.title !== plannedTask.title) return false;
+      const mappedTask = mappedTaskId(mapping, planned.featureName, storyId);
+      const taskIdentityMatches = plannedTask.action === currentTask.action && plannedTask.id === currentTask.id;
+      const taskCheckpointMatches = plannedTask.action === "create" && currentTask.action === "reuse" && mappedTask !== void 0 && String(mappedTask) === currentTask.id;
+      if (!taskIdentityMatches && !taskCheckpointMatches) return false;
+    }
+  }
+  return true;
 }
 async function storePlan(plan, dataDirectory) {
   const token = randomBytes3(32).toString("base64url");
@@ -29712,6 +29759,8 @@ var PublisherService = class {
         version: artifacts.version,
         fingerprint: artifacts.fingerprint,
         config: config2,
+        account: remote.metadata.inChargeBy,
+        remotePlan: canonicalRemotePlan(remote.requirements),
         createdAt: this.now(),
         expiresAt: this.now() + PLAN_TTL_MS
       };
@@ -29722,6 +29771,10 @@ var PublisherService = class {
         planToken,
         expiresAt: new Date(plan.expiresAt).toISOString(),
         productSpace: config2.productSpace.name,
+        pompProject: {
+          code: String(config2.pompProject.code),
+          name: config2.pompProject.name
+        },
         counts: remote.counts,
         requirements: remote.requirements,
         warnings
@@ -29779,6 +29832,9 @@ var PublisherService = class {
   }
   async execute({ planToken }, roots) {
     const plan = await loadPlan(planToken, this.dataDirectory, this.now());
+    if (!Array.isArray(plan.remotePlan) || typeof plan.account !== "string" || !plan.account) {
+      throw new Error("Publication plan is missing immutable execution details; prepare a new plan");
+    }
     const workspace = await resolveAuthorizedWorkspace(plan.workspaceUri, roots);
     if (workspace !== plan.workspace) throw new Error("Workspace root changed after prepare");
     const artifacts = await loadValidatedPublishArtifacts(workspace, plan.version);
@@ -29802,9 +29858,23 @@ var PublisherService = class {
       const existing = await readMapping(workspace, artifacts.version);
       const compatibility = mappingCompatibility(existing.mapping, artifacts, config2);
       const metadata = await this.client.requirementMetadata(config2.productSpace.id);
-      const warnings = normalizeWarnings(artifacts.warnings, compatibility.warnings, metadata.warnings);
+      if (metadata.inChargeBy !== plan.account) {
+        return {
+          status: "blocked",
+          recordPath: existing.path,
+          counts: mappingCounts(existing.mapping),
+          errors: ["E3 account changed after publication prepare; prepare a new plan"]
+        };
+      }
+      let currentRemote;
       try {
-        await planRemoteObjects(this.client, config2, artifacts.artifacts, compatibility.usableMapping);
+        currentRemote = await planRemoteObjects(
+          this.client,
+          config2,
+          artifacts.artifacts,
+          compatibility.usableMapping,
+          metadata
+        );
       } catch (error2) {
         return {
           status: "blocked",
@@ -29813,6 +29883,15 @@ var PublisherService = class {
           errors: [error2.message]
         };
       }
+      if (!remotePlanMatches(plan.remotePlan, currentRemote.requirements, compatibility.usableMapping)) {
+        return {
+          status: "blocked",
+          recordPath: existing.path,
+          counts: mappingCounts(existing.mapping),
+          errors: ["E3 publication plan changed after prepare; prepare a new plan"]
+        };
+      }
+      const warnings = normalizeWarnings(artifacts.warnings, compatibility.warnings, metadata.warnings);
       let mapping = compatibility.adoption || !compatibility.usableMapping ? adoptMappingCheckpoints(newMapping({
         version: artifacts.version,
         handoffPath: artifacts.handoffPath,
@@ -30701,7 +30780,7 @@ async function rootsFor(mcpServer) {
   }
 }
 function createE3McpServer({ service, developmentService } = {}) {
-  const mcpServer = new McpServer({ name: "oec-e3", version: "1.0.2" });
+  const mcpServer = new McpServer({ name: "oec-e3", version: "1.0.3" });
   const client = new E3Client({ auth: new AuthManager() });
   const publisher = service ?? new PublisherService({
     client

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.3
+
+- Bind PRD publication plans to the resolved E3 account and reject account changes before execution.
+- Persist the prepared requirement/task create-or-reuse plan and block remote drift before writes.
+- Expose the selected POMP project in the ready publication result.
+
 ## 1.0.2
 
 - Add safe natural-language examples for read-only status and non-mutating plan preparation.

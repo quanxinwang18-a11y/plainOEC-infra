@@ -32,7 +32,7 @@ Marketplace 只负责发现和分发。Plugin 可独立安装、升级和卸载�
 | Product | `3.0.4` |
 | Engineering | `1.9.6` |
 | Dev Beta | `0.1.0` |
-| E3 | `1.0.2` |
+| E3 | `1.0.3` |
 | Pipeline | `1.0.2` |
 | Common | `0.3.0` |
 
@@ -75,7 +75,7 @@ Marketplace 只负责发现和分发。Plugin 可独立安装、升级和卸载�
 
 当前本地证据包括：
 
-- `156/156` 自动测试通过（执行 `npm test`，以当前工作树结果为准）；
+- `159/159` 自动测试通过（执行 `npm test`，以当前工作树结果为准）；
 - Marketplace 与六个 Plugin strict validation 通过的结构测试；
 - committed bundles 可在没有 Plugin 内 `node_modules` 的隔离环境运行；
 - E3/Pipeline 的路径、身份、并发、幂等和失败恢复具有自动测试；
@@ -84,7 +84,7 @@ Marketplace 只负责发现和分发。Plugin 可独立安装、升级和卸载�
 仍不能声明：
 
 - 当前候选版本已经正式发布；
-- E3 `1.0.2` 的账号 Owner 逻辑已完成真实补丁复验；
+- E3 `1.0.3` 的账号 Owner 逻辑已完成真实补丁复验；
 - Pipeline `1.0.2` 已在授权非生产流水线上完成 single-POST 真实验收；
 - `oec-dev-beta` 已完成真实 Agent/Playwright outcome 验收；
 - Skills 的 route grader 已证明完整用户结果；
