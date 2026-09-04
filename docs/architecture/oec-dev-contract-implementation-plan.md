@@ -438,6 +438,31 @@ Profile 只改变校验强度，不表示必须按阶段执行：
 2 参数或命令错误
 ```
 
+### 5.6 E3 requirement mapping and cross-repository planning
+
+当用户以明确的 E3 requirement/Story 或自然语言需求作为起点时，Main Session 可以在 `code-plan` 指导下做
+只读映射，但不能把 E3 标识符当作本地任务身份。`STORY-*` 等前缀只是外部显示或引用文本；canonical
+`taskRef` 必须通过 `oec-spec` 单独解析，不能从前缀推导。
+
+映射前必须有当前 DEV_ROOT，并保留用户确认的 E3 product space。使用现有只读
+`get_e3_requirement_detail` 或 `get_e3_task_detail` 获取需求、任务和父需求 identity；没有明确空间时先让
+用户选择，不根据标题、目录名或最新对象猜测。读取范围仅包含当前 DEV_ROOT 的 `CLAUDE.md`、
+`ai-docs/Spec/` 和相关任务来源。用户明确要求分析其他仓库时，先取得每个仓库的精确路径和宿主授权，
+再分别读取该根的 `CLAUDE.md`/Specs；不得扫描父目录、兄弟目录、Plugin Data 历史路径或未授权 Root。
+
+输出使用可解释的 `required`、`possibly-related`、`not-indicated`、`unknown` 分类。每个候选必须列出具体
+证据、匹配的 Spec 和路径、未决假设；不使用数字 confidence 阈值自动选仓库。用户确认的是本次涉及的仓库
+集合，不等于确认写文件、实现代码或 E3 写入。E3 不可用时可以使用用户提供的需求文本或 PRD，但必须标记
+来源未验证，不伪造远端事实，也不创建 E3 对象。
+
+映射确认后，每个 DEV_ROOT 单独执行 `code-plan`，拥有自己的 canonical `taskRef`、`spec.md`、`design.md`、
+Change Boundary 和 Verification。只有发生真实跨仓接口变化时，Design 才记录 requirement/PRD identity、
+契约、提供方/消费方、兼容策略、顺序、回滚和独立验证；多个仓库的接口描述由开发者手工协调，不自动同步。
+报告始终区分 `completed`、`partial`、`blocked` 和 `unresolved` 仓库，部分完成不得描述为整体完成。
+
+`code-plan` 和 `code-finish` 不自动调用 E3 create/progress。需要远端操作时，用户必须另行请求现有
+`prepare → explicit Human confirmation → execute → status/read-back` 链路；本地映射或规划不能替代该确认。
+
 ## 6. Team Spec 自动提醒
 
 ### 6.1 定位
@@ -706,6 +731,8 @@ Markdown 中复制第二套解析规则。`oec-dev-beta` 不复制 Agent 或 run
 - [x] 现有四个 Agent 能读取两种任务来源；
 - [x] SessionStart 提示无能力清单、项目扫描、任务选择或状态写入；
 - [x] 稳定 Engineering Skills 可由精确自然语言意图触发，写入仍需精确路径确认；
+- [x] 显式 E3 requirement/Story 映射保持只读、证据分类、授权 Root、确认边界和 E3 降级；
+- [x] 跨仓规划保持逐 Root taskRef/Spec/Design、人工接口协调和部分结果报告；
 - [x] 稳定 Plugin 不恢复旧 Dev Router、固定 Agent 顺序或默认长时编排；
 - [x] `oec-dev-beta` 以单个显式 Skill 提供实验性长时 Web 编排；
 - [x] 构建、测试、strict plugin validation 和路径检查通过。
@@ -719,6 +746,8 @@ Markdown 中复制第二套解析规则。`oec-dev-beta` 不复制 Agent 或 run
 - `oec-spec` 增加 `task resolve` 与 `task check`，同时保留 `select`、`check` 和 `legacy-audit`；
 - `code-plan`、`code-implement`、`knowledge-manage`、`code-review`、`code-finish` 和四个 Agent 已切换到
   canonical taskRef 语义；
+- `code-plan`/`guide` 现在覆盖显式 E3 requirement/Story 的只读、证据分类、授权 Root、逐仓规划和安全 E3 handoff
+  guidance；映射仍是 Main Session 建议，不是新的 Skill、Router 或事实源；
 - `oec-dev-beta` 的 `web-develop` 只复用宿主 Agent 和 `oec-spec`，不复制文件或 runtime；
 - Product/Dev 双空间、legacy alias、结构化 Spec/Design、模块索引和 reminder 已加入隔离 fixture；
 - Claude 增加静态 SessionStart 行为注入，Codex 显式禁用 Hook 自动发现，稳定 Skills 改为由精确
@@ -728,7 +757,7 @@ Markdown 中复制第二套解析规则。`oec-dev-beta` 不复制 Agent 或 run
 
 ```bash
 npm run build
-npm test                         # 159 tests passed
+npm test                         # 171 tests passed
 claude plugin validate --strict ./oec-dev
 git diff --check
 ```

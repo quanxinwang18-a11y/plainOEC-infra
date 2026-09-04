@@ -113,6 +113,11 @@ Spec/Design 和相关 Team Specs，再在 Main Session 中实现和验证。
 任务身份统一使用 `versioned:vX.Y.Z/<task-slug>` 或 `change:YYYY-MM-DD-<slug>`。Product/Dev 双空间、
 结构化校验和提醒规则见 `docs/architecture/oec-dev-contract-implementation-plan.md`。
 
+如果用户从 E3 requirement/Story 开始，先做只读详情查询并基于当前 `DEV_ROOT` 的 `CLAUDE.md`、Specs 和
+代码证据输出 `required`、`possibly-related`、`not-indicated` 或 `unknown`；用户确认仓库集合后，再在每个
+仓库独立规划自己的 taskRef/Spec/Design。其他 Root 必须由用户给出精确路径并获宿主授权，不自动扫描、写入或
+创建 E3 对象。`code-plan` 和 `code-finish` 不自动触发 E3 create/progress。
+
 #### 可选
 
 - 需要实验性长时 Web/full-stack 流程时安装：

@@ -2,6 +2,12 @@
 
 ## Next
 
+- Extend goal-first `code-plan` guidance for explicit E3 requirement/Story mapping using read-only detail
+  tools and evidence classifications (`required`, `possibly-related`, `not-indicated`, `unknown`).
+- Keep additional repositories explicitly authorized and independently planned with their own canonical taskRef,
+  Spec/Design pair, manual cross-repository interface coordination, and separate completion reporting.
+- Add bilingual E3 mapping route/outcome eval cases without adding a public Skill or automatic E3 write path.
+
 ## 1.9.6
 
 - Narrow the SessionStart bootstrap to engineering requests in the Main Session.

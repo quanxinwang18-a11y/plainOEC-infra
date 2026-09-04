@@ -353,6 +353,43 @@ test('team Spec assets encode conditional artifacts and safe project ownership',
   assert.doesNotMatch(contract, /\.claude\/settings|\.codex\/skills|SessionStart|task\.py/);
 });
 
+test('E3 mapping eval cases cover bilingual route and safe outcome boundaries', () => {
+  for (const name of ['code-plan-e3-mapping-positive', 'code-plan-e3-mapping-positive-en']) {
+    const promptPath = resolve(pluginRoot, 'evals', name, 'prompt.md');
+    const promptText = readFileSync(promptPath, 'utf8');
+    const promptMatch = /^---\n([\s\S]*?)\n---\n/.exec(promptText);
+    assert.ok(promptMatch, `${name} prompt needs frontmatter`);
+    const prompt = YAML.parse(promptMatch[1]);
+    assert.equal(prompt.name, name);
+    assert.ok(prompt.tags.includes('outcome'));
+    assert.ok(prompt.tags.includes('code-plan'));
+    assert.match(promptText, /required/);
+    assert.match(promptText, /possibly-related/);
+    assert.match(promptText, /not-indicated/);
+    assert.match(promptText, /unknown/);
+    assert.match(promptText, /read-only E3 detail|只读查看/i);
+    assert.match(promptText, /taskRef/);
+    assert.match(promptText, /confirmation boundary/);
+    assert.match(promptText, /do not scan|不要扫描/i);
+    assert.match(promptText, /do not create E3 objects|不要创建 E3 对象/i);
+
+    const contract = readFileSync(resolve(pluginRoot, 'skills/code-plan/references/task-artifact-contract.md'), 'utf8');
+    assert.match(contract, /provider\/consumer/);
+    assert.match(contract, /manually keep|手工/);
+    assert.match(contract, /completed.*partial.*blocked.*unresolved/s);
+    assert.match(contract, /prepare.*explicit Human confirmation.*execute.*status\/read-back/s);
+
+    const graderText = readFileSync(resolve(pluginRoot, 'evals', name, 'graders/skill-route.md'), 'utf8');
+    const graderMatch = /^---\n([\s\S]*?)\n---\n/.exec(graderText);
+    assert.ok(graderMatch, `${name} grader needs frontmatter`);
+    const grader = YAML.parse(graderMatch[1]);
+    assert.deepEqual({ type: grader.type, tool: grader.tool, min: grader.min }, {
+      type: 'tool_used', tool: 'Skill', min: 1,
+    });
+    assert.match(grader.input_match, /code-plan/);
+  }
+});
+
 test('each Skill carries executable positive and negative eval cases', () => {
   for (const name of expectedSkills) {
     for (const polarity of ['positive', 'negative']) {

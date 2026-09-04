@@ -70,6 +70,19 @@ PRD → task context → spec.md + design.md → user confirmation → implement
 
 小而明确的修复不需要这道门，仍由 Main Session 直接修改和验证。
 
+### E3 需求到仓库映射
+
+用户也可以从自然语言的 E3 requirement/Story 开始。Main Session 先使用当前用户确认的 product space 和
+`get_e3_requirement_detail` / `get_e3_task_detail` 做只读查询，再读取当前 `DEV_ROOT` 的 `CLAUDE.md`、相关
+`ai-docs/Spec/` 和代码路径。输出 `required`、`possibly-related`、`not-indicated` 或 `unknown`，并列出具体
+证据、匹配的 Specs/paths 与未决假设。E3 ID（包括 `STORY-*`）只是来源证据，不是可推导的本地 `taskRef`。
+
+其他仓库只有在用户给出精确路径且宿主授权后才可分析；不扫描相邻目录、`~/work` 或 Plugin Data 历史路径。
+用户先确认仓库集合，再在每个仓库独立执行 `code-plan`，使用自己的 canonical `taskRef`、`spec.md`、
+`design.md`、Change Boundary 和 Verification。跨仓接口由各仓库 Design 手工保持 provider/consumer、兼容性、
+顺序、回滚和独立验证一致；报告分别列出 `completed`、`partial`、`blocked`、`unresolved`，不能把部分完成说成
+整体完成。该确认不授权代码写入或 E3 写入；`code-plan`/`code-finish` 不自动调用 E3 create/progress。
+
 ### `code-implement`
 
 这是已有任务的轻量执行入口。只有请求包含 canonical `taskRef` 或明确的现有 change ID，且任务

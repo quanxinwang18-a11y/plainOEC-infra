@@ -5,6 +5,8 @@
 - Add three guarded read-only query tools for the authenticated user's E3 tasks, system-requirement
   details, and development-task details. Query tools use dynamic work-item resolution, bounded
   pagination, product-space scoping, and no remote write path.
+- Fail closed on malformed or incomplete workspace binding configuration instead of treating it as unbound;
+  serialize concurrent binding selections with an exclusive Plugin Data lock and atomic JSON replacement.
 
 ## 1.0.3
 

@@ -64,3 +64,35 @@ oec-spec task check --dev-root "$DEV_ROOT" --product-root "$PRODUCT_ROOT" \
 
 Never write absolute machine paths into task documents. Product sources are read from `PRODUCT_ROOT`;
 task documents are written only to `DEV_ROOT`.
+
+## E3 requirement-to-repository mapping
+
+When the user's natural-language starting point is an explicit E3 requirement or Story, keep the E3
+identifier as external source evidence; it is not a local `taskRef`, even when it resembles `STORY-*`.
+Use the existing read-only `get_e3_requirement_detail` or `get_e3_task_detail` tools after the current
+workspace's user-confirmed product space is established. If the space is not bound, ask the user to
+select it through the existing binding flow; never choose by title, directory name, latest object, or
+identifier prefix. If the E3 ID or product space is absent/ambiguous, ask for it instead of searching. If E3 is
+unavailable, accept a user-provided requirement/PRD as unverified local source and say what could not be checked.
+
+Read only the current `DEV_ROOT`'s `CLAUDE.md`, relevant `ai-docs/Spec/` entries, task sources, and
+paths selected by `oec-spec`. A second repository is eligible only after the user names its exact root
+and the host authorizes it. Do not scan parent/sibling directories, `~/work`, Plugin Data history, or
+other roots. For every candidate repository, report one of `required`, `possibly-related`,
+`not-indicated`, or `unknown`, with concrete evidence, matched Specs and paths, and unresolved
+assumptions. Do not use a numeric confidence threshold to select the set. The user must confirm the
+repository set before task-pair writes; that confirmation does not authorize code edits or E3 writes.
+
+## Cross-repository planning and handoff
+
+After repository-set confirmation, run `code-plan` independently in each authorized root. Each root
+keeps its own canonical `taskRef`, `spec.md`, `design.md`, Change Boundary, and Verification. Link the
+same requirement/PRD identity, revision, original goal, and any real cross-repository API/message/data
+contract in each task's source or Design without copying Product documents. Prompt the developer to
+manually keep provider/consumer descriptions, compatibility, order, rollback, and independent checks
+consistent; do not synchronize files or write another root from the current session. Report
+`completed`, `partial`, `blocked`, and `unresolved` repositories separately, and never describe a
+partial set as the whole requirement being complete.
+
+`code-plan` and `code-finish` do not invoke E3 create/progress automatically. A later E3 handoff must
+be separately requested and reuse `prepare → explicit Human confirmation → execute → status/read-back`.

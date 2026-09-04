@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdtemp, mkdir, readFile, realpath, unlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, realpath, symlink, unlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import test from 'node:test';
 import YAML from 'yaml';
@@ -136,6 +136,10 @@ test('MCP roots require an exact client-provided workspace and HTML is escaped',
   const value = await fixture();
   assert.equal(await resolveAuthorizedWorkspace(value.workspaceUri, value.roots), await realpath(value.workspace));
   await assert.rejects(resolveAuthorizedWorkspace(value.workspaceUri, []), /not one of/);
+  await assert.rejects(
+    resolveAuthorizedWorkspace(pathToFileURL(join(value.workspace, '..')).href, value.roots),
+    /not one of/,
+  );
   assert.equal(escapeHtml('<script> & "x"'), '&lt;script&gt; &amp; &quot;x&quot;');
 });
 
@@ -666,4 +670,78 @@ test('duplicate exact task titles block preparation instead of guessing', async 
   const prepared = await service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots);
   assert.equal(prepared.status, 'blocked');
   assert.match(prepared.errors.join('\n'), /Ambiguous E3 tasks/);
+});
+
+test('corrupt workspace configuration fails closed without selecting or overwriting it', async () => {
+  for (const content of [
+    '{"productSpace":',
+    JSON.stringify({ productSpace: { id: 'space-1' } }),
+    JSON.stringify({ productSpace: { id: 'space-1', name: 'Non-production' }, pompProject: { code: 'pomp-1' } }),
+  ]) {
+    const value = await fixture();
+    const client = new FakeE3Client();
+    const service = new PublisherService({ client, dataDirectory: value.dataDirectory });
+    const configFile = await workspaceConfigFile(value);
+    await mkdir(dirname(configFile), { recursive: true });
+    await writeFile(configFile, content);
+    const before = await readFile(configFile, 'utf8');
+
+    await assert.rejects(
+      service.prepareWorkspaceBinding({ workspaceUri: value.workspaceUri }, value.roots),
+      /workspace configuration is corrupt/,
+    );
+    await assert.rejects(
+      service.workspaceBinding({ workspaceUri: value.workspaceUri }, value.roots),
+      /workspace configuration is corrupt/,
+    );
+    await assert.rejects(
+      service.prepare({ workspaceUri: value.workspaceUri, version: 'v1.2.3' }, value.roots),
+      /workspace configuration is corrupt/,
+    );
+    assert.equal(await readFile(configFile, 'utf8'), before);
+    assert.equal(client.calls, 0);
+  }
+});
+
+test('workspace binding selection serializes concurrent writes and leaves one valid winner', async () => {
+  const value = await fixture();
+  const client = new FakeE3Client();
+  const firstService = new PublisherService({ client, dataDirectory: value.dataDirectory });
+  const secondService = new PublisherService({ client, dataDirectory: value.dataDirectory });
+  const prepared = await firstService.prepareWorkspaceBinding({ workspaceUri: value.workspaceUri }, value.roots);
+  const originalListSpaces = client.listSpaces.bind(client);
+  client.listSpaces = async (...args) => {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    return originalListSpaces(...args);
+  };
+
+  const results = await Promise.allSettled([
+    firstService.selectProductSpace({ selectionToken: prepared.selectionToken, spaceId: 'space-1' }, value.roots),
+    secondService.selectProductSpace({ selectionToken: prepared.selectionToken, spaceId: 'space-1' }, value.roots),
+  ]);
+  assert.equal(results.filter((item) => item.status === 'fulfilled').length, 1);
+  const rejected = results.find((item) => item.status === 'rejected');
+  assert.match(rejected.reason.message, /already being updated|already been completed/);
+
+  const configFile = await workspaceConfigFile(value);
+  const config = JSON.parse(await readFile(configFile, 'utf8'));
+  assert.deepEqual(config.productSpace, { id: 'space-1', name: 'Non-production' });
+  assert.deepEqual(config.pompProject, { code: 'pomp-1', name: 'Default POMP', isDefault: true });
+});
+
+test('canonical root aliases share a binding while a separate clone remains unbound', async () => {
+  const dataDirectory = await mkdtemp(join(tmpdir(), 'oec-publish-canonical-data-'));
+  const value = await fixture(1, dataDirectory);
+  const clone = await fixture(1, dataDirectory);
+  const aliasParent = await mkdtemp(join(tmpdir(), 'oec-publish-alias-'));
+  const alias = join(aliasParent, 'workspace');
+  await symlink(value.workspace, alias, 'dir');
+  const aliasUri = pathToFileURL(alias).href;
+  const client = new FakeE3Client();
+  const service = new PublisherService({ client, dataDirectory });
+
+  await configure(service, value);
+  assert.equal((await service.workspaceBinding({ workspaceUri: aliasUri }, value.roots)).status, 'bound');
+  assert.equal((await service.workspaceBinding({ workspaceUri: clone.workspaceUri }, clone.roots)).status, 'unbound');
+  assert.equal((await service.prepareWorkspaceBinding({ workspaceUri: aliasUri }, [{ uri: value.workspaceUri }])).status, 'bound');
 });

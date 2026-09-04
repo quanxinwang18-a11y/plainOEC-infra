@@ -53,12 +53,18 @@ ai-docs/Spec/integrations/e3/development-tasks/<changeId>.yaml
 为当前 Change 准备研发任务计划，展示将创建或复用的对象，不要执行。
 ```
 
+普通 `code-plan`、`code-implement` 或 `code-finish` 不会自动创建或更新 E3。只有用户明确提出远端操作时，
+才沿 `prepare → explicit Human confirmation → execute → status/read-back` 继续；映射或本地验证结果不能
+替代该确认。
+
 所有远端写入都来自短期不可变 plan，并要求宿主人类交互。PRD publication plan 同时绑定解析出的
 E3 account、产物 fingerprint、目标空间/POMP 和 requirement/task create-or-reuse 快照；execute 发现
 账号、配置、对象身份或确认快照变化时必须重新 prepare。Server 不提供通用 E3 CRUD、缺陷/测试
 请求工作流、任意字段编辑或任意 payload。在同一 Plugin Data 内，PRD publication 按 canonical
-workspace 与 version 串行，研发任务创建和 progress 按 canonical workspace 与 change ID 串行；并发
-竞争者返回 partial 并要求查询 status 后重试，不会同时创建对象或重复写 worklog。项目仓库中的 publication record 和 development task record 只保存远端身份、关联和恢复所需信息；资源锁只存在于
+workspace 与 version 串行，workspace binding selection、研发任务创建和 progress 也按 canonical workspace
+串行；并发竞争者返回 partial/blocked 并要求重新查询或重试，不会同时创建对象、覆盖绑定或重复写 worklog。
+Workspace config 发生 malformed JSON 或 identity 字段缺失时 fail closed，不会把损坏配置当作未绑定状态，也
+不会覆盖它。项目仓库中的 publication record 和 development task record 只保存远端身份、关联和恢复所需信息；资源锁只存在于
 Plugin Data，不进入业务仓库，也不声称协调使用不同 Plugin Data 的独立安装。
 
 ## 当前证据

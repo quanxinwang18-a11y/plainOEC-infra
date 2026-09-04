@@ -29562,8 +29562,59 @@ async function loadPublishArtifacts(workspace, requestedVersion) {
   const warnings = Array.isArray(handoff.quality_gate?.warnings) ? handoff.quality_gate.warnings : [];
   return { version: version2, handoffPath, artifacts, warnings, fingerprint: artifactFingerprint(files) };
 }
+function configError(message) {
+  return new Error(`E3 workspace configuration is corrupt: ${message}`);
+}
+function nonEmptyConfigString(value) {
+  return typeof value === "string" && value.trim().length > 0;
+}
+function validateWorkspaceConfig(config2) {
+  if (!config2 || typeof config2 !== "object" || Array.isArray(config2)) {
+    throw configError("configuration must be a JSON object");
+  }
+  const productSpace = config2.productSpace;
+  if (!productSpace || typeof productSpace !== "object" || Array.isArray(productSpace)) {
+    throw configError("productSpace must be a JSON object");
+  }
+  if (!nonEmptyConfigString(productSpace.id) || !nonEmptyConfigString(productSpace.name)) {
+    throw configError("productSpace requires non-empty id and name");
+  }
+  if (config2.pompProject !== void 0) {
+    const pompProject = config2.pompProject;
+    if (!pompProject || typeof pompProject !== "object" || Array.isArray(pompProject) || !nonEmptyConfigString(pompProject.code) || !nonEmptyConfigString(pompProject.name)) {
+      throw configError("pompProject requires non-empty code and name");
+    }
+  }
+  if (config2.productRoot !== void 0) {
+    const productRoot = config2.productRoot;
+    if (!productRoot || typeof productRoot !== "object" || Array.isArray(productRoot)) {
+      throw configError("productRoot must be a JSON object");
+    }
+    for (const key of ["localPath", "gitRemote", "revision"]) {
+      if (productRoot[key] !== void 0 && !nonEmptyConfigString(productRoot[key])) {
+        throw configError(`productRoot.${key} must be a non-empty string when provided`);
+      }
+    }
+  }
+  if (config2.pendingPompSelection !== void 0 && typeof config2.pendingPompSelection !== "boolean") {
+    throw configError("pendingPompSelection must be a boolean when provided");
+  }
+  if (config2.updatedAt !== void 0 && typeof config2.updatedAt !== "string") {
+    throw configError("updatedAt must be a string when provided");
+  }
+  return config2;
+}
 async function loadConfig(workspace, dataDirectory) {
-  return readJson(configPath(workspace, dataDirectory));
+  const path = configPath(workspace, dataDirectory);
+  let config2;
+  try {
+    config2 = JSON.parse(await readFile3(path, "utf8"));
+  } catch (error2) {
+    if (error2.code === "ENOENT") return null;
+    if (error2 instanceof SyntaxError) throw configError("invalid JSON");
+    throw error2;
+  }
+  return validateWorkspaceConfig(config2);
 }
 function sameConfig(left, right) {
   return left?.productSpace?.id === right?.productSpace?.id && left?.pompProject?.code === right?.pompProject?.code;
@@ -29917,51 +29968,65 @@ var PublisherService = class {
     };
   }
   async selectProductSpace({ selectionToken, spaceId, pompProjectCode }, roots) {
-    const selection = await loadSelection(selectionToken, this.dataDirectory, this.now());
+    let selection = await loadSelection(selectionToken, this.dataDirectory, this.now());
     const workspace = await assertSelectionWorkspace(selection, roots);
-    const spaces = await this.client.listSpaces();
-    const authorizedSpace = selection.phase === "space" ? selection.candidates.find((item) => String(item.id) === String(spaceId)) : selection.selectedSpace;
-    if (!authorizedSpace || String(authorizedSpace.id) !== String(spaceId)) {
-      throw new Error("spaceId was not returned for this selection");
-    }
-    const space = spaces.find((item) => String(item.id) === String(spaceId));
-    if (!space) throw new Error("Selected E3 product space is no longer available");
-    const projects = await this.client.listPompProjects(space.id);
-    if (projects.length === 0) throw new Error("no-pomp-projects: selected E3 space has no POMP projects");
-    if (selection.phase === "space" && pompProjectCode) {
-      throw new Error("pompProjectCode is not valid until POMP candidates are returned");
-    }
-    const authorizedProjectCodes = new Set(
-      (selection.phase === "pomp" ? selection.candidates : projects).map((item) => String(item.code))
+    const releaseLock = await acquireExecutionLock(
+      pluginDataRoot(this.dataDirectory),
+      `workspace-binding:${workspace}`
     );
-    let selected = pompProjectCode ? projects.find((item) => item.code === String(pompProjectCode)) : automaticPompProject(projects);
-    if (pompProjectCode && (!selected || !authorizedProjectCodes.has(String(pompProjectCode)))) {
-      throw new Error("pompProjectCode is not a candidate for this selection");
+    if (!releaseLock) {
+      throw new Error("E3 workspace binding is already being updated; retry after it finishes");
     }
-    if (selected && !authorizedProjectCodes.has(String(selected.code))) {
-      throw new Error("POMP candidates changed; prepare again");
+    try {
+      selection = await loadSelection(selectionToken, this.dataDirectory, this.now());
+      await assertSelectionWorkspace(selection, roots);
+      await loadConfig(workspace, this.dataDirectory);
+      const spaces = await this.client.listSpaces();
+      const authorizedSpace = selection.phase === "space" ? selection.candidates.find((item) => String(item.id) === String(spaceId)) : selection.selectedSpace;
+      if (!authorizedSpace || String(authorizedSpace.id) !== String(spaceId)) {
+        throw new Error("spaceId was not returned for this selection");
+      }
+      const space = spaces.find((item) => String(item.id) === String(spaceId));
+      if (!space) throw new Error("Selected E3 product space is no longer available");
+      const projects = await this.client.listPompProjects(space.id);
+      if (projects.length === 0) throw new Error("no-pomp-projects: selected E3 space has no POMP projects");
+      if (selection.phase === "space" && pompProjectCode) {
+        throw new Error("pompProjectCode is not valid until POMP candidates are returned");
+      }
+      const authorizedProjectCodes = new Set(
+        (selection.phase === "pomp" ? selection.candidates : projects).map((item) => String(item.code))
+      );
+      let selected = pompProjectCode ? projects.find((item) => item.code === String(pompProjectCode)) : automaticPompProject(projects);
+      if (pompProjectCode && (!selected || !authorizedProjectCodes.has(String(pompProjectCode)))) {
+        throw new Error("pompProjectCode is not a candidate for this selection");
+      }
+      if (selected && !authorizedProjectCodes.has(String(selected.code))) {
+        throw new Error("POMP candidates changed; prepare again");
+      }
+      if (!selected) {
+        await atomicJson(configPath(workspace, this.dataDirectory), { productSpace: space, pendingPompSelection: true });
+        await storeSelection({
+          ...selection,
+          phase: "pomp",
+          selectedSpace: space,
+          candidates: projects
+        }, this.dataDirectory, selectionToken);
+        return {
+          status: "needs_pomp_selection",
+          selectionToken,
+          expiresAt: new Date(selection.expiresAt).toISOString(),
+          spaceId: String(space.id),
+          productSpace: space.name,
+          candidates: projects
+        };
+      }
+      const config2 = { productSpace: space, pompProject: selected, updatedAt: new Date(this.now()).toISOString() };
+      await atomicJson(configPath(workspace, this.dataDirectory), config2);
+      await storeSelection({ ...selection, usedAt: this.now() }, this.dataDirectory, selectionToken);
+      return { status: "selected", productSpace: space.name, pompProject: selected.name };
+    } finally {
+      await releaseLock();
     }
-    if (!selected) {
-      await atomicJson(configPath(workspace, this.dataDirectory), { productSpace: space, pendingPompSelection: true });
-      await storeSelection({
-        ...selection,
-        phase: "pomp",
-        selectedSpace: space,
-        candidates: projects
-      }, this.dataDirectory, selectionToken);
-      return {
-        status: "needs_pomp_selection",
-        selectionToken,
-        expiresAt: new Date(selection.expiresAt).toISOString(),
-        spaceId: String(space.id),
-        productSpace: space.name,
-        candidates: projects
-      };
-    }
-    const config2 = { productSpace: space, pompProject: selected, updatedAt: new Date(this.now()).toISOString() };
-    await atomicJson(configPath(workspace, this.dataDirectory), config2);
-    await storeSelection({ ...selection, usedAt: this.now() }, this.dataDirectory, selectionToken);
-    return { status: "selected", productSpace: space.name, pompProject: selected.name };
   }
   async execute({ planToken }, roots) {
     const plan = await loadPlan(planToken, this.dataDirectory, this.now());

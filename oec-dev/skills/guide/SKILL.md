@@ -38,13 +38,17 @@ confirmation.
    failure diagnosis, an explicitly requested testing method, decision challenge, throwaway experiments,
    legacy migration,
    durable knowledge, or finalization.
-2. Non-trivial implementation sourced from a PRD, Story, HANDOFF, issue, or other requirement:
+2. Non-trivial implementation sourced from a PRD, Story, HANDOFF, explicit E3 requirement/Story, issue, or other requirement:
    plan before business-code edits with `code-plan`.
 3. An existing ready task plus an implementation request: continue with `code-implement`.
 4. Small, local, reversible, or urgent coding: stay lightweight in the Main Session.
 
 A ready task without an implementation request does not authorize implementation. A request to review a
 ready task uses review, not implementation.
+
+For an E3 or other external requirement/Story goal, keep external identity separate from local task identity and
+let the planning gate gather read-only evidence before proposing work. If another repository is mentioned, ask for
+its exact user-authorized root; never scan neighboring directories or carry assumptions across roots.
 
 ## Safety and handoff
 

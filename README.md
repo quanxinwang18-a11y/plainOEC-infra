@@ -75,7 +75,7 @@ Marketplace 只负责发现和分发。Plugin 可独立安装、升级和卸载�
 
 当前本地证据包括：
 
-- `159/159` 自动测试通过（执行 `npm test`，以当前工作树结果为准）；
+- `171/171` 自动测试通过（执行 `npm test`，以当前工作树结果为准）；
 - Marketplace 与六个 Plugin strict validation 通过的结构测试；
 - committed bundles 可在没有 Plugin 内 `node_modules` 的隔离环境运行；
 - E3/Pipeline 的路径、身份、并发、幂等和失败恢复具有自动测试；

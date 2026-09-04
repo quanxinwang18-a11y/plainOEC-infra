@@ -2,7 +2,8 @@
 
 **文档版本**: 2.1
 **制定日期**: 2026-09-04
-**状态**: Approved design baseline；Phase 0/1 已完成，Phase 2 核心能力已实现，Gate 2 宿主持久化验收及后续 Phase 3-5 待完成
+**状态**: Approved design baseline；Phase 0/1 已完成，Phase 2 核心能力与本地 Gate 2 安全测试已实现，Phase 3-4 的
+Main Session guidance/eval 已补齐；Gate 2 宿主持久化、Gate 3 mapping outcome 和后续真实远端验收仍待完成
 **代码基线**: `e4823eb`，`oec-e3@1.0.3`
 **负责人**: [待定]
 
@@ -928,8 +929,10 @@ workspace binding 必须证明：
 workspace root 上完成只读/prepare 验收，首次调用返回 `needs_space_selection`，未绑定状态返回 `unbound`。
 用户明确选择 `202330` 后，已在隔离的临时 Plugin Data 中验证 `select_product_space` 返回 `selected`，并由
 `get_e3_workspace_binding` 读回 `bound`；由于当前 shell 未提供宿主的 `${CLAUDE_PLUGIN_DATA}`，没有擅自写入猜测的用户级目录。
+本地测试还覆盖 malformed/incomplete config 的 fail-closed 行为、原子配置写入、同一 workspace 的并发选择、
+canonical root alias 复用和独立 clone 隔离。这里不宣称真实宿主 Plugin Data 持久化已验收。
 
-通过后才开放跨仓映射试点。
+仓库内的 Phase 3-4 映射与逐仓规划 guidance 已开放试点，但 Gate 3 的真实 mapping corpus/outcome 仍待完成。
 
 ### Gate 3：Mapping Outcome
 
@@ -942,6 +945,10 @@ unknown 能正确暴露
 用户可以修正
 确认前无跨仓写入
 ```
+
+**当前结果**：`code-plan`/`guide` 已增加只读映射、证据分类、授权 Root、逐仓规划和人工跨仓协调 guidance，
+并加入中英文自然语言 route/outcome eval 与静态 contract assertions。未运行模型评估 corpus，因此不宣称
+映射准确率或 Gate 3 outcome 已通过。
 
 通过后才试点逐仓库规划。
 
@@ -1032,17 +1039,17 @@ dist bundle
 ```text
 workspace-scoped binding
 原子写与锁
-配置迁移和损坏恢复测试
+配置损坏 fail-closed、并发、canonical root 和独立 clone 测试
 无 SessionStart/自动扫描验证
 ```
 
 ### Phase 3-4
 
 ```text
-自然语言 route/outcome eval
-可解释映射 corpus
-逐仓库规划用户故事
-多仓部分失败报告
+自然语言 route/outcome eval（中英文样例，静态 contract 验证）
+可解释映射 guidance（真实 mapping corpus 仍待建立）
+逐仓库规划与跨仓接口人工协调提醒
+多仓 completed/partial/blocked/unresolved 报告
 ```
 
 ### Phase 5
