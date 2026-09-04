@@ -51,10 +51,10 @@
   <text x="1205" y="354" class="section">平台能力 Plugins</text>
 
   <text x="395" y="413" class="label">oec-product</text>
-  <text x="395" y="440" class="version">3.0.3</text>
+  <text x="395" y="440" class="version">3.0.4</text>
   <text x="395" y="463" class="count">1 Agent · 3 Skills · 0 MCP</text>
   <text x="395" y="518" class="label">oec-dev</text>
-  <text x="395" y="545" class="version">1.9.5</text>
+  <text x="395" y="545" class="version">1.9.6</text>
   <text x="395" y="568" class="count">4 Agents · 11 Skills · 0 MCP</text>
   <text x="395" y="615" class="label">oec-dev-beta</text>
   <text x="395" y="637" class="version">0.1.0</text>

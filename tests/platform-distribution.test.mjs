@@ -174,7 +174,7 @@ test('current-facing documentation stays aligned with Marketplace components', a
   assert.doesNotMatch(report, /\boec-(?:product|engineering|e3|pipeline|common)@[~^]?\d+\.\d+\.\d+\b/);
   assert.match(report, /简单、局部、低风险改动/);
   assert.match(report, /非平凡、高风险或需跨会话保存上下文的改动/);
-  assert.match(report, /prd-publish[\s\S]{0,180}manual-only/);
+  assert.match(report, /prd-publish[\s\S]{0,240}(?:model-discoverable|自然语言发现)/);
   assert.match(report, /decision-review[\s\S]{0,180}可自动发现/);
   assert.match(report, /code-finish[\s\S]{0,180}可自动发现/);
   assert.match(report, /oec-dev-beta[\s\S]{0,180}web-develop/);

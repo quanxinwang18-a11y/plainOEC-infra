@@ -1,6 +1,6 @@
 # 平台 Plugin 层级与 MCP 迁移设计
 
-> 当前候选实现：Marketplace `3.1.0`、`oec-product@3.0.3`、`oec-dev@1.9.5`、`oec-dev-beta@0.1.0`、
+> 当前候选实现：Marketplace `3.1.0`、`oec-product@3.0.4`、`oec-dev@1.9.6`、`oec-dev-beta@0.1.0`、
 > `oec-e3@1.0.2`、`oec-pipeline@1.0.2`、`oec-common@0.3.0`。本文区分“代码和自动验证已完成”与“真实外部平台已验收”；
 > SAE、UTP 和 `oec-testing` 仍未进入 Marketplace。
 
@@ -75,8 +75,8 @@ flowchart TB
 
 | Plugin | Agent | Skills | Hook | MCP | 责任 |
 | --- | ---: | ---: | ---: | ---: | --- |
-| `oec-product@3.0.3` | 1 | 3 | 0 | 0 | PRD 领域知识和发布语义 |
-| `oec-dev@1.9.5` | 4 | 11 | 1 | 0 | 稳定 OEC Dev 任务执行、Specs、模块上下文和工程辅助；含一个 SessionStart bootstrap |
+| `oec-product@3.0.4` | 1 | 3 | 0 | 0 | PRD 领域知识和发布语义 |
+| `oec-dev@1.9.6` | 4 | 11 | 1 | 0 | 稳定 OEC Dev 任务执行、Specs、模块上下文和工程辅助；含一个 SessionStart bootstrap |
 | `oec-dev-beta@0.1.0` | 0 | 1 | 0 | 0 | 实验性长时 Web/full-stack 编排；复用宿主 Engineering 能力 |
 | `oec-e3@1.0.2` | 0 | 0 | 0 | 1 | E3 PRD 发布与研发任务执行 |
 | `oec-pipeline@1.0.2` | 0 | 0 | 0 | 1 | 既有 dev/test 流水线受控执行 |
@@ -300,12 +300,12 @@ Token、空间选择、plan 和 Pipeline 运行时状态不得进入 Git。旧 P
 
 ## 10. 分发和版本
 
-`oec-product@3.0.3` 声明同 Marketplace 依赖：
+`oec-product@3.0.4` 声明同 Marketplace 依赖：
 
 ```json
 {
   "name": "oec-product",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "dependencies": [
     { "name": "oec-e3", "version": "~1.0.0" }
   ]
@@ -325,7 +325,7 @@ plugin-scoped 身份会变化，因此 Product 使用主版本升级。
 | 六个研发任务工具 | 已验收 | 自动测试、mock journey 与“OBU-AI提效组”真实主链均完成 |
 | 四个 Pipeline 工具 | 已实现 | 自动测试和 mock/integration 已完成；未执行真实 Pipeline |
 | Product dependency cutover | 已完成 | Product 0 MCP；隔离安装自动解析 E3 dependency |
-| Engineering 1.9.5 task execution | 已完成 | `code-implement`、十个稳定 Skills、四个 Agent 和静态 Hook |
+| Engineering 1.9.6 task execution | 已完成 | `code-implement`、十个稳定 Skills、四个 Agent 和静态 Hook |
 | Dev Beta 0.1.0 | 已实现 | 单个显式长时 Skill；复用宿主 Agent/runtime，真实 Web outcome 待验收 |
 | Common HTML Slides | 已完成 | 1 个零依赖 Skill；真实浏览器验证 overview、hash 与键盘导航 |
 | SAE、UTP 准入 | 审计中 | 不创建空 Plugin，不进入 Marketplace |

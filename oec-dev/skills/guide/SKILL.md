@@ -1,31 +1,60 @@
 ---
 name: guide
-description: Use when starting a conversation or when a user describes an engineering goal; guides goal-first Skill discovery and user-facing next-step interaction without requiring internal OEC process knowledge
+description: Bootstrap guidance for the main-session model; use only through SessionStart, not as a user-invoked engineering capability
+disable-model-invocation: true
 ---
 
-<SUBAGENT-STOP>
-If you were dispatched as a subagent to execute a specific task, do not apply this bootstrap. Follow the dispatch contract and the task context you received.
-</SUBAGENT-STOP>
+## Scope
 
-<EXTREMELY-IMPORTANT>
-The user brings a goal, not an internal OEC process. The user does not need to know or name Skills, task identifiers, planning documents, team knowledge files, phases, or Agents. Infer the next useful action from the user's natural language and the repository context, and explain it in user-facing terms.
+Apply this bootstrap only to engineering requests in the Main Session. It does not govern ordinary
+conversation, non-engineering requests, or dispatched Agents.
 
-Before any response or action, check whether an oec-dev Skill applies. If one applies, invoke it before clarifying questions, repository exploration, planning, or editing. Do not replace Skill invocation with a sentence saying that you will follow the Skill.
+## Goal first
 
-If the user is unsure what to do, do not invent work or ask them to choose an internal Skill or artifact. Inspect only enough context to offer two or three concrete, evidence-backed next steps, recommend the simplest option, and ask only the material question that changes the work. For non-trivial work, check available Skills before acting.
+The user brings a goal, not an internal OEC process. The user does not need to know or name Skills,
+task identifiers, planning documents, team knowledge files, phases, or Agents. Infer the smallest
+useful next action from the user's natural language and available repository evidence.
 
-When a user asks to implement or develop from a PRD, Story, HANDOFF, issue, or other requirement document, the document is a source, not a ready task. For a non-trivial request, invoke `code-plan` first. Explain the proposed scope, exact files, and safe next step in user-facing language; show exact task paths when confirmation is needed, and wait for confirmation before any business-code edit. Once the planning result is ready and any required confirmation is complete, continue the original implementation request with `code-implement`; do not ask the user to repeat the request or manually provide an internal task identity unless a material ambiguity requires it.
+Do not ask the user to choose an internal Skill or artifact. If the goal is unclear, inspect only
+enough context to offer one recommended next step; mention an alternative only when it materially
+changes scope or risk. Ask only the question that changes the work.
 
-If the user provides an existing ready task, invoke `code-implement` directly. If the request is a small obvious fix or ordinary direct coding with no requirement document, do not force task artifacts. For explicit requests for review, diagnosis, TDD, decision challenge, prototyping, durable Specs, legacy migration, or closing, invoke the matching Skill. Keep experimental Web orchestration explicit; do not start it merely because a task has a frontend.
+## Skill matching
 
-Do not initialize or update durable engineering knowledge merely because a PRD or code change exists. When the work reveals a possible long-lived fact or decision, explain that it may be worth recording and let the relevant Skill handle the user confirmation. Do not force a fixed phase, status, task split, TDD loop, Agent sequence, or commit flow.
-</EXTREMELY-IMPORTANT>
+For an engineering request that may change code, engineering documents, or external engineering state,
+use native Skill descriptions to find a clear match. Do not enumerate or read every Skill file for
+each request. Invoke at most one primary Skill unless the selected Skill explicitly delegates another
+capability. If no Skill clearly matches, answer or work directly.
 
-## The operating rule
+A matching Skill must satisfy both its positive trigger and its negative boundary. Prefer the narrowest
+capability that fits the user's goal.
 
-1. Match the user's goal and current context to the narrowest relevant Skill; the user should not have to know its name.
-2. Invoke that Skill before taking the first related action.
-3. Let the Skill choose any necessary internal planning or knowledge artifacts, while exposing only decisions that materially affect the user.
-4. Follow the user's original goal across Skill handoffs and automatically continue it after a confirmed planning result; never make the user act as the router between planning and implementation.
+## Routing priority
 
-Prefer the smallest sufficient change. Preserve unrelated user work, define observable success criteria, and verify final behavior before claiming completion. If work changes a stable responsibility, interface, invariant, failure mode, module boundary, or verified command, proactively identify the durable document that may need review.
+1. Explicit specialized intent, when its positive trigger and negative boundary match: read-only review,
+   failure diagnosis, an explicitly requested testing method, decision challenge, throwaway experiments,
+   legacy migration,
+   durable knowledge, or finalization.
+2. Non-trivial implementation sourced from a PRD, Story, HANDOFF, issue, or other requirement:
+   plan before business-code edits with `code-plan`.
+3. An existing ready task plus an implementation request: continue with `code-implement`.
+4. Small, local, reversible, or urgent coding: stay lightweight in the Main Session.
+
+A ready task without an implementation request does not authorize implementation. A request to review a
+ready task uses review, not implementation.
+
+## Safety and handoff
+
+For broad, destructive, cross-module, public-contract, or materially ambiguous work, summarize the
+intended scope, affected paths, and verification approach before editing. Do not create workflow
+artifacts or durable knowledge by default.
+
+When planning is required, show the user-facing scope and exact paths that need confirmation. After a
+confirmed ready planning result, continue the original implementation request without asking the user
+to repeat it. Never make the user act as the router between capabilities. If the original request was
+only for explanation, design, or review, stop at that result.
+
+Prefer the smallest sufficient change. Preserve unrelated work, define observable success criteria,
+and report current verification evidence. Do not claim a check passed unless it actually ran. Identify
+possible durable Spec or ADR review only when a stable responsibility, interface, invariant, failure
+mode, module boundary, or verified command changed; do not update it automatically.

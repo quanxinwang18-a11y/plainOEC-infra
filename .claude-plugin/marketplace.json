@@ -14,14 +14,14 @@
   "plugins": [
     {
       "name": "oec-product",
-      "version": "3.0.3",
+      "version": "3.0.4",
       "description": "PRD 编写、需求评审和 E3 发布。",
       "source": "./oec-product",
       "category": "product-management"
     },
     {
       "name": "oec-dev",
-      "version": "1.9.5",
+      "version": "1.9.6",
       "description": "OEC Dev 模块上下文、任务 Spec/Design、任务实现、团队工程知识、故障诊断和代码评审。",
       "source": "./oec-dev",
       "category": "development"

@@ -281,7 +281,7 @@ Product 管理产品需求从编写、评审到经确认发布 E3 的语义闭�
 | Agent | `prd-manager` | 显式 PM 身份 |
 | Skill | `prd-write` | 创建产品需求 SSOT |
 | Skill | `prd-review` | 只读红队评审 |
-| Skill | `prd-publish` | 显式发布到 E3 |
+| Skill | `prd-publish` | 自然语言可发现，确认后发布到 E3 |
 | Runtime | artifact checker | 确定性检查 PRD/HANDOFF 结构 |
 
 ### 6.3 `prd-manager` Agent
@@ -301,8 +301,9 @@ API、数据库 schema、部署和代码架构属于 Engineering，除非它们�
 `prd-review` 对现有产物执行只读红队评审，重点检查歧义、冲突、不可测试验收条件、越权技术设计
 和未决业务决定。它不修改文件，也不发布 E3。
 
-`prd-publish` 是 manual-only Skill。它验证 finalized artifacts、子 PRD 与 HANDOFF，展示
-准备结果并等待 Human 确认，然后调用 E3 工具。普通写作或评审不能自动产生远端副作用。
+`prd-publish` 可由明确的自然语言发布意图发现。它验证 finalized artifacts、子 PRD 与 HANDOFF，展示
+准备结果并等待 Human 确认，然后调用 E3 工具。自然语言发现不会跳过确认；普通写作或评审不能自动
+产生远端副作用。
 
 ![PM 以显式身份按目标调用写作、评审和发布三个 Product Skills，并保持产物、人工门禁和远端状态边界](assets/plainoec-infra-management-report/07-pm-skills-map.png)
 
@@ -940,11 +941,12 @@ grader 与 with/without 消融；在该证据形成前，不以 Skill 数量或 
 - prototype 不应命中生产实现、benchmark 或普通 bugfix。
 - `prd-write`、`prd-review`、`prd-publish` 三个 PRD 能力互斥。
 - small fix 不应触发 planning、TDD 或 closing。
-- Product 的外部发布 Skill 不应由模型自动调用；稳定 Engineering Skills 应由精确自然语言意图发现。
+- Product 的外部发布 Skill 可以由明确的自然语言发布意图发现，但不能在计划确认前执行；稳定 Engineering Skills 应由精确自然语言意图发现。
 
-当前 `prd-publish` 仍是 Product 的 manual-only Skill。Engineering 的十个稳定 Skills 均可由模型
-发现；`decision-review`、`prototype`、`docs-migrate` 和 `code-finish` 仍通过
-正文安全门和独立确认保护本地写入。实验性 `/oec-dev-beta:web-develop` 保持 manual-only。
+当前 `prd-publish` 已允许由明确的自然语言发布意图发现，但仍通过 prepare、计划展示、Human
+confirmation、execute 和 status 保护远端写入。Engineering 的十个稳定 Skills 均可由模型发现；
+`decision-review`、`prototype`、`docs-migrate` 和 `code-finish` 仍通过正文安全门和独立确认保护本地
+写入。实验性 `/oec-dev-beta:web-develop` 保持 manual-only。
 
 ### 11.3 Eval 运行边界
 

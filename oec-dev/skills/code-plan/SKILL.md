@@ -68,8 +68,11 @@ oec-spec task check --dev-root "$DEV_ROOT" --product-root "$PRODUCT_ROOT" \
   --task-ref <taskRef> --stage ready --format json
 ```
 
-A failed check is visible and blocks a ready claim. At this checkpoint, run the read-only freshness
-check and report its candidates:
+A failed check is visible and blocks a ready claim. Return the original user goal, canonical taskRef,
+confirmed Change Boundary, exact artifact paths, ready-check result, unresolved decisions, and the
+suggested next action so the Main Session can continue without making the user route the work.
+
+At this checkpoint, run the read-only freshness check and report its candidates:
 
 ```bash
 oec-spec remind --workspace "$DEV_ROOT" --paths <affected paths> \

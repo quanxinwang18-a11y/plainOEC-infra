@@ -168,8 +168,8 @@ MCP Tool 适合：
 
 当前结构包含六个独立分发单元：
 
-- `oec-product@3.0.3`：1 Agent、3 Skills、0 MCP；明确依赖 `oec-e3`。
-- `oec-dev@1.9.5`：10 个可自动发现的稳定 Skills、4 个可选 Agent、1 个静态 SessionStart 行为 Hook、0 MCP；普通编码仍由主 Coding Agent 负责。
+- `oec-product@3.0.4`：1 Agent、3 Skills、0 MCP；明确依赖 `oec-e3`。
+- `oec-dev@1.9.6`：10 个可自动发现的稳定 Skills、4 个可选 Agent、1 个静态 SessionStart 行为 Hook、0 MCP；普通编码仍由主 Coding Agent 负责。
 - `oec-dev-beta@0.1.0`：1 个显式实验性 Skill；复用宿主 Engineering 的 Agent 和 `oec-spec`，不复制文件或 runtime。
 - `oec-e3@1.0.2`：1 MCP Server、10 Tools；负责 PRD 发布和研发任务主链。
 - `oec-pipeline@1.0.2`：1 MCP Server、4 Tools；只运行既有 dev/test 流水线。

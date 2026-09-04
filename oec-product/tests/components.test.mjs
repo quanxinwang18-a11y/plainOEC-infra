@@ -22,7 +22,7 @@ test('product manager is explicit, inherits the model, and preloads only write a
   assert.doesNotMatch(body, /SKILL\.md|\.mcp\.json|OAuth|HTTP API|retry loop/i);
 });
 
-test('skills have distinct positive triggers and E3 publishing is manual-only', () => {
+test('skills have distinct positive triggers and E3 publishing is model-discoverable but confirmed', () => {
   const writing = frontmatter('skills/prd-write/SKILL.md');
   const reviewing = frontmatter('skills/prd-review/SKILL.md');
   const publishing = frontmatter('skills/prd-publish/SKILL.md');
@@ -35,16 +35,21 @@ test('skills have distinct positive triggers and E3 publishing is manual-only', 
   assert.match(reviewing.metadata.description, /review code or technical designs/);
   assert.match(writing.body, /assets\/root-prd\.md/);
   assert.match(reviewing.body, /RF-01.*RF-05/s);
-  assert.equal(publishing.metadata['disable-model-invocation'], true);
-  assert.match(publishing.metadata.description, /already finalized version/);
-  assert.match(publishing.metadata.description, /completed child PRDs and HANDOFF/);
-  assert.match(publishing.metadata.description, /explicit E3 PRD publishing requests/);
-  assert.match(publishing.body, /original `spaceId`.*selected `pompProjectCode`/s);
+  assert.equal(publishing.metadata['disable-model-invocation'], undefined);
+  assert.match(publishing.metadata.description, /publish or submit it/);
+  assert.match(publishing.metadata.description, /completed artifacts/);
+  assert.match(publishing.metadata.description, /Do not use for PRD writing/);
+  assert.match(publishing.body, /Natural-language discovery is allowed/);
+  assert.match(publishing.body, /Never execute merely because the\s+initial user request said/);
+  assert.match(publishing.body, /explicit confirmation tied to this displayed plan/);
+  assert.match(publishing.body, /original\s+`spaceId`.*selected\s+`pompProjectCode`/s);
   assert.match(publishing.body, /published-version-changed/);
   assert.match(publishing.body, /remote-object-drift/);
   assert.match(publishing.body, /git add -- <recordPath>/);
   assert.match(publishing.body, /git commit -m .* -- <recordPath>/);
   assert.match(publishing.body, /Never stage plugin data, credentials, configuration, selection, or\s+plan files/s);
+  const publishPositive = frontmatter('evals/prd-publish-positive/prompt.md');
+  assert.doesNotMatch(publishPositive.body, /\/oec-product:prd-publish/);
   assert.doesNotMatch(publishing.body, /oauth|token file|https?:\/\/|JSON payload|node .*\.mjs|retry/i);
 });
 
@@ -109,7 +114,7 @@ test('writing assets cover the product SSOT and use safe exact-path commit synta
 test('plugin relies on native discovery and has no forbidden root component framework', () => {
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-product');
-  assert.equal(manifest.version, '3.0.3');
+  assert.equal(manifest.version, '3.0.4');
   assert.deepEqual(manifest.dependencies, [{ name: 'oec-e3', version: '~1.0.0' }]);
   const packageManifest = JSON.parse(readFileSync(resolve(pluginRoot, '..', 'package.json'), 'utf8'));
   assert.equal(packageManifest.version, '3.1.0');

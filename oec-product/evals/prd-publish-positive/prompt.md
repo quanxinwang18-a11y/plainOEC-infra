@@ -7,4 +7,4 @@ timeout_seconds: 300
 allowed_tools: [Read, Glob, Grep, Skill]
 ---
 
-Use /oec-product:prd-publish to publish the already finalized v2.1.0 PRD with completed child PRDs and HANDOFF.
+Publish the already finalized v2.1.0 PRD to E3. It has completed child PRDs and HANDOFF; first show me the plan and wait for my confirmation before any remote write.

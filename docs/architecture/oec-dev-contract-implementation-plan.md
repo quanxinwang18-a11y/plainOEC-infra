@@ -1,6 +1,6 @@
 # OEC Dev 契约与实施计划
 
-- **Status**: Implemented candidate — Engineering 1.9.5 and Dev Beta 0.1.0 follow-up pending commit and release decision
+- **Status**: Implemented candidate — Engineering 1.9.6 and Dev Beta 0.1.0 follow-up pending commit and release decision
 - **Owner**: `oec-dev` / OEC Dev
 - **Scope**: `plainOEC-infra/oec-dev` (stable execution) and `plainOEC-infra/oec-dev-beta` (experimental long-running orchestration)
 - **Last updated**: 2026-09-02

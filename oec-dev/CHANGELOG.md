@@ -2,6 +2,15 @@
 
 ## Next
 
+## 1.9.6
+
+- Narrow the SessionStart bootstrap to engineering requests in the Main Session.
+- Keep `guide` as Hook-only bootstrap guidance rather than a model-invocable business Skill.
+- Add explicit Skill matching precedence, positive/negative boundary matching, one-primary-Skill guidance,
+  and a narrow risk gate for broad or destructive work.
+- Preserve the lightweight direct-coding path and avoid project scans, per-turn context, task runtime, or
+  fixed workflow orchestration.
+
 **BREAKING RC CHANGE:** align the public Dev identity and names before the first stable release.
 
 - Rename the public Skills to goal-oriented names: `guide`, `code-plan`, `code-implement`, `code-finish`,

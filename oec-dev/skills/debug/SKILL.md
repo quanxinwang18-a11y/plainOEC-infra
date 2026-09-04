@@ -24,6 +24,10 @@ cause from temporal correlation, or stop at a suppressed symptom. If three disti
 fail on the same symptom, stop and re-examine architecture or assumptions before attempting a
 fourth. Remove temporary instrumentation unless it provides justified ongoing observability.
 
+Return the original failure goal, the reproduced signal, observed facts, falsifiable hypotheses,
+root cause (or the evidence gap), changed files, verification result, and residual risk. If a fix is
+ready, return it to the Main Session without automatically invoking planning, review, or closing.
+
 Use a durable change note only when the investigation reveals a lasting system fact, decision, or
 residual operational risk. Ordinary debugging does not require a stage file, state directory, or
 mandatory report.

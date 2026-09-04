@@ -483,8 +483,9 @@ Skill 的价值不是替模型复述常识，而是在正确触发时提供模�
 | 移出稳定分发 | 长时 Web/full-stack 编排 | 依赖 Playwright、成本不可预测且需要多轮 Agent 调度，独立放入 `oec-dev-beta` |
 
 因此稳定 `oec-dev` 为 10 个可由模型发现的 Skills 和 4 个 Agent；`oec-dev-beta` 只有一个
-`web-develop`，保持 `disable-model-invocation: true`。稳定 Plugin 只保留真正不可逆的外部发布
-Skill 为 manual-only；本地写入和 commit 通过各自的确认门控制。
+`web-develop`，保持 `disable-model-invocation: true`。Product 的 `prd-publish` 可以由明确的自然语言
+发布意图发现，但远端写入仍由 prepare、计划展示、Human confirmation 和 status 验证保护；本地写入
+和 commit 通过各自的确认门控制。
 
 本轮已有的 route eval 只能证明调用或抑制行为，不能证明真实用户收益。删除或继续保留通用方法 Skill
 前，仍需用固定任务集比较成功率、无关步骤、验证完整性和交互成本。
@@ -698,8 +699,8 @@ Plugin 的粒度则由生命周期决定：当外部事实来源、认证权限�
 
 | Plugin | Agent | Skills | Hook | MCP | 作用与边界 |
 | --- | ---: | ---: | ---: | ---: | --- |
-| `oec-product@3.0.3` | 1 | 3 | 0 | 0 | PRD 写作、只读评审和发布语义；依赖 E3 |
-| `oec-dev@1.9.5` | 4 | 10 | 1 | 0 | 稳定任务执行、团队 Specs、决策、诊断、review 和 close |
+| `oec-product@3.0.4` | 1 | 3 | 0 | 0 | PRD 写作、只读评审和发布语义；依赖 E3 |
+| `oec-dev@1.9.6` | 4 | 10 | 1 | 0 | 稳定任务执行、团队 Specs、决策、诊断、review 和 close |
 | `oec-dev-beta@0.1.0` | 0 | 1 | 0 | 0 | 实验性长时 Web/full-stack 编排 |
 | `oec-e3@1.0.2` | 0 | 0 | 0 | 1 | 4 个 PRD 发布工具 + 6 个研发任务工具 |
 | `oec-pipeline@1.0.2` | 0 | 0 | 0 | 1 | 既有 dev/test 流水线的受控 prepare/execute/status |
@@ -1014,8 +1015,8 @@ OEC-infra 后续不应继续做“更多 Prompt、更多角色路由、更多统
 | 项目 | 版本/状态 |
 | --- | --- |
 | Marketplace | `3.1.0` release candidate |
-| Product | `3.0.3` release candidate，未创建新 tag |
-| Engineering | `1.9.5` release candidate，未创建新 tag |
+| Product | `3.0.4` release candidate，未创建新 tag |
+| Engineering | `1.9.6` release candidate，未创建新 tag |
 | Dev Beta | `0.1.0` experimental candidate，未创建新 tag |
 | E3 | `1.0.2` release candidate，未创建新 tag |
 | Pipeline | `1.0.2` release candidate，未创建新 tag |

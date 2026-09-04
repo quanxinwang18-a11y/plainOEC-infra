@@ -67,7 +67,7 @@ const expectedSkills = [
 test('engineering plugin exposes ten task Skills, one bootstrap Skill, four Agents, and one static Hook', () => {
   const manifest = JSON.parse(readFileSync(resolve(pluginRoot, '.claude-plugin/plugin.json'), 'utf8'));
   assert.equal(manifest.name, 'oec-dev');
-  assert.equal(manifest.version, '1.9.5');
+  assert.equal(manifest.version, '1.9.6');
   // Agents and Skills are auto-discovered from directories, not declared in plugin.json.
   for (const key of ['skills', 'agents', 'mcpServers', 'commands', 'hooks']) assert.equal(key in manifest, false);
 
@@ -133,17 +133,17 @@ test('SessionStart injects bounded behavioral guidance without duplicating capab
   assert.match(context, /^<EXTREMELY-IMPORTANT>/);
   assert.match(context, /The user brings a goal, not an internal OEC process/);
   assert.match(context, /does not need to know or name Skills/);
-  assert.match(context, /If the user is unsure what to do/);
-  assert.match(context, /two or three concrete, evidence-backed next steps/);
-  assert.match(context, /guide/);
-  assert.match(context, /Before any response or action/);
+  assert.match(context, /ordinary\s+conversation, non-engineering requests/);
+  assert.match(context, /one recommended next step/);
+  assert.match(context, /Do not enumerate or read every Skill file/);
+  assert.match(context, /at most one primary Skill/);
   assert.match(context, /code-plan/);
   assert.match(context, /code-implement/);
-  assert.match(context, /never make the user act as the router/);
-  assert.match(context, /before any business-code edit/);
-  assert.match(context, /proactively identify the durable document that may need review/);
-  assert.match(context, /Do not initialize or update durable engineering knowledge merely because a PRD or code change exists/);
-  assert.match(context, /Do not force a fixed phase, status, task split/);
+  assert.match(context, /positive trigger and its negative boundary/);
+  assert.match(context, /broad, destructive, cross-module/);
+  assert.match(context, /never make the user act as the router/i);
+  assert.match(context, /before editing/);
+  assert.match(context, /Do not create workflow\s+artifacts or durable knowledge by default/);
   assert.match(context, /smallest sufficient change/);
   assert.match(context, /observable success criteria/);
   assert.ok(context.length <= 5000, `SessionStart context is too large: ${context.length} characters`);
@@ -223,10 +223,13 @@ test('skill descriptions make positive and negative judgment boundaries explicit
   assert.match(skill('code-plan').body, /planning gate before business-code/);
   const bootstrap = readFileSync(resolve(pluginRoot, `skills/${bootstrapSkill}/SKILL.md`), 'utf8');
   assert.match(bootstrap, /The user brings a goal, not an internal OEC process/);
-  assert.match(bootstrap, /Before any response or action/);
+  const bootstrapMetadata = skill(bootstrapSkill).metadata;
+  assert.equal(bootstrapMetadata['disable-model-invocation'], true);
+  assert.match(bootstrap, /engineering requests in the Main Session/);
+  assert.match(bootstrap, /Do not enumerate or read every Skill file/);
   assert.match(bootstrap, /PRD.*code-plan/s);
-  assert.match(bootstrap, /ready.*code-implement/s);
-  assert.match(bootstrap, /Let the Skill choose any necessary internal planning or knowledge artifacts/);
+  assert.match(bootstrap, /ready task.*implementation request.*code-implement/s);
+  assert.match(bootstrap, /one primary Skill/);
   assert.match(skill('code-plan').metadata.description, /small obvious fix/);
   assert.match(skill('decision-review').metadata.description, /asks to challenge/);
   assert.match(skill('decision-review').metadata.description, /ordinary planning/);

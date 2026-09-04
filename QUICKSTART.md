@@ -81,8 +81,8 @@ claude plugin install \
 
 #### 受控
 
-E3 发布必须显式调用 Product 的 publishing Skill，并经过准备、计划展示、Human confirmation、远端写入
-和 status 验证。首次使用不要从真实外部写入开始。
+E3 发布可以直接用自然语言描述目标，Model 会发现 Product 的 publishing Skill；也可以显式调用。无论入口
+如何，发布都必须经过准备、计划展示、Human confirmation、远端写入和 status 验证。首次使用不要从真实外部写入开始。
 
 ### 研发角色
 

@@ -2,11 +2,12 @@
 
 import { readFileSync } from 'node:fs';
 
-// The bootstrap Skill is injected at session start so the model receives the
-// same mandatory process before it can choose a domain Skill or edit code.
-// Detailed workflow contracts remain in their native Skill and Agent assets.
-const bootstrap = readFileSync(new URL('../skills/guide/SKILL.md', import.meta.url), 'utf8').trim();
-const context = `<EXTREMELY-IMPORTANT>\nYou are using oec-dev. The following bootstrap governs Skill discovery and task handling:\n\n${bootstrap}\n</EXTREMELY-IMPORTANT>`;
+// Inject only the bounded main-session bootstrap. Detailed workflow contracts remain in
+// their native Skill and Agent assets; the hook does not scan the project or create state.
+const bootstrap = readFileSync(new URL('../skills/guide/SKILL.md', import.meta.url), 'utf8')
+  .replace(/^---[\s\S]*?---\n/, '')
+  .trim();
+const context = `<EXTREMELY-IMPORTANT>\nYou are using oec-dev in the Main Session. Apply the following scoped bootstrap:\n\n${bootstrap}\n</EXTREMELY-IMPORTANT>`;
 
 process.stdout.write(`${JSON.stringify({
   hookSpecificOutput: {

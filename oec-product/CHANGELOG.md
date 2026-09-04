@@ -2,6 +2,12 @@
 
 ## Next
 
+## 3.0.4
+
+- Allow `prd-publish` to be discovered from clear natural-language requests.
+- Keep PRD publication behind prepare, displayed plan, Human confirmation, execute, and independent status
+  verification; natural-language discovery does not authorize a remote write.
+
 **BREAKING RC CHANGE:** rename the public Product Skills to `prd-write`, `prd-review`, and `prd-publish`; expose the product manager Agent as `prd-manager`.
 
 ## 3.0.3

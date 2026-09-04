@@ -275,5 +275,5 @@ claude plugin validate --strict ./oec-dev
 git diff --check
 ```
 
-当前 1.9.5 是候选版本。自动测试、bundle、Plugin validation、真实 Agent 发现和真实 Playwright
+当前 1.9.6 是候选版本。自动测试、bundle、Plugin validation、真实 Agent 发现和真实 Playwright
 旅程是不同证据等级；不能用其中一项替代另一项。

@@ -29,8 +29,8 @@ Marketplace 只负责发现和分发。Plugin 可独立安装、升级和卸载�
 | 模块 | 版本 |
 | --- | --- |
 | Marketplace | `3.1.0` |
-| Product | `3.0.3` |
-| Engineering | `1.9.5` |
+| Product | `3.0.4` |
+| Engineering | `1.9.6` |
 | Dev Beta | `0.1.0` |
 | E3 | `1.0.2` |
 | Pipeline | `1.0.2` |

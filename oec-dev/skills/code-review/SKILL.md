@@ -44,5 +44,10 @@ oec-spec remind --workspace "$DEV_ROOT" --paths <changed paths> \
   [--task-ref <taskRef>] --format json
 ```
 
-Report candidates as advisory possibilities, not proof that a Spec is stale. Remain read-only: do not
-edit files, create review artifacts, stage changes, commit, deploy, or write external task state.
+Report candidates as advisory possibilities, not proof that a Spec is stale. Return the review target,
+material findings, evidence gaps, and one suggested next action. If the user later authorizes clear
+mechanical repairs, the Main Session may choose `checker`; do not invoke it or modify files as part of
+this read-only review.
+
+Remain read-only: do not edit files, create review artifacts, stage changes, commit, deploy, or write
+external task state.

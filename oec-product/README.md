@@ -14,13 +14,13 @@ Agent 只预加载 PRD 写作与评审能力。完整 PM 会话通过显式 Agen
 claude --agent oec-product:prd-manager
 ```
 
-E3 发布必须由用户显式调用：
+当用户明确要求将已完成的 PRD 发布到 E3 时，Model 可以按自然语言发现 `prd-publish`；用户仍可显式调用：
 
 ```text
 /oec-product:prd-publish v1.2.3
 ```
 
-发布采用 prepare/confirm/execute/status 四段边界。prepare 不创建远端对象；execute 只接受
+发布采用 prepare/confirm/execute/status 四段边界。自然语言发现不会跳过计划确认，execute 仍必须基于展示的计划获得 Human confirmation。prepare 不创建远端对象；execute 只接受
 15 分钟有效的计划令牌、要求宿主进行人类确认，并在每个远端成功结果后原子更新 workspace
 内的 E3 record。
 
@@ -37,7 +37,7 @@ POMP 和系统需求元数据只在存在唯一候选或唯一默认值时自动
 Product 定义 PRD、Story 和 HANDOFF 的产品语义；`oec-e3` 负责认证、远端对象、幂等和状态查询。
 安装 Product 会加载 `oec-e3@~1.0.0`，但普通 PRD 写作和评审不会触发远端发布。
 
-当前 3.0.3 仍是未打 tag 的候选版本。验证当前候选组合时先显式安装 `oec-e3@plainOEC-infra`，再安装
+当前 3.0.4 仍是未打 tag 的候选版本。验证当前候选组合时先显式安装 `oec-e3@plainOEC-infra`，再安装
 Product；Product 单独安装会按 semver 选择最近已发布的 E3 tag。
 
 ## 本地验证

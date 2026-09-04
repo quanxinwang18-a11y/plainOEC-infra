@@ -61,8 +61,8 @@ Run the tests named by the task Design or the smallest relevant repository check
 typecheck and lint commands. The latest result is the only completion evidence; missing, skipped, or
 failed checks must be reported as `partial` or `failed`.
 
-Return:
-
+Return the original user goal with the result; suggest the next evidence-backed capability only when
+implementation was the original request. Do not automatically invoke review, closing, E3, or Pipeline.
 ```markdown
 ## Development report
 
